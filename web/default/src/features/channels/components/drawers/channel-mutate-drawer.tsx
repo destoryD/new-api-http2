@@ -237,6 +237,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.system_prompt?.trim() ||
     values.force_format ||
     values.thinking_to_content ||
+    values.enable_http2 ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
     values.claude_beta_query ||
@@ -3133,6 +3134,29 @@ export function ChannelMutateDrawer({
                               <FormDescription>
                                 {t(
                                   'Convert reasoning_content to <think> tag in content'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='enable_http2'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>{t('Enable HTTP/2')}</FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Force upstream requests to use HTTP/2; log an error if the backend does not support it'
                                 )}
                               </FormDescription>
                             </div>
