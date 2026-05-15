@@ -483,16 +483,32 @@ func sendPingData(c *gin.Context, mutex *sync.Mutex) error {
 func DoRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
 	return doRequest(c, req, info)
 }
+
 func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
 	var client *http.Client
 	var err error
+	
+	// 检查是否启用 HTTP/2
+	enableHttp2 := info.ChannelSetting.EnableHttp2
+	
 	if info.ChannelSetting.Proxy != "" {
-		client, err = service.NewProxyHttpClient(info.ChannelSetting.Proxy)
-		if err != nil {
-			return nil, fmt.Errorf("new proxy http client failed: %w", err)
+		if enableHttp2 {
+			client, err = service.GetHttp2ClientWithProxy(info.ChannelSetting.Proxy)
+			if err != nil {
+				return nil, fmt.Errorf("get http2 proxy client failed: %w", err)
+			}
+		} else {
+			client, err = service.NewProxyHttpClient(info.ChannelSetting.Proxy)
+			if err != nil {
+				return nil, fmt.Errorf("new proxy http client failed: %w", err)
+			}
 		}
 	} else {
-		client = service.GetHttpClient()
+		if enableHttp2 {
+			client = service.GetHttp2Client()
+		} else {
+			client = service.GetHttpClient()
+		}
 	}
 
 	var stopPinger context.CancelFunc
