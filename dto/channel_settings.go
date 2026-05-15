@@ -13,6 +13,7 @@ type ChannelSettings struct {
 	PassThroughBodyEnabled bool   `json:"pass_through_body_enabled,omitempty"`
 	SystemPrompt           string `json:"system_prompt,omitempty"`
 	SystemPromptOverride   bool   `json:"system_prompt_override,omitempty"`
+	EnableHttp2            bool   `json:"enable_http2,omitempty"` // 是否启用 HTTP/2 客户端
 }
 
 type VertexKeyType string
