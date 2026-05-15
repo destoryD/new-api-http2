@@ -505,7 +505,10 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 		}
 	} else {
 		if enableHttp2 {
-			client = service.GetHttp2Client()
+			client, err = service.GetHttp2Client()
+			if err != nil {
+				return nil, fmt.Errorf("get http2 client failed: %w", err)
+			}
 		} else {
 			client = service.GetHttpClient()
 		}
@@ -533,11 +536,23 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.LogError(c, "do request failed: "+err.Error())
+		if enableHttp2 {
+			logger.LogError(c, "HTTP/2 request failed: "+err.Error()+"; the upstream backend may not support HTTP/2")
+		} else {
+			logger.LogError(c, "do request failed: "+err.Error())
+		}
 		return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: do request failed"))
 	}
 	if resp == nil {
 		return nil, errors.New("resp is nil")
+	}
+	if enableHttp2 && resp.ProtoMajor != 2 {
+		err = fmt.Errorf("HTTP/2 is enabled for this channel but upstream responded with %s; the upstream backend may not support HTTP/2", resp.Proto)
+		logger.LogError(c, err.Error())
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+		return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: upstream backend does not support HTTP/2"))
 	}
 
 	if upID := resp.Header.Get(common2.RequestIdKey); upID != "" {

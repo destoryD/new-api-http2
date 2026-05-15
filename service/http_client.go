@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"net/http"
@@ -15,6 +16,53 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/proxy"
 )
+
+type strictHTTP2Transport struct {
+	transport *http.Transport
+}
+
+func (t *strictHTTP2Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	resp, err := t.transport.RoundTrip(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp == nil || resp.ProtoMajor == 2 {
+		return resp, nil
+	}
+	if resp.Body != nil {
+		_ = resp.Body.Close()
+	}
+	return nil, fmt.Errorf("HTTP/2 is required but upstream negotiated %s", resp.Proto)
+}
+
+func (t *strictHTTP2Transport) CloseIdleConnections() {
+	t.transport.CloseIdleConnections()
+}
+
+func configureStrictHTTP2Transport(transport *http.Transport) error {
+	if err := http2.ConfigureTransport(transport); err != nil {
+		return err
+	}
+	transport.ForceAttemptHTTP2 = true
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	} else {
+		transport.TLSClientConfig = transport.TLSClientConfig.Clone()
+	}
+	transport.TLSClientConfig.NextProtos = []string{"h2"}
+	return nil
+}
+
+func newStrictHTTP2Client(transport *http.Transport) *http.Client {
+	client := &http.Client{
+		Transport:     &strictHTTP2Transport{transport: transport},
+		CheckRedirect: checkRedirect,
+	}
+	if common.RelayTimeout != 0 {
+		client.Timeout = time.Duration(common.RelayTimeout) * time.Second
+	}
+	return client
+}
 
 var (
 	httpClient       *http.Client
@@ -74,25 +122,13 @@ func InitHttp2Client() {
 	}
 
 	// 配置 HTTP/2 参数
-	if err := http2.ConfigureTransport(transport); err != nil {
-		common.SysLog(fmt.Sprintf("Failed to configure HTTP/2 transport: %v, falling back to HTTP/1.1", err))
-		// 如果配置失败，降级到 HTTP/1.1
-		http2Client = httpClient
+	if err := configureStrictHTTP2Transport(transport); err != nil {
+		common.SysError(fmt.Sprintf("Failed to configure strict HTTP/2 transport: %v", err))
+		http2Client = nil
 		return
 	}
 
-	if common.RelayTimeout == 0 {
-		http2Client = &http.Client{
-			Transport:     transport,
-			CheckRedirect: checkRedirect,
-		}
-	} else {
-		http2Client = &http.Client{
-			Transport:     transport,
-			Timeout:       time.Duration(common.RelayTimeout) * time.Second,
-			CheckRedirect: checkRedirect,
-		}
-	}
+	http2Client = newStrictHTTP2Client(transport)
 }
 
 func GetHttpClient() *http.Client {
@@ -100,12 +136,11 @@ func GetHttpClient() *http.Client {
 }
 
 // GetHttp2Client 获取 HTTP/2 客户端
-func GetHttp2Client() *http.Client {
+func GetHttp2Client() (*http.Client, error) {
 	if http2Client == nil {
-		// 如果未初始化，返回 HTTP/1.1 客户端作为备选
-		return httpClient
+		return nil, fmt.Errorf("strict HTTP/2 client is not initialized")
 	}
-	return http2Client
+	return http2Client, nil
 }
 
 // GetHttpClientWithProxy returns the default client or a proxy-enabled one when proxyURL is provided.
@@ -119,7 +154,7 @@ func GetHttpClientWithProxy(proxyURL string) (*http.Client, error) {
 // GetHttp2ClientWithProxy 获取支持代理的 HTTP/2 客户端
 func GetHttp2ClientWithProxy(proxyURL string) (*http.Client, error) {
 	if proxyURL == "" {
-		return GetHttp2Client(), nil
+		return GetHttp2Client()
 	}
 	return NewHttp2ProxyHttpClient(proxyURL)
 }
@@ -131,17 +166,13 @@ func ResetProxyClientCache() {
 	
 	// 清理 HTTP/1.1 代理客户端
 	for _, client := range proxyClients {
-		if transport, ok := client.Transport.(*http.Transport); ok && transport != nil {
-			transport.CloseIdleConnections()
-		}
+		client.CloseIdleConnections()
 	}
 	proxyClients = make(map[string]*http.Client)
 	
 	// 清理 HTTP/2 代理客户端
 	for _, client := range http2ProxyClients {
-		if transport, ok := client.Transport.(*http.Transport); ok && transport != nil {
-			transport.CloseIdleConnections()
-		}
+		client.CloseIdleConnections()
 	}
 	http2ProxyClients = make(map[string]*http.Client)
 }
@@ -235,10 +266,7 @@ func NewProxyHttpClient(proxyURL string) (*http.Client, error) {
 // NewHttp2ProxyHttpClient 创建支持代理的 HTTP/2 客户端
 func NewHttp2ProxyHttpClient(proxyURL string) (*http.Client, error) {
 	if proxyURL == "" {
-		if client := GetHttp2Client(); client != nil {
-			return client, nil
-		}
-		return http.DefaultClient, nil
+		return GetHttp2Client()
 	}
 
 	proxyClientLock.Lock()
@@ -265,26 +293,12 @@ func NewHttp2ProxyHttpClient(proxyURL string) (*http.Client, error) {
 			transport.TLSClientConfig = common.InsecureTLSConfig
 		}
 
-		// 配置 HTTP/2
-		if err := http2.ConfigureTransport(transport); err != nil {
-			common.SysLog(fmt.Sprintf("Failed to configure HTTP/2 transport for proxy %s: %v", proxyURL, err))
-			// 配置失败时，回退到 HTTP/1.1
-			client := &http.Client{
-				Transport:     transport,
-				CheckRedirect: checkRedirect,
-			}
-			client.Timeout = time.Duration(common.RelayTimeout) * time.Second
-			proxyClientLock.Lock()
-			http2ProxyClients[proxyURL] = client
-			proxyClientLock.Unlock()
-			return client, nil
+		if err := configureStrictHTTP2Transport(transport); err != nil {
+			common.SysError(fmt.Sprintf("Failed to configure strict HTTP/2 transport for proxy %s: %v", proxyURL, err))
+			return nil, err
 		}
 
-		client := &http.Client{
-			Transport:     transport,
-			CheckRedirect: checkRedirect,
-		}
-		client.Timeout = time.Duration(common.RelayTimeout) * time.Second
+		client := newStrictHTTP2Client(transport)
 		proxyClientLock.Lock()
 		http2ProxyClients[proxyURL] = client
 		proxyClientLock.Unlock()
@@ -321,20 +335,12 @@ func NewHttp2ProxyHttpClient(proxyURL string) (*http.Client, error) {
 			transport.TLSClientConfig = common.InsecureTLSConfig
 		}
 
-		// 配置 HTTP/2
-		if err := http2.ConfigureTransport(transport); err != nil {
-			common.SysLog(fmt.Sprintf("Failed to configure HTTP/2 transport for SOCKS5 proxy %s: %v", proxyURL, err))
-			// 配置失败时，回退到 HTTP/1.1
-			client := &http.Client{Transport: transport, CheckRedirect: checkRedirect}
-			client.Timeout = time.Duration(common.RelayTimeout) * time.Second
-			proxyClientLock.Lock()
-			http2ProxyClients[proxyURL] = client
-			proxyClientLock.Unlock()
-			return client, nil
+		if err := configureStrictHTTP2Transport(transport); err != nil {
+			common.SysError(fmt.Sprintf("Failed to configure strict HTTP/2 transport for SOCKS5 proxy %s: %v", proxyURL, err))
+			return nil, err
 		}
 
-		client := &http.Client{Transport: transport, CheckRedirect: checkRedirect}
-		client.Timeout = time.Duration(common.RelayTimeout) * time.Second
+		client := newStrictHTTP2Client(transport)
 		proxyClientLock.Lock()
 		http2ProxyClients[proxyURL] = client
 		proxyClientLock.Unlock()
