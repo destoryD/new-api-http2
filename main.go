@@ -274,6 +274,7 @@ func InitResources() error {
 	ratio_setting.InitRatioSettings()
 
 	service.InitHttpClient()
+	service.InitHttp2Client()
 
 	service.InitTokenEncoders()
 

@@ -70,6 +70,7 @@ var (
 	proxyClientLock  sync.Mutex
 	proxyClients     = make(map[string]*http.Client)
 	http2ProxyClients = make(map[string]*http.Client)
+	http2ClientLock  sync.Mutex
 )
 
 func checkRedirect(req *http.Request, via []*http.Request) error {
@@ -137,6 +138,13 @@ func GetHttpClient() *http.Client {
 
 // GetHttp2Client 获取 HTTP/2 客户端
 func GetHttp2Client() (*http.Client, error) {
+	if http2Client == nil {
+		http2ClientLock.Lock()
+		defer http2ClientLock.Unlock()
+		if http2Client == nil {
+			InitHttp2Client()
+		}
+	}
 	if http2Client == nil {
 		return nil, fmt.Errorf("strict HTTP/2 client is not initialized")
 	}
