@@ -37,19 +37,19 @@ func AllowChannelRPM(channelID int, modelName string, rpmLimit int, modelRPMLimi
 	}
 
 	requests := make([]channelRPMRequest, 0, 2)
-	if rpmLimit > 0 {
-		requests = append(requests, channelRPMRequest{
-			key:   fmt.Sprintf("channel_rpm:%d", channelID),
-			limit: rpmLimit,
-			scope: "channel",
-		})
-	}
 	modelName = strings.TrimSpace(modelName)
 	if modelRPMLimit > 0 && modelName != "" {
 		requests = append(requests, channelRPMRequest{
 			key:   fmt.Sprintf("channel_rpm:%d:model:%s", channelID, modelName),
 			limit: modelRPMLimit,
 			scope: "model",
+		})
+	}
+	if rpmLimit > 0 {
+		requests = append(requests, channelRPMRequest{
+			key:   fmt.Sprintf("channel_rpm:%d", channelID),
+			limit: rpmLimit,
+			scope: "channel",
 		})
 	}
 	if len(requests) == 0 {
