@@ -4458,6 +4458,11 @@
     "，and ": ", and ",
     "、": ", ",
     "Model Name Override": "Remplacement du nom du modèle",
-    "Override the response model with the model name requested by the user": "Remplacer le modèle de la réponse par le nom du modèle demandé par l'utilisateur"
+    "Override the response model with the model name requested by the user": "Remplacer le modèle de la réponse par le nom du modèle demandé par l'utilisateur",
+    "Channel RPM Limit": "Limite RPM du canal",
+    "Maximum requests per minute for this channel; 0 means unlimited": "Nombre maximal de requêtes par minute pour ce canal ; 0 signifie illimité",
+    "Model RPM Limits": "Limites RPM par modèle",
+    "Per-model requests per minute for this channel; empty means unlimited": "Requêtes par minute par modèle pour ce canal ; vide signifie illimité",
+    "No model RPM limits configured.": "Aucune limite RPM par modèle configurée."
   }
 }

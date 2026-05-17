@@ -4458,6 +4458,11 @@
     "，and ": ", and ",
     "、": ", ",
     "Model Name Override": "Ghi đè tên mô hình",
-    "Override the response model with the model name requested by the user": "Ghi đè mô hình trong phản hồi bằng tên mô hình do người dùng yêu cầu"
+    "Override the response model with the model name requested by the user": "Ghi đè mô hình trong phản hồi bằng tên mô hình do người dùng yêu cầu",
+    "Channel RPM Limit": "Giới hạn RPM của kênh",
+    "Maximum requests per minute for this channel; 0 means unlimited": "Số yêu cầu tối đa mỗi phút cho kênh này; 0 nghĩa là không giới hạn",
+    "Model RPM Limits": "Giới hạn RPM theo mô hình",
+    "Per-model requests per minute for this channel; empty means unlimited": "Số yêu cầu mỗi phút theo từng mô hình cho kênh này; để trống nghĩa là không giới hạn",
+    "No model RPM limits configured.": "Chưa cấu hình giới hạn RPM theo mô hình."
   }
 }

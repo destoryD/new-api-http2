@@ -3828,6 +3828,11 @@
     "，": ", ",
     "、": ", ",
     "模型名称覆盖": "Model Name Override",
-    "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Override the response model with the model name requested by the user"
+    "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Override the response model with the model name requested by the user",
+    "渠道 RPM 限制": "Channel RPM Limit",
+    "限制该渠道每分钟请求数，0 表示不限制": "Limit requests per minute for this channel; 0 means unlimited",
+    "模型 RPM 限制": "Model RPM Limits",
+    "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Limit requests per minute per model for this channel. JSON object; leave empty for unlimited.",
+    "模型 RPM 限制必须是 JSON 对象，值为非负整数": "Model RPM Limits must be a JSON object with non-negative integer values"
   }
 }

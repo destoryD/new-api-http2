@@ -4458,6 +4458,11 @@
     "，and ": ", and ",
     "、": ", ",
     "Model Name Override": "Model Name Override",
-    "Override the response model with the model name requested by the user": "Override the response model with the model name requested by the user"
+    "Override the response model with the model name requested by the user": "Override the response model with the model name requested by the user",
+    "Channel RPM Limit": "Channel RPM Limit",
+    "Maximum requests per minute for this channel; 0 means unlimited": "Maximum requests per minute for this channel; 0 means unlimited",
+    "Model RPM Limits": "Model RPM Limits",
+    "Per-model requests per minute for this channel; empty means unlimited": "Per-model requests per minute for this channel; empty means unlimited",
+    "No model RPM limits configured.": "No model RPM limits configured."
   }
 }

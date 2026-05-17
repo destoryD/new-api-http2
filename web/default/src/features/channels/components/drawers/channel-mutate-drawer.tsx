@@ -239,6 +239,8 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.thinking_to_content ||
     values.enable_http2 ||
     values.model_name_override ||
+    values.rpm_limit ||
+    values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
     values.claude_beta_query ||
@@ -3190,6 +3192,74 @@ export function ChannelMutateDrawer({
                                 onCheckedChange={field.onChange}
                               />
                             </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='rpm_limit'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>{t('Channel RPM Limit')}</FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                step={1}
+                                inputMode='numeric'
+                                placeholder='0'
+                                value={field.value ?? 0}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(event) => {
+                                  const value = Math.max(
+                                    0,
+                                    Math.floor(Number(event.target.value) || 0)
+                                  )
+                                  field.onChange(value)
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'Maximum requests per minute for this channel; 0 means unlimited'
+                              )}
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='model_rpm_limits'
+                        render={({ field }) => (
+                          <FormItem className='space-y-3 px-4 py-3'>
+                            <div className='space-y-1'>
+                              <FormLabel>{t('Model RPM Limits')}</FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Per-model requests per minute for this channel; empty means unlimited'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <JsonEditor
+                                value={field.value || ''}
+                                onChange={field.onChange}
+                                disabled={isSubmitting}
+                                keyPlaceholder='gpt-4o'
+                                valuePlaceholder='60'
+                                keyLabel='Model'
+                                valueLabel='RPM'
+                                emptyMessage={t(
+                                  'No model RPM limits configured.'
+                                )}
+                                template={{ 'gpt-4o': 60 }}
+                                valueType='number'
+                              />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />

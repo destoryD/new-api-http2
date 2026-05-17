@@ -197,6 +197,14 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		addUsedChannel(c, channel.Id)
+		if limitErr := checkChannelRPMLimit(c, channel, relayInfo.OriginModelName); limitErr != nil {
+			newAPIError = limitErr
+			relayInfo.LastError = newAPIError
+			if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
+				break
+			}
+			continue
+		}
 		bodyStorage, bodyErr := common.GetBodyStorage(c)
 		if bodyErr != nil {
 			// Ensure consistent 413 for oversized bodies even when error occurs later (e.g., retry path)
@@ -258,6 +266,65 @@ func addUsedChannel(c *gin.Context, channelId int) {
 	useChannel := c.GetStringSlice("use_channel")
 	useChannel = append(useChannel, fmt.Sprintf("%d", channelId))
 	c.Set("use_channel", useChannel)
+}
+
+func checkChannelRPMLimit(c *gin.Context, channel *model.Channel, modelName string) *types.NewAPIError {
+	if channel == nil {
+		return nil
+	}
+
+	channelID := channel.Id
+	channelSetting := channel.GetSetting()
+	if channelSetting.RPMLimit <= 0 && len(channelSetting.ModelRPMLimits) == 0 {
+		if ctxSetting, ok := common.GetContextKeyType[dto.ChannelSettings](c, constant.ContextKeyChannelSetting); ok {
+			channelSetting = ctxSetting
+		}
+	}
+	modelRPMLimit := getModelRPMLimit(channelSetting.ModelRPMLimits, modelName)
+	if channelSetting.RPMLimit <= 0 && modelRPMLimit <= 0 {
+		return nil
+	}
+
+	if channelID <= 0 {
+		channelID = common.GetContextKeyInt(c, constant.ContextKeyChannelId)
+	}
+	allowed, limitedScope, err := service.AllowChannelRPM(channelID, modelName, channelSetting.RPMLimit, modelRPMLimit)
+	if err != nil {
+		return types.NewErrorWithStatusCode(
+			fmt.Errorf("check channel #%d RPM limit failed: %w", channelID, err),
+			types.ErrorCodeChannelRateLimited,
+			http.StatusInternalServerError,
+			types.ErrOptionWithNoRecordErrorLog(),
+		)
+	}
+	if !allowed {
+		if limitedScope == "model" {
+			return types.NewErrorWithStatusCode(
+				fmt.Errorf("channel #%d model %s reached RPM limit %d", channelID, modelName, modelRPMLimit),
+				types.ErrorCodeChannelRateLimited,
+				http.StatusTooManyRequests,
+				types.ErrOptionWithNoRecordErrorLog(),
+			)
+		}
+		return types.NewErrorWithStatusCode(
+			fmt.Errorf("channel #%d reached RPM limit %d", channelID, channelSetting.RPMLimit),
+			types.ErrorCodeChannelRateLimited,
+			http.StatusTooManyRequests,
+			types.ErrOptionWithNoRecordErrorLog(),
+		)
+	}
+	return nil
+}
+
+func getModelRPMLimit(modelRPMLimits map[string]int, modelName string) int {
+	modelName = strings.TrimSpace(modelName)
+	if len(modelRPMLimits) == 0 || modelName == "" {
+		return 0
+	}
+	if limit, ok := modelRPMLimits[modelName]; ok && limit > 0 {
+		return limit
+	}
+	return 0
 }
 
 func fastTokenCountMetaForPricing(request dto.Request) *types.TokenCountMeta {
@@ -535,6 +602,13 @@ func RelayTask(c *gin.Context) {
 		}
 
 		addUsedChannel(c, channel.Id)
+		if limitErr := checkChannelRPMLimit(c, channel, relayInfo.OriginModelName); limitErr != nil {
+			taskErr = service.TaskErrorWrapperLocal(limitErr.Err, string(limitErr.GetErrorCode()), limitErr.StatusCode)
+			if !shouldRetryTaskRelay(c, channel.Id, taskErr, common.RetryTimes-retryParam.GetRetry()) {
+				break
+			}
+			continue
+		}
 		bodyStorage, bodyErr := common.GetBodyStorage(c)
 		if bodyErr != nil {
 			if common.IsRequestBodyTooLargeError(bodyErr) || errors.Is(bodyErr, common.ErrRequestBodyTooLarge) {

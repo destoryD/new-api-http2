@@ -4458,6 +4458,11 @@
     "，and ": ", and ",
     "、": ", ",
     "Model Name Override": "モデル名の上書き",
-    "Override the response model with the model name requested by the user": "レスポンスのモデル名をユーザーがリクエストしたモデル名で上書きします"
+    "Override the response model with the model name requested by the user": "レスポンスのモデル名をユーザーがリクエストしたモデル名で上書きします",
+    "Channel RPM Limit": "チャネル RPM 制限",
+    "Maximum requests per minute for this channel; 0 means unlimited": "このチャネルの1分あたりの最大リクエスト数です。0 は無制限を意味します",
+    "Model RPM Limits": "モデル RPM 制限",
+    "Per-model requests per minute for this channel; empty means unlimited": "このチャネルのモデルごとの1分あたりのリクエスト数です。空欄は無制限を意味します",
+    "No model RPM limits configured.": "モデル RPM 制限は設定されていません。"
   }
 }

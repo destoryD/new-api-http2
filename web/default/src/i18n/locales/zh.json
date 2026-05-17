@@ -4458,6 +4458,11 @@
     "，and ": "，",
     "、": "、",
     "Model Name Override": "模型名称覆盖",
-    "Override the response model with the model name requested by the user": "使用用户请求中的模型名称覆盖返回数据里的模型名称"
+    "Override the response model with the model name requested by the user": "使用用户请求中的模型名称覆盖返回数据里的模型名称",
+    "Channel RPM Limit": "渠道 RPM 限制",
+    "Maximum requests per minute for this channel; 0 means unlimited": "限制该渠道每分钟请求数，0 表示不限制",
+    "Model RPM Limits": "模型 RPM 限制",
+    "Per-model requests per minute for this channel; empty means unlimited": "按模型限制该渠道每分钟请求数，留空表示不限制",
+    "No model RPM limits configured.": "未配置模型 RPM 限制。"
   }
 }
