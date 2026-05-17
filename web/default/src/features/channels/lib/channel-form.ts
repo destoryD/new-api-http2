@@ -188,6 +188,14 @@ export const channelFormSchema = z
     thinking_to_content: z.boolean().optional(),
     enable_http2: z.boolean().optional(),
     model_name_override: z.boolean().optional(),
+    rpm_limit: z.number().int().min(0).optional(),
+    model_rpm_limits: z
+      .string()
+      .optional()
+      .refine(validateModelRPMLimits, {
+        message:
+          'Model RPM Limits must be a JSON object with non-negative integer values',
+      }),
     proxy: z.string().optional(),
     pass_through_body_enabled: z.boolean().optional(),
     system_prompt: z.string().optional(),
@@ -330,6 +338,8 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   thinking_to_content: false,
   enable_http2: false,
   model_name_override: false,
+  rpm_limit: 0,
+  model_rpm_limits: '',
   proxy: '',
   pass_through_body_enabled: false,
   system_prompt: '',
@@ -368,6 +378,10 @@ export function transformChannelToFormDefaults(
   let extraSettings = {
     force_format: false,
     thinking_to_content: false,
+    enable_http2: false,
+    model_name_override: false,
+    rpm_limit: 0,
+    model_rpm_limits: '',
     proxy: '',
     pass_through_body_enabled: false,
     system_prompt: '',
@@ -382,6 +396,8 @@ export function transformChannelToFormDefaults(
         thinking_to_content: parsed.thinking_to_content || false,
         enable_http2: parsed.enable_http2 || false,
         model_name_override: parsed.model_name_override || false,
+        rpm_limit: Math.max(0, Math.floor(Number(parsed.rpm_limit) || 0)),
+        model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         proxy: parsed.proxy || '',
         pass_through_body_enabled: parsed.pass_through_body_enabled || false,
         system_prompt: parsed.system_prompt || '',
@@ -501,12 +517,68 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     thinking_to_content: formData.thinking_to_content || false,
     enable_http2: formData.enable_http2 || false,
     model_name_override: formData.model_name_override || false,
+    rpm_limit: Math.max(0, Math.floor(Number(formData.rpm_limit) || 0)),
+    model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     proxy: formData.proxy || '',
     pass_through_body_enabled: formData.pass_through_body_enabled || false,
     system_prompt: formData.system_prompt || '',
     system_prompt_override: formData.system_prompt_override || false,
   }
   return JSON.stringify(settingObj)
+}
+
+function normalizeModelRPMLimits(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {}
+  }
+  const limits: Record<string, number> = {}
+  for (const [model, limit] of Object.entries(value)) {
+    const normalizedModel = model.trim()
+    const normalizedLimit = Math.max(0, Math.floor(Number(limit) || 0))
+    if (normalizedModel && normalizedLimit > 0) {
+      limits[normalizedModel] = normalizedLimit
+    }
+  }
+  return limits
+}
+
+function parseModelRPMLimits(value: string | undefined): Record<string, number> {
+  if (!value?.trim()) {
+    return {}
+  }
+  try {
+    return normalizeModelRPMLimits(JSON.parse(value))
+  } catch {
+    return {}
+  }
+}
+
+function formatModelRPMLimits(value: unknown): string {
+  const limits = normalizeModelRPMLimits(value)
+  if (Object.keys(limits).length === 0) {
+    return ''
+  }
+  return JSON.stringify(limits, null, 2)
+}
+
+function validateModelRPMLimits(value: string | undefined): boolean {
+  if (!value?.trim()) {
+    return true
+  }
+  try {
+    const parsed = JSON.parse(value)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return false
+    }
+    return Object.entries(parsed).every(
+      ([model, limit]) =>
+        model.trim() !== '' &&
+        Number.isInteger(Number(limit)) &&
+        Number(limit) >= 0
+    )
+  } catch {
+    return false
+  }
 }
 
 /**

@@ -3684,6 +3684,11 @@
     "，": ", ",
     "、": ", ",
     "模型名称覆盖": "Remplacement du nom du modèle",
-    "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Remplacer le modèle de la réponse par le nom du modèle demandé par l'utilisateur"
+    "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Remplacer le modèle de la réponse par le nom du modèle demandé par l'utilisateur",
+    "渠道 RPM 限制": "Limite RPM du canal",
+    "限制该渠道每分钟请求数，0 表示不限制": "Limite les requêtes par minute pour ce canal ; 0 signifie illimité",
+    "模型 RPM 限制": "Limites RPM par modèle",
+    "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Limite les requêtes par minute par modèle pour ce canal. Objet JSON ; laisser vide pour illimité.",
+    "模型 RPM 限制必须是 JSON 对象，值为非负整数": "Les limites RPM par modèle doivent être un objet JSON avec des entiers non négatifs"
   }
 }

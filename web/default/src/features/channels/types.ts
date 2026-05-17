@@ -84,6 +84,8 @@ export interface ChannelSettings {
   thinking_to_content?: boolean
   enable_http2?: boolean
   model_name_override?: boolean
+  rpm_limit?: number
+  model_rpm_limits?: Record<string, number>
   proxy?: string
   pass_through_body_enabled?: boolean
   system_prompt?: string
