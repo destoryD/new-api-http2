@@ -4456,6 +4456,8 @@
     "operation and charging behavior": "运营和收费行为产生的法律责任",
     "，": "，",
     "，and ": "，",
-    "、": "、"
+    "、": "、",
+    "Model Name Override": "模型名称覆盖",
+    "Override the response model with the model name requested by the user": "使用用户请求中的模型名称覆盖返回数据里的模型名称"
   }
 }

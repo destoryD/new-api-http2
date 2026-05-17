@@ -27,14 +27,23 @@ func sendStreamData(c *gin.Context, info *relaycommon.RelayInfo, data string, fo
 		return nil
 	}
 
-	if !forceFormat && !thinkToContent {
+	if !forceFormat && !thinkToContent && !info.ShouldOverrideResponseModelName() {
 		return helper.StringData(c, data)
+	}
+
+	if !forceFormat && !thinkToContent {
+		overriddenData, _, err := info.OverrideResponseModelNameJSONString(data)
+		if err != nil {
+			return err
+		}
+		return helper.StringData(c, overriddenData)
 	}
 
 	var lastStreamResponse dto.ChatCompletionsStreamResponse
 	if err := common.UnmarshalJsonStr(data, &lastStreamResponse); err != nil {
 		return err
 	}
+	lastStreamResponse.Model = info.ResponseModelName(lastStreamResponse.Model)
 
 	if !thinkToContent {
 		return helper.ObjectData(c, lastStreamResponse)
@@ -168,6 +177,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 		&containStreamUsage, info, &shouldSendLastResp); err != nil {
 		logger.LogError(c, fmt.Sprintf("error handling last response: %s, lastStreamData: [%s]", err.Error(), lastStreamData))
 	}
+	model = info.ResponseModelName(model)
 
 	if info.RelayFormat == types.RelayFormatOpenAI {
 		if shouldSendLastResp {
@@ -239,6 +249,12 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 	if info.ChannelSetting.ForceFormat {
 		forceFormat = true
 	}
+	modelOverride := false
+	responseModel := info.ResponseModelName(simpleResponse.Model)
+	if simpleResponse.Model != "" && responseModel != simpleResponse.Model {
+		simpleResponse.Model = responseModel
+		modelOverride = true
+	}
 
 	usageModified := false
 	if simpleResponse.Usage.PromptTokens == 0 {
@@ -261,13 +277,18 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 
 	switch info.RelayFormat {
 	case types.RelayFormatOpenAI:
-		if usageModified {
+		if usageModified || modelOverride {
 			var bodyMap map[string]interface{}
 			err = common.Unmarshal(responseBody, &bodyMap)
 			if err != nil {
 				return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
 			}
-			bodyMap["usage"] = simpleResponse.Usage
+			if usageModified {
+				bodyMap["usage"] = simpleResponse.Usage
+			}
+			if modelOverride {
+				bodyMap["model"] = simpleResponse.Model
+			}
 			responseBody, _ = common.Marshal(bodyMap)
 		}
 		if forceFormat {
@@ -569,6 +590,12 @@ func OpenaiHandlerWithUsage(c *gin.Context, info *relaycommon.RelayInfo, resp *h
 	err = common.Unmarshal(responseBody, &usageResp)
 	if err != nil {
 		return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+	}
+
+	if updatedBody, _, overrideErr := info.OverrideResponseModelNameJSONBytes(responseBody); overrideErr != nil {
+		return nil, types.NewOpenAIError(overrideErr, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+	} else {
+		responseBody = updatedBody
 	}
 
 	// 写入新的 response body
