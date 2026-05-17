@@ -4216,6 +4216,8 @@
     "并确认自行承担部署": "confirm that I bear legal responsibility arising from deployment",
     "运营和收费行为产生的法律责任": "operation and charging behavior",
     "，": ", ",
-    "、": ", "
+    "、": ", ",
+    "模型名称覆盖": "Ghi đè tên mô hình",
+    "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Ghi đè mô hình trong phản hồi bằng tên mô hình do người dùng yêu cầu"
   }
 }

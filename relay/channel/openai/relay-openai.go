@@ -24,7 +24,7 @@ func sendStreamData(c *gin.Context, info *relaycommon.RelayInfo, data string, fo
 		return nil
 	}
 
-	if !forceFormat && !thinkToContent {
+	if !forceFormat && !thinkToContent && !info.ShouldOverrideResponseModelName() {
 		return helper.StringData(c, data)
 	}
 
@@ -32,6 +32,7 @@ func sendStreamData(c *gin.Context, info *relaycommon.RelayInfo, data string, fo
 	if err := common.UnmarshalJsonStr(data, &lastStreamResponse); err != nil {
 		return err
 	}
+	lastStreamResponse.Model = info.ResponseModelName(lastStreamResponse.Model)
 
 	if !thinkToContent {
 		return helper.ObjectData(c, lastStreamResponse)
@@ -180,6 +181,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	}
 
 	applyUsagePostProcessing(info, usage, common.StringToByteSlice(lastStreamData))
+	model = info.ResponseModelName(model)
 
 	HandleFinalResponse(c, info, lastStreamData, responseId, createAt, model, systemFingerprint, usage, containStreamUsage)
 
@@ -225,6 +227,18 @@ func OpenaiHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Respo
 			common.SetContextKey(c, constant.ContextKeyAdminRejectReason, "openai_finish_reason=content_filter")
 			break
 		}
+	}
+
+	responseModel := info.ResponseModelName(simpleResponse.Model)
+	if simpleResponse.Model != "" && responseModel != simpleResponse.Model {
+		simpleResponse.Model = responseModel
+		var bodyMap map[string]interface{}
+		err = common.Unmarshal(responseBody, &bodyMap)
+		if err != nil {
+			return nil, types.NewOpenAIError(err, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+		}
+		bodyMap["model"] = simpleResponse.Model
+		responseBody, _ = common.Marshal(bodyMap)
 	}
 
 	forceFormat := false

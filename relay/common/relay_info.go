@@ -188,6 +188,54 @@ type RelayInfo struct {
 	*TaskRelayInfo
 }
 
+func (info *RelayInfo) ShouldOverrideResponseModelName() bool {
+	return info != nil &&
+		info.ChannelMeta != nil &&
+		info.ChannelMeta.ChannelSetting.ModelNameOverride &&
+		strings.TrimSpace(info.OriginModelName) != ""
+}
+
+func (info *RelayInfo) ResponseModelName(fallback string) string {
+	if info.ShouldOverrideResponseModelName() {
+		return info.OriginModelName
+	}
+	return fallback
+}
+
+func (info *RelayInfo) OverrideResponseModelNameJSONBytes(body []byte) ([]byte, bool, error) {
+	if !info.ShouldOverrideResponseModelName() {
+		return body, false, nil
+	}
+
+	var bodyMap map[string]json.RawMessage
+	if err := common.Unmarshal(body, &bodyMap); err != nil {
+		return body, false, err
+	}
+	if _, ok := bodyMap["model"]; !ok {
+		return body, false, nil
+	}
+
+	modelNameBytes, err := common.Marshal(info.OriginModelName)
+	if err != nil {
+		return body, false, err
+	}
+	bodyMap["model"] = modelNameBytes
+
+	updatedBody, err := common.Marshal(bodyMap)
+	if err != nil {
+		return body, false, err
+	}
+	return updatedBody, true, nil
+}
+
+func (info *RelayInfo) OverrideResponseModelNameJSONString(data string) (string, bool, error) {
+	updatedData, changed, err := info.OverrideResponseModelNameJSONBytes(common.StringToByteSlice(data))
+	if err != nil || !changed {
+		return data, changed, err
+	}
+	return string(updatedData), true, nil
+}
+
 func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 	channelType := common.GetContextKeyInt(c, constant.ContextKeyChannelType)
 	paramOverride := common.GetContextKeyStringMap(c, constant.ContextKeyChannelParamOverride)

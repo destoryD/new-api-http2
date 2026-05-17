@@ -39,6 +39,11 @@ func OaiResponsesHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 		c.Set("image_generation_call_quality", responsesResponse.GetQuality())
 		c.Set("image_generation_call_size", responsesResponse.GetSize())
 	}
+	if updatedBody, _, overrideErr := info.OverrideResponseModelNameJSONBytes(responseBody); overrideErr != nil {
+		return nil, types.NewOpenAIError(overrideErr, types.ErrorCodeBadResponseBody, http.StatusInternalServerError)
+	} else {
+		responseBody = updatedBody
+	}
 
 	// 写入新的 response body
 	service.IOCopyBytesGracefully(c, resp, responseBody)
@@ -87,6 +92,19 @@ func OaiResponsesStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp
 			logger.LogError(c, "failed to unmarshal stream response: "+err.Error())
 			sr.Error(err)
 			return
+		}
+		if streamResponse.Response != nil {
+			responseModel := info.ResponseModelName(streamResponse.Response.Model)
+			if streamResponse.Response.Model != "" && responseModel != streamResponse.Response.Model {
+				streamResponse.Response.Model = responseModel
+				jsonData, err := common.Marshal(streamResponse)
+				if err != nil {
+					logger.LogError(c, "failed to marshal stream response: "+err.Error())
+					sr.Error(err)
+					return
+				}
+				data = string(jsonData)
+			}
 		}
 		sendResponsesStreamData(c, streamResponse, data)
 		switch streamResponse.Type {
