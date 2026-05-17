@@ -300,14 +300,14 @@ func checkChannelRPMLimit(c *gin.Context, channel *model.Channel, modelName stri
 	if !allowed {
 		if limitedScope == "model" {
 			return types.NewErrorWithStatusCode(
-				fmt.Errorf("channel #%d model %s reached RPM limit %d", channelID, modelName, modelRPMLimit),
+				fmt.Errorf("model %s exceeded RPM limit; current model RPM limit is %d requests per minute", modelName, modelRPMLimit),
 				types.ErrorCodeChannelRateLimited,
 				http.StatusTooManyRequests,
 				types.ErrOptionWithNoRecordErrorLog(),
 			)
 		}
 		return types.NewErrorWithStatusCode(
-			fmt.Errorf("channel #%d reached RPM limit %d", channelID, channelSetting.RPMLimit),
+			fmt.Errorf("channel exceeded RPM limit; channel RPM limit is %d requests per minute", channelSetting.RPMLimit),
 			types.ErrorCodeChannelRateLimited,
 			http.StatusTooManyRequests,
 			types.ErrOptionWithNoRecordErrorLog(),
@@ -678,7 +678,7 @@ func RelayTask(c *gin.Context) {
 
 // respondTaskError 统一输出 Task 错误响应（含 429 限流提示改写）
 func respondTaskError(c *gin.Context, taskErr *dto.TaskError) {
-	if taskErr.StatusCode == http.StatusTooManyRequests {
+	if taskErr.StatusCode == http.StatusTooManyRequests && taskErr.Code != string(types.ErrorCodeChannelRateLimited) {
 		taskErr.Message = "当前分组上游负载已饱和，请稍后再试"
 	}
 	c.JSON(taskErr.StatusCode, taskErr)
