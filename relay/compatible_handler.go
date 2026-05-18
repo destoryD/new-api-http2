@@ -23,6 +23,29 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func supportsNonStreamToStreamAggregation(apiType int) bool {
+	switch apiType {
+	case constant.APITypeOpenAI,
+		constant.APITypeOpenRouter,
+		constant.APITypeXinference,
+		constant.APITypeAli,
+		constant.APITypeBaiduV2,
+		constant.APITypeDeepSeek,
+		constant.APITypeJimeng,
+		constant.APITypeMiniMax,
+		constant.APITypeMistral,
+		constant.APITypeMoonshot,
+		constant.APITypePerplexity,
+		constant.APITypeSiliconFlow,
+		constant.APITypeSubmodel,
+		constant.APITypeVolcEngine,
+		constant.APITypeZhipuV4:
+		return true
+	default:
+		return false
+	}
+}
+
 func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types.NewAPIError) {
 	info.InitChannelMeta(c)
 
@@ -45,10 +68,26 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 		return types.NewError(err, types.ErrorCodeChannelModelMappedError, types.ErrOptionWithSkipRetry())
 	}
 
+	passThroughGlobal := model_setting.GetGlobalSettings().PassThroughRequestEnabled
+	clientRequestedStream := lo.FromPtrOr(request.Stream, false)
+	if info.ChannelSetting.NonStreamToStream &&
+		!clientRequestedStream &&
+		info.RelayMode == relayconstant.RelayModeChatCompletions &&
+		supportsNonStreamToStreamAggregation(info.ApiType) &&
+		!passThroughGlobal &&
+		!info.ChannelSetting.PassThroughBodyEnabled {
+		request.Stream = common.GetPointer(true)
+		info.IsStream = true
+		info.StreamForcedForNonStream = true
+	}
+
 	includeUsage := true
 	// 判断用户是否需要返回使用情况
 	if request.StreamOptions != nil {
 		includeUsage = request.StreamOptions.IncludeUsage
+	}
+	if info.StreamForcedForNonStream {
+		includeUsage = true
 	}
 
 	// 如果不支持StreamOptions，将StreamOptions设置为nil
@@ -56,7 +95,7 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 		request.StreamOptions = nil
 	} else {
 		// 如果支持StreamOptions，且请求中没有设置StreamOptions，根据配置文件设置StreamOptions
-		if constant.ForceStreamOption {
+		if constant.ForceStreamOption || info.StreamForcedForNonStream {
 			request.StreamOptions = &dto.StreamOptions{
 				IncludeUsage: true,
 			}
@@ -71,8 +110,8 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 	}
 	adaptor.Init(info)
 
-	passThroughGlobal := model_setting.GetGlobalSettings().PassThroughRequestEnabled
 	if info.RelayMode == relayconstant.RelayModeChatCompletions &&
+		!info.StreamForcedForNonStream &&
 		!passThroughGlobal &&
 		!info.ChannelSetting.PassThroughBodyEnabled &&
 		service.ShouldChatCompletionsUseResponsesGlobal(info.ChannelId, info.ChannelType, info.OriginModelName) {

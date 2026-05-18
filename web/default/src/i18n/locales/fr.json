@@ -920,6 +920,7 @@
     "Controls how much the model thinks before answering": "Contrôle la quantité de raisonnement avant la réponse",
     "Controls whether user verification (biometrics/PIN) is required during Passkey flows.": "Contrôle si la vérification de l'utilisateur (biométrie/PIN) est requise lors des flux de Passkey.",
     "Conversion rate from USD to your custom currency": "Taux de conversion de l'USD vers votre devise personnalisée",
+    "Convert non-stream requests to upstream stream requests and aggregate the stream into a non-stream response": "Convertir les requêtes non-stream en requêtes stream amont et agréger le flux en une réponse non-stream",
     "Convert reasoning_content to <think> tag in content": "Convertir reasoning_content en balise <think> dans content",
     "Convert string to lowercase": "Convertir la chaîne en minuscules",
     "Convert string to uppercase": "Convertir la chaîne en majuscules",
@@ -4463,6 +4464,7 @@
     "Maximum requests per minute for this channel; 0 means unlimited": "Nombre maximal de requêtes par minute pour ce canal ; 0 signifie illimité",
     "Model RPM Limits": "Limites RPM par modèle",
     "Per-model requests per minute for this channel; empty means unlimited": "Requêtes par minute par modèle pour ce canal ; vide signifie illimité",
-    "No model RPM limits configured.": "Aucune limite RPM par modèle configurée."
+    "No model RPM limits configured.": "Aucune limite RPM par modèle configurée.",
+    "Non-stream to Stream": "Non-stream vers stream"
   }
 }

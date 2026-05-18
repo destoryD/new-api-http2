@@ -9,6 +9,7 @@ type ChannelSettings struct {
 	SystemPromptOverride   bool           `json:"system_prompt_override,omitempty"`
 	EnableHttp2            bool           `json:"enable_http2,omitempty"` // 是否启用 HTTP/2 客户端
 	ModelNameOverride      bool           `json:"model_name_override,omitempty"`
+	NonStreamToStream      bool           `json:"non_stream_to_stream,omitempty"`
 	RPMLimit               int            `json:"rpm_limit,omitempty"`
 	ModelRPMLimits         map[string]int `json:"model_rpm_limits,omitempty"`
 }
