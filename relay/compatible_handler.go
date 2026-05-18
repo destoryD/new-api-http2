@@ -26,6 +26,7 @@ import (
 func supportsNonStreamToStreamAggregation(apiType int) bool {
 	switch apiType {
 	case constant.APITypeOpenAI,
+		constant.APITypeAnthropic,
 		constant.APITypeOpenRouter,
 		constant.APITypeXinference,
 		constant.APITypeAli,
@@ -44,6 +45,10 @@ func supportsNonStreamToStreamAggregation(apiType int) bool {
 	default:
 		return false
 	}
+}
+
+func supportsMessagesNonStreamToStreamAggregation(apiType int) bool {
+	return supportsNonStreamToStreamAggregation(apiType)
 }
 
 func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types.NewAPIError) {
