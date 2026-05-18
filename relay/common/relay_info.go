@@ -105,7 +105,8 @@ type RelayInfo struct {
 	OriginModelName        string
 	RequestURLPath         string
 	RequestHeaders         map[string]string
-	ShouldIncludeUsage     bool
+	ShouldIncludeUsage       bool
+	StreamForcedForNonStream bool
 	DisablePing            bool // 是否禁止向下游发送自定义 Ping
 	ClientWs               *websocket.Conn
 	TargetWs               *websocket.Conn
@@ -305,6 +306,7 @@ func (info *RelayInfo) ToString() string {
 	fmt.Fprintf(b, "OriginModelName: %q, ", info.OriginModelName)
 	fmt.Fprintf(b, "EstimatePromptTokens: %d, ", info.estimatePromptTokens)
 	fmt.Fprintf(b, "ShouldIncludeUsage: %t, ", info.ShouldIncludeUsage)
+	fmt.Fprintf(b, "StreamForcedForNonStream: %t, ", info.StreamForcedForNonStream)
 	fmt.Fprintf(b, "DisablePing: %t, ", info.DisablePing)
 	fmt.Fprintf(b, "SendResponseCount: %d, ", info.SendResponseCount)
 	fmt.Fprintf(b, "FinalPreConsumedQuota: %d, ", info.FinalPreConsumedQuota)

@@ -188,6 +188,7 @@ export const channelFormSchema = z
     thinking_to_content: z.boolean().optional(),
     enable_http2: z.boolean().optional(),
     model_name_override: z.boolean().optional(),
+    non_stream_to_stream: z.boolean().optional(),
     rpm_limit: z.number().int().min(0).optional(),
     model_rpm_limits: z
       .string()
@@ -338,6 +339,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   thinking_to_content: false,
   enable_http2: false,
   model_name_override: false,
+  non_stream_to_stream: false,
   rpm_limit: 0,
   model_rpm_limits: '',
   proxy: '',
@@ -396,6 +398,7 @@ export function transformChannelToFormDefaults(
         thinking_to_content: parsed.thinking_to_content || false,
         enable_http2: parsed.enable_http2 || false,
         model_name_override: parsed.model_name_override || false,
+        non_stream_to_stream: parsed.non_stream_to_stream || false,
         rpm_limit: Math.max(0, Math.floor(Number(parsed.rpm_limit) || 0)),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         proxy: parsed.proxy || '',
@@ -517,6 +520,7 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     thinking_to_content: formData.thinking_to_content || false,
     enable_http2: formData.enable_http2 || false,
     model_name_override: formData.model_name_override || false,
+    non_stream_to_stream: formData.non_stream_to_stream || false,
     rpm_limit: Math.max(0, Math.floor(Number(formData.rpm_limit) || 0)),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     proxy: formData.proxy || '',

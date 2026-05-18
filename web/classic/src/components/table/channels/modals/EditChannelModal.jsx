@@ -244,6 +244,7 @@ const EditChannelModal = (props) => {
     thinking_to_content: false,
     enable_http2: false,
     model_name_override: false,
+    non_stream_to_stream: false,
     rpm_limit: 0,
     model_rpm_limits: '',
     proxy: '',
@@ -570,6 +571,7 @@ const EditChannelModal = (props) => {
     thinking_to_content: false,
     enable_http2: false,
     model_name_override: false,
+    non_stream_to_stream: false,
     rpm_limit: 0,
     model_rpm_limits: '',
     proxy: '',
@@ -925,6 +927,8 @@ const EditChannelModal = (props) => {
           data.enable_http2 = parsedSettings.enable_http2 || false;
           data.model_name_override =
             parsedSettings.model_name_override || false;
+          data.non_stream_to_stream =
+            parsedSettings.non_stream_to_stream || false;
           data.rpm_limit = Math.max(
             0,
             Math.floor(Number(parsedSettings.rpm_limit) || 0),
@@ -944,6 +948,7 @@ const EditChannelModal = (props) => {
           data.thinking_to_content = false;
           data.enable_http2 = false;
           data.model_name_override = false;
+          data.non_stream_to_stream = false;
           data.rpm_limit = 0;
           data.model_rpm_limits = '';
           data.proxy = '';
@@ -956,6 +961,7 @@ const EditChannelModal = (props) => {
         data.thinking_to_content = false;
         data.enable_http2 = false;
         data.model_name_override = false;
+        data.non_stream_to_stream = false;
         data.rpm_limit = 0;
         data.model_rpm_limits = '';
         data.proxy = '';
@@ -1069,6 +1075,7 @@ const EditChannelModal = (props) => {
         thinking_to_content: data.thinking_to_content,
         enable_http2: data.enable_http2,
         model_name_override: data.model_name_override,
+        non_stream_to_stream: data.non_stream_to_stream,
         rpm_limit: data.rpm_limit,
         model_rpm_limits: data.model_rpm_limits,
         proxy: data.proxy,
@@ -1116,6 +1123,7 @@ const EditChannelModal = (props) => {
         data.thinking_to_content ||
         data.enable_http2 ||
         data.model_name_override ||
+        data.non_stream_to_stream ||
         data.rpm_limit ||
         (data.model_rpm_limits && data.model_rpm_limits.trim()) ||
         data.pass_through_body_enabled ||
@@ -1461,6 +1469,7 @@ const EditChannelModal = (props) => {
       thinking_to_content: false,
       enable_http2: false,
       model_name_override: false,
+      non_stream_to_stream: false,
       rpm_limit: 0,
       model_rpm_limits: '',
       proxy: '',
@@ -1840,6 +1849,7 @@ const EditChannelModal = (props) => {
       thinking_to_content: localInputs.thinking_to_content || false,
       enable_http2: localInputs.enable_http2 || false,
       model_name_override: localInputs.model_name_override || false,
+      non_stream_to_stream: localInputs.non_stream_to_stream || false,
       rpm_limit: Math.max(
         0,
         Math.floor(Number(localInputs.rpm_limit) || 0),
@@ -1928,6 +1938,7 @@ const EditChannelModal = (props) => {
     delete localInputs.thinking_to_content;
     delete localInputs.enable_http2;
     delete localInputs.model_name_override;
+    delete localInputs.non_stream_to_stream;
     delete localInputs.rpm_limit;
     delete localInputs.model_rpm_limits;
     delete localInputs.proxy;
@@ -2625,6 +2636,7 @@ const EditChannelModal = (props) => {
                   <Form.Switch field='thinking_to_content' label={t('思考内容转换')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('thinking_to_content', value)} extraText={t('将 reasoning_content 转换为 <think> 标签拼接到内容中')} />
                   <Form.Switch field='enable_http2' label={t('启用 HTTP/2')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('enable_http2', value)} extraText={t('强制使用 HTTP/2 请求；如果上游不支持，将记录错误并返回失败')} />
                   <Form.Switch field='model_name_override' label={t('模型名称覆盖')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('model_name_override', value)} extraText={t('开启后使用用户请求中的模型名称覆盖返回数据里的模型名称')} />
+                  <Form.Switch field='non_stream_to_stream' label={t('非流转流式')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('non_stream_to_stream', value)} extraText={t('将客户端非流请求转为上游流式请求，并聚合后作为非流响应返回')} />
                   <Form.InputNumber field='rpm_limit' label={t('渠道 RPM 限制')} min={0} step={1} placeholder='0' onNumberChange={(value) => handleChannelSettingsChange('rpm_limit', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('限制该渠道每分钟请求数，0 表示不限制')} />
                   <Form.TextArea field='model_rpm_limits' label={t('模型 RPM 限制')} placeholder='{"gpt-4o": 60}' onChange={(value) => handleChannelSettingsChange('model_rpm_limits', value)} autosize showClear extraText={t('按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制')} />
                   <Form.Switch field='pass_through_body_enabled' label={t('透传请求体')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('pass_through_body_enabled', value)} extraText={t('启用请求体透传功能')} />

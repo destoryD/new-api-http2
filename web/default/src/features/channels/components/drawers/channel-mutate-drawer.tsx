@@ -220,6 +220,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.thinking_to_content ||
     values.enable_http2 ||
     values.model_name_override ||
+    values.non_stream_to_stream ||
     values.rpm_limit ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
@@ -3358,6 +3359,29 @@ export function ChannelMutateDrawer({
                               <FormDescription>
                                 {t(
                                   'Override the response model with the model name requested by the user'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='non_stream_to_stream'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>{t('Non-stream to Stream')}</FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Convert non-stream requests to upstream stream requests and aggregate the stream into a non-stream response'
                                 )}
                               </FormDescription>
                             </div>

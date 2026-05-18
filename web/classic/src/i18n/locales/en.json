@@ -3831,6 +3831,8 @@
     "、": ", ",
     "模型名称覆盖": "Model Name Override",
     "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Override the response model with the model name requested by the user",
+    "非流转流式": "Non-stream to Stream",
+    "将客户端非流请求转为上游流式请求，并聚合后作为非流响应返回": "Convert non-stream client requests to upstream stream requests and aggregate the stream into a non-stream response",
     "渠道 RPM 限制": "Channel RPM Limit",
     "限制该渠道每分钟请求数，0 表示不限制": "Limit requests per minute for this channel; 0 means unlimited",
     "模型 RPM 限制": "Model RPM Limits",

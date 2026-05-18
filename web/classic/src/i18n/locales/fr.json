@@ -3685,6 +3685,8 @@
     "、": ", ",
     "模型名称覆盖": "Remplacement du nom du modèle",
     "开启后使用用户请求中的模型名称覆盖返回数据里的模型名称": "Remplacer le modèle de la réponse par le nom du modèle demandé par l'utilisateur",
+    "非流转流式": "Non-stream vers stream",
+    "将客户端非流请求转为上游流式请求，并聚合后作为非流响应返回": "Convertir les requêtes client non-stream en requêtes stream amont et agréger le flux en une réponse non-stream",
     "渠道 RPM 限制": "Limite RPM du canal",
     "限制该渠道每分钟请求数，0 表示不限制": "Limite les requêtes par minute pour ce canal ; 0 signifie illimité",
     "模型 RPM 限制": "Limites RPM par modèle",
