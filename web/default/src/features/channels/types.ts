@@ -85,6 +85,7 @@ export interface ChannelSettings {
   enable_http2?: boolean
   model_name_override?: boolean
   non_stream_to_stream?: boolean
+  allowed_endpoint_types?: string[]
   rpm_limit?: number
   model_rpm_limits?: Record<string, number>
   proxy?: string

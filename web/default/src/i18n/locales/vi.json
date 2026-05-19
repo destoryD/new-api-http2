@@ -4465,6 +4465,9 @@
     "Model RPM Limits": "Giới hạn RPM theo mô hình",
     "Per-model requests per minute for this channel; empty means unlimited": "Số yêu cầu mỗi phút theo từng mô hình cho kênh này; để trống nghĩa là không giới hạn",
     "No model RPM limits configured.": "Chưa cấu hình giới hạn RPM theo mô hình.",
-    "Non-stream to Stream": "Không stream sang stream"
+    "Non-stream to Stream": "Không stream sang stream",
+    "Allowed Endpoint Types": "Loại endpoint được phép",
+    "Only selected endpoint types can use this channel; leave empty to allow all": "Chỉ các loại endpoint đã chọn mới được dùng kênh này; để trống để cho phép tất cả",
+    "Select endpoint types...": "Chọn loại endpoint..."
   }
 }

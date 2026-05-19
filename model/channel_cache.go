@@ -93,22 +93,26 @@ func SyncChannelCache(frequency int) {
 	}
 }
 
-func GetRandomSatisfiedChannel(group string, model string, retry int) (*Channel, error) {
+func GetRandomSatisfiedChannel(group string, model string, retry int, endpointTypes ...string) (*Channel, error) {
 	// if memory cache is disabled, get channel directly from database
+	endpointType := ""
+	if len(endpointTypes) > 0 {
+		endpointType = endpointTypes[0]
+	}
 	if !common.MemoryCacheEnabled {
-		return GetChannel(group, model, retry)
+		return GetChannel(group, model, retry, endpointType)
 	}
 
 	channelSyncLock.RLock()
 	defer channelSyncLock.RUnlock()
 
 	// First, try to find channels with the exact model name.
-	channels := group2model2channels[group][model]
+	channels := filterChannelIDsByEndpoint(group2model2channels[group][model], endpointType)
 
 	// If no channels found, try to find channels with the normalized model name.
 	if len(channels) == 0 {
 		normalizedModel := ratio_setting.FormatMatchingModelName(model)
-		channels = group2model2channels[group][normalizedModel]
+		channels = filterChannelIDsByEndpoint(group2model2channels[group][normalizedModel], endpointType)
 	}
 
 	if len(channels) == 0 {

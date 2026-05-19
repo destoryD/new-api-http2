@@ -4465,6 +4465,9 @@
     "Model RPM Limits": "Лимиты RPM по моделям",
     "Per-model requests per minute for this channel; empty means unlimited": "Запросы в минуту по каждой модели для этого канала; пусто означает без ограничений",
     "No model RPM limits configured.": "Лимиты RPM по моделям не настроены.",
-    "Non-stream to Stream": "Нестриминг в стриминг"
+    "Non-stream to Stream": "Нестриминг в стриминг",
+    "Allowed Endpoint Types": "Разрешенные типы эндпоинтов",
+    "Only selected endpoint types can use this channel; leave empty to allow all": "Только выбранные типы эндпоинтов могут использовать этот канал; оставьте пустым, чтобы разрешить все",
+    "Select endpoint types...": "Выберите типы эндпоинтов..."
   }
 }

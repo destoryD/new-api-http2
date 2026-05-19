@@ -4465,6 +4465,9 @@
     "Model RPM Limits": "モデル RPM 制限",
     "Per-model requests per minute for this channel; empty means unlimited": "このチャネルのモデルごとの1分あたりのリクエスト数です。空欄は無制限を意味します",
     "No model RPM limits configured.": "モデル RPM 制限は設定されていません。",
-    "Non-stream to Stream": "非ストリームをストリームへ"
+    "Non-stream to Stream": "非ストリームをストリームへ",
+    "Allowed Endpoint Types": "許可するエンドポイントタイプ",
+    "Only selected endpoint types can use this channel; leave empty to allow all": "選択したエンドポイントタイプのみがこのチャンネルを使用できます。空のままにするとすべて許可されます",
+    "Select endpoint types...": "エンドポイントタイプを選択..."
   }
 }

@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"sync"
 
@@ -103,21 +104,43 @@ func getChannelQuery(group string, model string, retry int) (*gorm.DB, error) {
 	return channelQuery, nil
 }
 
-func GetChannel(group string, model string, retry int) (*Channel, error) {
+func GetChannel(group string, model string, retry int, endpointTypes ...string) (*Channel, error) {
 	var abilities []Ability
+	endpointType := ""
+	if len(endpointTypes) > 0 {
+		endpointType = endpointTypes[0]
+	}
 
 	var err error = nil
-	channelQuery, err := getChannelQuery(group, model, retry)
-	if err != nil {
-		return nil, err
-	}
-	if common.UsingSQLite || common.UsingPostgreSQL {
-		err = channelQuery.Order("weight DESC").Find(&abilities).Error
+	if endpointType == "" {
+		channelQuery, queryErr := getChannelQuery(group, model, retry)
+		if queryErr != nil {
+			return nil, queryErr
+		}
+		if common.UsingSQLite || common.UsingPostgreSQL {
+			err = channelQuery.Order("weight DESC").Find(&abilities).Error
+		} else {
+			err = channelQuery.Order("weight DESC").Find(&abilities).Error
+		}
 	} else {
-		err = channelQuery.Order("weight DESC").Find(&abilities).Error
+		err = DB.Model(&Ability{}).
+			Where(commonGroupCol+" = ? and model = ? and enabled = ?", group, model, true).
+			Order("priority DESC").
+			Order("weight DESC").
+			Find(&abilities).Error
 	}
 	if err != nil {
 		return nil, err
+	}
+	abilities, err = filterAbilitiesByEndpoint(abilities, endpointType)
+	if err != nil {
+		return nil, err
+	}
+	if endpointType != "" {
+		abilities, err = filterAbilitiesByPriorityRetry(abilities, retry)
+		if err != nil {
+			return nil, err
+		}
 	}
 	channel := Channel{}
 	if len(abilities) > 0 {
@@ -141,6 +164,36 @@ func GetChannel(group string, model string, retry int) (*Channel, error) {
 	}
 	err = DB.First(&channel, "id = ?", channel.Id).Error
 	return &channel, err
+}
+
+func filterAbilitiesByPriorityRetry(abilities []Ability, retry int) ([]Ability, error) {
+	if len(abilities) == 0 {
+		return abilities, nil
+	}
+	uniquePriorities := make(map[int]struct{})
+	for _, ability := range abilities {
+		priority := int(lo.FromPtrOr(ability.Priority, int64(0)))
+		uniquePriorities[priority] = struct{}{}
+	}
+	priorities := make([]int, 0, len(uniquePriorities))
+	for priority := range uniquePriorities {
+		priorities = append(priorities, priority)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(priorities)))
+	if len(priorities) == 0 {
+		return nil, errors.New("database consistency error")
+	}
+	if retry >= len(priorities) {
+		retry = len(priorities) - 1
+	}
+	targetPriority := priorities[retry]
+	filtered := make([]Ability, 0, len(abilities))
+	for _, ability := range abilities {
+		if int(lo.FromPtrOr(ability.Priority, int64(0))) == targetPriority {
+			filtered = append(filtered, ability)
+		}
+	}
+	return filtered, nil
 }
 
 func (channel *Channel) AddAbilities(tx *gorm.DB) error {

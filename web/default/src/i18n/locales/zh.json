@@ -4465,6 +4465,9 @@
     "Model RPM Limits": "模型 RPM 限制",
     "Per-model requests per minute for this channel; empty means unlimited": "按模型限制该渠道每分钟请求数，留空表示不限制",
     "No model RPM limits configured.": "未配置模型 RPM 限制。",
-    "Non-stream to Stream": "非流转流式"
+    "Non-stream to Stream": "非流转流式",
+    "Allowed Endpoint Types": "允许的访问端口类型",
+    "Only selected endpoint types can use this channel; leave empty to allow all": "仅允许选中的端口类型使用该渠道，留空表示全部允许",
+    "Select endpoint types...": "选择访问端口类型..."
   }
 }

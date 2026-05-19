@@ -4465,6 +4465,9 @@
     "Model RPM Limits": "Limites RPM par modèle",
     "Per-model requests per minute for this channel; empty means unlimited": "Requêtes par minute par modèle pour ce canal ; vide signifie illimité",
     "No model RPM limits configured.": "Aucune limite RPM par modèle configurée.",
-    "Non-stream to Stream": "Non-stream vers stream"
+    "Non-stream to Stream": "Non-stream vers stream",
+    "Allowed Endpoint Types": "Types de points d’accès autorisés",
+    "Only selected endpoint types can use this channel; leave empty to allow all": "Seuls les types de points d’accès sélectionnés peuvent utiliser ce canal ; laissez vide pour tout autoriser",
+    "Select endpoint types...": "Sélectionner des types de points d’accès..."
   }
 }

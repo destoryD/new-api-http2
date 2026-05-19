@@ -4224,6 +4224,9 @@
     "限制该渠道每分钟请求数，0 表示不限制": "Giới hạn số yêu cầu mỗi phút cho kênh này; 0 nghĩa là không giới hạn",
     "模型 RPM 限制": "Giới hạn RPM theo mô hình",
     "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Giới hạn số yêu cầu mỗi phút theo mô hình cho kênh này. Đối tượng JSON; để trống nghĩa là không giới hạn.",
-    "模型 RPM 限制必须是 JSON 对象，值为非负整数": "Giới hạn RPM theo mô hình phải là đối tượng JSON với giá trị là số nguyên không âm"
+    "模型 RPM 限制必须是 JSON 对象，值为非负整数": "Giới hạn RPM theo mô hình phải là đối tượng JSON với giá trị là số nguyên không âm",
+    "允许的访问端口类型": "Loại endpoint được phép",
+    "选择访问端口类型": "Chọn loại endpoint",
+    "仅允许选中的端口类型使用该渠道，留空表示全部允许": "Chỉ các loại endpoint đã chọn mới được dùng kênh này; để trống để cho phép tất cả"
   }
 }

@@ -10,6 +10,7 @@ type ChannelSettings struct {
 	EnableHttp2            bool           `json:"enable_http2,omitempty"` // 是否启用 HTTP/2 客户端
 	ModelNameOverride      bool           `json:"model_name_override,omitempty"`
 	NonStreamToStream      bool           `json:"non_stream_to_stream,omitempty"`
+	AllowedEndpointTypes   []string       `json:"allowed_endpoint_types,omitempty"`
 	RPMLimit               int            `json:"rpm_limit,omitempty"`
 	ModelRPMLimits         map[string]int `json:"model_rpm_limits,omitempty"`
 }

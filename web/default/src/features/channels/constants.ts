@@ -103,6 +103,25 @@ export const CHANNEL_TYPE_OPTIONS: { value: number; label: string }[] = (() => {
   return ordered
 })()
 
+export const CHANNEL_ENDPOINT_TYPE_OPTIONS: { value: string; label: string }[] =
+  [
+    { value: 'messages', label: 'messages' },
+    { value: 'chat/completions', label: 'chat/completions' },
+    { value: 'completions', label: 'completions' },
+    { value: 'responses', label: 'responses' },
+    { value: 'responses/compact', label: 'responses/compact' },
+    { value: 'embeddings', label: 'embeddings' },
+    { value: 'rerank', label: 'rerank' },
+    { value: 'images/generations', label: 'images/generations' },
+    { value: 'images/edits', label: 'images/edits' },
+    { value: 'audio/speech', label: 'audio/speech' },
+    { value: 'audio/transcriptions', label: 'audio/transcriptions' },
+    { value: 'audio/translations', label: 'audio/translations' },
+    { value: 'moderations', label: 'moderations' },
+    { value: 'realtime', label: 'realtime' },
+    { value: 'gemini', label: 'gemini' },
+  ]
+
 // ============================================================================
 // Channel Status (label values are i18n keys; use t(config.label) in components)
 // ============================================================================

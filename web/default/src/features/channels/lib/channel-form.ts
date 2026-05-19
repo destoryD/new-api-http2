@@ -60,6 +60,7 @@ export const channelFormSchema = z.object({
   enable_http2: z.boolean().optional(),
   model_name_override: z.boolean().optional(),
   non_stream_to_stream: z.boolean().optional(),
+  allowed_endpoint_types: z.array(z.string()).optional(),
   rpm_limit: z.number().int().min(0).optional(),
   model_rpm_limits: z
     .string()
@@ -129,6 +130,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   enable_http2: false,
   model_name_override: false,
   non_stream_to_stream: false,
+  allowed_endpoint_types: [],
   rpm_limit: 0,
   model_rpm_limits: '',
   proxy: '',
@@ -170,6 +172,7 @@ export function transformChannelToFormDefaults(
     enable_http2: false,
     model_name_override: false,
     non_stream_to_stream: false,
+    allowed_endpoint_types: [] as string[],
     rpm_limit: 0,
     model_rpm_limits: '',
     proxy: '',
@@ -187,6 +190,9 @@ export function transformChannelToFormDefaults(
         enable_http2: parsed.enable_http2 || false,
         model_name_override: parsed.model_name_override || false,
         non_stream_to_stream: parsed.non_stream_to_stream || false,
+        allowed_endpoint_types: normalizeAllowedEndpointTypes(
+          parsed.allowed_endpoint_types
+        ),
         rpm_limit: Math.max(0, Math.floor(Number(parsed.rpm_limit) || 0)),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         proxy: parsed.proxy || '',
@@ -301,6 +307,9 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     enable_http2: formData.enable_http2 || false,
     model_name_override: formData.model_name_override || false,
     non_stream_to_stream: formData.non_stream_to_stream || false,
+    allowed_endpoint_types: normalizeAllowedEndpointTypes(
+      formData.allowed_endpoint_types
+    ),
     rpm_limit: Math.max(0, Math.floor(Number(formData.rpm_limit) || 0)),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     proxy: formData.proxy || '',
@@ -309,6 +318,19 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     system_prompt_override: formData.system_prompt_override || false,
   }
   return JSON.stringify(settingObj)
+}
+
+function normalizeAllowedEndpointTypes(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return Array.from(
+    new Set(
+      value
+        .map((endpoint) => String(endpoint).trim())
+        .filter((endpoint) => endpoint !== '')
+    )
+  )
 }
 
 function normalizeModelRPMLimits(value: unknown): Record<string, number> {
