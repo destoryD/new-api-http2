@@ -197,6 +197,7 @@ export const channelFormSchema = z
         message:
           'Model RPM Limits must be a JSON object with non-negative integer values',
       }),
+    allowed_endpoint_types: z.array(z.string()).optional(),
     proxy: z.string().optional(),
     pass_through_body_enabled: z.boolean().optional(),
     system_prompt: z.string().optional(),
@@ -342,6 +343,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   non_stream_to_stream: false,
   rpm_limit: 0,
   model_rpm_limits: '',
+  allowed_endpoint_types: [],
   proxy: '',
   pass_through_body_enabled: false,
   system_prompt: '',
@@ -384,6 +386,7 @@ export function transformChannelToFormDefaults(
     model_name_override: false,
     rpm_limit: 0,
     model_rpm_limits: '',
+    allowed_endpoint_types: [] as string[],
     proxy: '',
     pass_through_body_enabled: false,
     system_prompt: '',
@@ -401,6 +404,9 @@ export function transformChannelToFormDefaults(
         non_stream_to_stream: parsed.non_stream_to_stream || false,
         rpm_limit: Math.max(0, Math.floor(Number(parsed.rpm_limit) || 0)),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
+        allowed_endpoint_types: normalizeAllowedEndpointTypes(
+          parsed.allowed_endpoint_types
+        ),
         proxy: parsed.proxy || '',
         pass_through_body_enabled: parsed.pass_through_body_enabled || false,
         system_prompt: parsed.system_prompt || '',
@@ -523,12 +529,28 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     non_stream_to_stream: formData.non_stream_to_stream || false,
     rpm_limit: Math.max(0, Math.floor(Number(formData.rpm_limit) || 0)),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
+    allowed_endpoint_types: normalizeAllowedEndpointTypes(
+      formData.allowed_endpoint_types
+    ),
     proxy: formData.proxy || '',
     pass_through_body_enabled: formData.pass_through_body_enabled || false,
     system_prompt: formData.system_prompt || '',
     system_prompt_override: formData.system_prompt_override || false,
   }
   return JSON.stringify(settingObj)
+}
+
+function normalizeAllowedEndpointTypes(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return Array.from(
+    new Set(
+      value
+        .map((endpoint) => String(endpoint).trim())
+        .filter((endpoint) => endpoint !== '')
+    )
+  )
 }
 
 function normalizeModelRPMLimits(value: unknown): Record<string, number> {

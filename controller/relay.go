@@ -179,11 +179,12 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	}()
 
 	retryParam := &service.RetryParam{
-		Ctx:         c,
-		TokenGroup:  relayInfo.TokenGroup,
-		ModelName:   relayInfo.OriginModelName,
-		RequestPath: c.Request.URL.Path,
-		Retry:       common.GetPointer(0),
+		Ctx:          c,
+		TokenGroup:   relayInfo.TokenGroup,
+		ModelName:    relayInfo.OriginModelName,
+		RequestPath:  c.Request.URL.Path,
+		EndpointType: dto.ChannelEndpointTypeFromPath(c.Request.URL.Path),
+		Retry:        common.GetPointer(0),
 	}
 	relayInfo.RetryIndex = 0
 	relayInfo.LastError = nil
@@ -198,6 +199,14 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		}
 
 		addUsedChannel(c, channel.Id)
+		if endpointErr := checkChannelEndpointAllowed(c, channel, retryParam.EndpointType); endpointErr != nil {
+			newAPIError = endpointErr
+			relayInfo.LastError = newAPIError
+			if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
+				break
+			}
+			continue
+		}
 		if limitErr := checkChannelRPMLimit(c, channel, relayInfo.OriginModelName); limitErr != nil {
 			newAPIError = limitErr
 			relayInfo.LastError = newAPIError
@@ -267,6 +276,27 @@ func addUsedChannel(c *gin.Context, channelId int) {
 	useChannel := c.GetStringSlice("use_channel")
 	useChannel = append(useChannel, fmt.Sprintf("%d", channelId))
 	c.Set("use_channel", useChannel)
+}
+
+func checkChannelEndpointAllowed(c *gin.Context, channel *model.Channel, endpointType string) *types.NewAPIError {
+	if channel == nil {
+		return nil
+	}
+	channelSetting := channel.GetSetting()
+	if len(channelSetting.AllowedEndpointTypes) == 0 {
+		if ctxSetting, ok := common.GetContextKeyType[dto.ChannelSettings](c, constant.ContextKeyChannelSetting); ok {
+			channelSetting = ctxSetting
+		}
+	}
+	if dto.IsChannelEndpointAllowed(channelSetting.AllowedEndpointTypes, endpointType) {
+		return nil
+	}
+	return types.NewErrorWithStatusCode(
+		fmt.Errorf("endpoint type %s is not allowed by this channel", endpointType),
+		types.ErrorCodeChannelEndpointNotAllowed,
+		http.StatusForbidden,
+		types.ErrOptionWithNoRecordErrorLog(),
+	)
 }
 
 func checkChannelRPMLimit(c *gin.Context, channel *model.Channel, modelName string) *types.NewAPIError {

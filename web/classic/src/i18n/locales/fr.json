@@ -3691,6 +3691,9 @@
     "限制该渠道每分钟请求数，0 表示不限制": "Limite les requêtes par minute pour ce canal ; 0 signifie illimité",
     "模型 RPM 限制": "Limites RPM par modèle",
     "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Limite les requêtes par minute par modèle pour ce canal. Objet JSON ; laisser vide pour illimité.",
-    "模型 RPM 限制必须是 JSON 对象，值为非负整数": "Les limites RPM par modèle doivent être un objet JSON avec des entiers non négatifs"
+    "模型 RPM 限制必须是 JSON 对象，值为非负整数": "Les limites RPM par modèle doivent être un objet JSON avec des entiers non négatifs",
+    "允许的访问端口类型": "Types de points d’accès autorisés",
+    "选择访问端口类型": "Sélectionner des types de points d’accès",
+    "仅允许选中的端口类型使用该渠道，留空表示全部允许": "Seuls les types de points d’accès sélectionnés peuvent utiliser ce canal ; laissez vide pour tout autoriser"
   }
 }

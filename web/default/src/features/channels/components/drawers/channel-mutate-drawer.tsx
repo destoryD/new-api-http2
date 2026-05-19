@@ -116,6 +116,7 @@ import {
 import {
   ADD_MODE_OPTIONS,
   CHANNEL_TYPE_OPTIONS,
+  CHANNEL_ENDPOINT_TYPE_OPTIONS,
   CHANNEL_TYPE_WARNINGS,
   ERROR_MESSAGES,
   FIELD_DESCRIPTIONS,
@@ -221,6 +222,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.enable_http2 ||
     values.model_name_override ||
     values.non_stream_to_stream ||
+    (values.allowed_endpoint_types?.length ?? 0) > 0 ||
     values.rpm_limit ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
@@ -3391,6 +3393,34 @@ export function ChannelMutateDrawer({
                                 onCheckedChange={field.onChange}
                               />
                             </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='allowed_endpoint_types'
+                        render={({ field }) => (
+                          <FormItem className='space-y-3 px-4 py-3'>
+                            <div className='space-y-1'>
+                              <FormLabel>
+                                {t('Allowed Endpoint Types')}
+                              </FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Only selected endpoint types can use this channel; leave empty to allow all'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <MultiSelect
+                                options={CHANNEL_ENDPOINT_TYPE_OPTIONS}
+                                selected={field.value || []}
+                                onChange={field.onChange}
+                                placeholder={t('Select endpoint types...')}
+                              />
+                            </FormControl>
+                            <FormMessage />
                           </FormItem>
                         )}
                       />
