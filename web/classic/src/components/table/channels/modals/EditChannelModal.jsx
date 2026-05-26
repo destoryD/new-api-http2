@@ -341,6 +341,78 @@ const EditChannelModal = (props) => {
   const [keyMode, setKeyMode] = useState('append');
   const [isEnterpriseAccount, setIsEnterpriseAccount] = useState(false);
   const [doubaoApiEditUnlocked, setDoubaoApiEditUnlocked] = useState(false);
+  const redirectModelList = useMemo(() => {
+    const mapping = inputs.model_mapping;
+    if (typeof mapping !== 'string') return [];
+    const trimmed = mapping.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return [];
+      }
+      const values = Object.values(parsed)
+        .map((value) => (typeof value === 'string' ? value.trim() : undefined))
+        .filter((value) => value);
+      return Array.from(new Set(values));
+    } catch (error) {
+      return [];
+    }
+  }, [inputs.model_mapping]);
+  const redirectModelKeyList = useMemo(() => {
+    const mapping = inputs.model_mapping;
+    if (typeof mapping !== 'string') return [];
+    const trimmed = mapping.trim();
+    if (!trimmed) return [];
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        return [];
+      }
+      const keys = Object.keys(parsed)
+        .map((key) => key.trim())
+        .filter((key) => key);
+      return Array.from(new Set(keys));
+    } catch (error) {
+      return [];
+    }
+  }, [inputs.model_mapping]);
+  const upstreamDetectedModels = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          (inputs.upstream_model_update_last_detected_models || [])
+            .map((model) => String(model || '').trim())
+            .filter(Boolean),
+        ),
+      ),
+    [inputs.upstream_model_update_last_detected_models],
+  );
+  const upstreamDetectedModelsPreview = useMemo(
+    () => upstreamDetectedModels.slice(0, UPSTREAM_DETECTED_MODEL_PREVIEW_LIMIT),
+    [upstreamDetectedModels],
+  );
+  const upstreamDetectedModelsOmittedCount =
+    upstreamDetectedModels.length - upstreamDetectedModelsPreview.length;
+  const modelSearchMatchedCount = useMemo(() => {
+    const keyword = modelSearchValue.trim();
+    if (!keyword) {
+      return modelOptions.length;
+    }
+    return modelOptions.reduce(
+      (count, option) => count + (selectFilter(keyword, option) ? 1 : 0),
+      0,
+    );
+  }, [modelOptions, modelSearchValue]);
+  const modelSearchHintText = useMemo(() => {
+    const keyword = modelSearchValue.trim();
+    if (!keyword || modelSearchMatchedCount !== 0) {
+      return '';
+    }
+    return t('未匹配到模型，按回车键可将「{{name}}」作为自定义模型名添加', {
+      name: keyword,
+    });
+  }, [modelSearchMatchedCount, modelSearchValue, t]);
   const paramOverrideMeta = useMemo(() => {
     const raw =
       typeof inputs.param_override === 'string'
