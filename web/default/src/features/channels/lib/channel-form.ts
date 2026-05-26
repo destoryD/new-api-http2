@@ -198,6 +198,7 @@ export const channelFormSchema = z
           'Model RPM Limits must be a JSON object with non-negative integer values',
       }),
     allowed_endpoint_types: z.array(z.string()).optional(),
+    override_error_as_429: z.boolean().optional(),
     proxy: z.string().optional(),
     pass_through_body_enabled: z.boolean().optional(),
     system_prompt: z.string().optional(),
@@ -344,6 +345,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   rpm_limit: 0,
   model_rpm_limits: '',
   allowed_endpoint_types: [],
+  override_error_as_429: false,
   proxy: '',
   pass_through_body_enabled: false,
   system_prompt: '',
@@ -407,6 +409,7 @@ export function transformChannelToFormDefaults(
         allowed_endpoint_types: normalizeAllowedEndpointTypes(
           parsed.allowed_endpoint_types
         ),
+        override_error_as_429: parsed.override_error_as_429 || false,
         proxy: parsed.proxy || '',
         pass_through_body_enabled: parsed.pass_through_body_enabled || false,
         system_prompt: parsed.system_prompt || '',
@@ -532,6 +535,7 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     allowed_endpoint_types: normalizeAllowedEndpointTypes(
       formData.allowed_endpoint_types
     ),
+    override_error_as_429: formData.override_error_as_429 || false,
     proxy: formData.proxy || '',
     pass_through_body_enabled: formData.pass_through_body_enabled || false,
     system_prompt: formData.system_prompt || '',

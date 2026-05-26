@@ -248,6 +248,8 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 		processChannelError(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan()), newAPIError)
 
+		newAPIError = overrideErrorIfMatchKeywords(c, newAPIError)
+
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break
 		}
@@ -757,4 +759,24 @@ func shouldRetryTaskRelay(c *gin.Context, channelId int, taskErr *dto.TaskError,
 		return false
 	}
 	return true
+}
+
+func overrideErrorIfMatchKeywords(c *gin.Context, err *types.NewAPIError) *types.NewAPIError {
+	if err == nil {
+		return nil
+	}
+	channelSetting, ok := common.GetContextKeyType[dto.ChannelSettings](c, constant.ContextKeyChannelSetting)
+	if !ok || !channelSetting.OverrideErrorAs429 {
+		return err
+	}
+	if service.ShouldDisableChannel(err) {
+		return types.NewErrorWithStatusCode(
+			fmt.Errorf("rate_limit_exceeded"),
+			types.ErrorCodeChannelRateLimited,
+			http.StatusTooManyRequests,
+			types.ErrOptionWithNoRecordErrorLog(),
+			types.ErrOptionWithSkipRetry(),
+		)
+	}
+	return err
 }

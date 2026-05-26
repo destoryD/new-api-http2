@@ -223,6 +223,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.model_name_override ||
     values.non_stream_to_stream ||
     (values.allowed_endpoint_types?.length ?? 0) > 0 ||
+    values.override_error_as_429 ||
     values.rpm_limit ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
@@ -2755,6 +2756,27 @@ export function ChannelMutateDrawer({
                                 />
                               </FormControl>
                               <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        <FormField
+                          control={form.control}
+                          name='override_error_as_429'
+                          render={({ field }) => (
+                            <FormItem className='flex items-center justify-between gap-3 border-t pt-4'>
+                              <div className='space-y-0.5'>
+                                <FormLabel>{t('Override Error as 429')}</FormLabel>
+                                <FormDescription>
+                                  {t(FIELD_DESCRIPTIONS.OVERRIDE_ERROR_AS_429)}
+                                </FormDescription>
+                              </div>
+                              <FormControl>
+                                <Switch
+                                  checked={field.value}
+                                  onCheckedChange={field.onChange}
+                                />
+                              </FormControl>
                             </FormItem>
                           )}
                         />
