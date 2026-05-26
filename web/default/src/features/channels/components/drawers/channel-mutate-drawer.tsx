@@ -2581,6 +2581,27 @@ export function ChannelMutateDrawer({
                           </FormItem>
                         )}
                       />
+
+                      <FormField
+                        control={form.control}
+                        name='override_error_as_429'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>{t('Override Error as 429')}</FormLabel>
+                              <FormDescription>
+                                {t(FIELD_DESCRIPTIONS.OVERRIDE_ERROR_AS_429)}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value === true}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </div>
 
                     <div className='space-y-4 border-t pt-4'>

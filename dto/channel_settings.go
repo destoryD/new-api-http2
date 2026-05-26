@@ -7,12 +7,13 @@ type ChannelSettings struct {
 	PassThroughBodyEnabled bool           `json:"pass_through_body_enabled,omitempty"`
 	SystemPrompt           string         `json:"system_prompt,omitempty"`
 	SystemPromptOverride   bool           `json:"system_prompt_override,omitempty"`
-	EnableHttp2            bool           `json:"enable_http2,omitempty"` // 是否启用 HTTP/2 客户端
+	EnableHttp2            bool           `json:"enable_http2,omitempty"`
 	ModelNameOverride      bool           `json:"model_name_override,omitempty"`
 	NonStreamToStream      bool           `json:"non_stream_to_stream,omitempty"`
 	AllowedEndpointTypes   []string       `json:"allowed_endpoint_types,omitempty"`
 	RPMLimit               int            `json:"rpm_limit,omitempty"`
 	ModelRPMLimits         map[string]int `json:"model_rpm_limits,omitempty"`
+	OverrideErrorAs429     bool           `json:"override_error_as_429,omitempty"`
 }
 
 type VertexKeyType string
