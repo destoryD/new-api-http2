@@ -282,134 +282,9 @@ const EditChannelModal = (props) => {
     model_rpm_limits: '',
     proxy: '',
     pass_through_body_enabled: false,
-    system_prompt: '',
-    system_prompt_override: false,
-    settings: '',
-    // 仅 Vertex: 密钥格式（存入 settings.vertex_key_type）
-    vertex_key_type: 'json',
-    // 仅 AWS: 密钥格式和区域（存入 settings.aws_key_type 和 settings.aws_region）
-    aws_key_type: 'ak_sk',
-    // 企业账户设置
-    is_enterprise_account: false,
-    // 字段透传控制默认值
-    allow_service_tier: false,
-    disable_store: false, // false = 允许透传（默认开启）
-    allow_safety_identifier: false,
-    allow_include_obfuscation: false,
-    allow_inference_geo: false,
-    allow_speed: false,
-    claude_beta_query: false,
-    upstream_model_update_check_enabled: false,
-    upstream_model_update_auto_sync_enabled: false,
-    upstream_model_update_last_check_time: 0,
-    upstream_model_update_last_detected_models: [],
-    upstream_model_update_ignored_models: '',
-  };
-  const [batch, setBatch] = useState(false);
-  const [multiToSingle, setMultiToSingle] = useState(false);
-  const [multiKeyMode, setMultiKeyMode] = useState('random');
-  const [autoBan, setAutoBan] = useState(true);
-  const [inputs, setInputs] = useState(originInputs);
-  const [originModelOptions, setOriginModelOptions] = useState([]);
-  const [modelOptions, setModelOptions] = useState([]);
-  const [groupOptions, setGroupOptions] = useState([]);
-  const [basicModels, setBasicModels] = useState([]);
-  const [fullModels, setFullModels] = useState([]);
-  const [modelGroups, setModelGroups] = useState([]);
-  const [customModel, setCustomModel] = useState('');
-  const [modelSearchValue, setModelSearchValue] = useState('');
-  const [modalImageUrl, setModalImageUrl] = useState('');
-  const [isModalOpenurl, setIsModalOpenurl] = useState(false);
-  const [modelModalVisible, setModelModalVisible] = useState(false);
-  const [fetchedModels, setFetchedModels] = useState([]);
-  const [modelMappingValueModalVisible, setModelMappingValueModalVisible] =
-    useState(false);
-  const [modelMappingValueModalModels, setModelMappingValueModalModels] =
-    useState([]);
-  const [modelMappingValueKey, setModelMappingValueKey] = useState('');
-  const [modelMappingValueSelected, setModelMappingValueSelected] =
-    useState('');
-  const [ollamaModalVisible, setOllamaModalVisible] = useState(false);
-  const formApiRef = useRef(null);
-  const [vertexKeys, setVertexKeys] = useState([]);
-  const [vertexFileList, setVertexFileList] = useState([]);
-  const vertexErroredNames = useRef(new Set()); // 避免重复报错
-  const [isMultiKeyChannel, setIsMultiKeyChannel] = useState(false);
-  const [channelSearchValue, setChannelSearchValue] = useState('');
-  const [useManualInput, setUseManualInput] = useState(false); // 是否使用手动输入模式
-  const [keyMode, setKeyMode] = useState('append'); // 密钥模式：replace（覆盖）或 append（追加）
-  const [isEnterpriseAccount, setIsEnterpriseAccount] = useState(false); // 是否为企业账户
-  const [doubaoApiEditUnlocked, setDoubaoApiEditUnlocked] = useState(false); // 豆包渠道自定义 API 地址隐藏入口
-  const redirectModelList = useMemo(() => {
-    const mapping = inputs.model_mapping;
-    if (typeof mapping !== 'string') return [];
-    const trimmed = mapping.trim();
-    if (!trimmed) return [];
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        return [];
-      }
-      const values = Object.values(parsed)
-        .map((value) => (typeof value === 'string' ? value.trim() : undefined))
-        .filter((value) => value);
-      return Array.from(new Set(values));
-    } catch (error) {
-      return [];
-    }
-  }, [inputs.model_mapping]);
-  const redirectModelKeyList = useMemo(() => {
-    const mapping = inputs.model_mapping;
-    if (typeof mapping !== 'string') return [];
-    const trimmed = mapping.trim();
-    if (!trimmed) return [];
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-        return [];
-      }
-      const keys = Object.keys(parsed)
-        .map((key) => key.trim())
-        .filter((key) => key);
-      return Array.from(new Set(keys));
-    } catch (error) {
-      return [];
-    }
-  }, [inputs.model_mapping]);
-  const upstreamDetectedModels = useMemo(
-    () =>
-      Array.from(
-        new Set(
-          (inputs.upstream_model_update_last_detected_models || [])
-            .map((model) => String(model || '').trim())
-            .filter(Boolean),
-        ),
-      ),
-    [inputs.upstream_model_update_last_detected_models],
-  );
-  const upstreamDetectedModelsPreview = useMemo(
-    () => upstreamDetectedModels.slice(0, UPSTREAM_DETECTED_MODEL_PREVIEW_LIMIT),
-    [upstreamDetectedModels],
-  );
-  const upstreamDetectedModelsOmittedCount =
-    upstreamDetectedModels.length - upstreamDetectedModelsPreview.length;
-  const modelSearchMatchedCount = useMemo(() => {
-    const keyword = modelSearchValue.trim();
-    if (!keyword) {
-      return modelOptions.length;
-    }
-    return modelOptions.reduce(
-      (count, option) => count + (selectFilter(keyword, option) ? 1 : 0),
-      0,
-    );
-  }, [modelOptions, modelSearchValue]);
-  const modelSearchHintText = useMemo(() => {
-    const keyword = modelSearchValue.trim();
-    if (!keyword || modelSearchMatchedCount !== 0) {
-      return '';
-    }
-    return t('未匹配到模型，按回车键可将「{{name}}」作为自定义模型名添加', {
-      name: keyword,
+      system_prompt: '',
+      system_prompt_override: false,
+      override_error_as_429: false,
     });
   }, [modelSearchMatchedCount, modelSearchValue, t]);
   const paramOverrideMeta = useMemo(() => {
@@ -980,6 +855,8 @@ const EditChannelModal = (props) => {
           data.system_prompt = parsedSettings.system_prompt || '';
           data.system_prompt_override =
             parsedSettings.system_prompt_override || false;
+          data.override_error_as_429 =
+            parsedSettings.override_error_as_429 || false;
         } catch (error) {
           console.error('解析渠道设置失败:', error);
           data.force_format = false;
@@ -994,6 +871,7 @@ const EditChannelModal = (props) => {
           data.pass_through_body_enabled = false;
           data.system_prompt = '';
           data.system_prompt_override = false;
+          data.override_error_as_429 = false;
         }
       } else {
         data.force_format = false;
@@ -1008,6 +886,7 @@ const EditChannelModal = (props) => {
         data.pass_through_body_enabled = false;
         data.system_prompt = '';
         data.system_prompt_override = false;
+        data.override_error_as_429 = false;
       }
 
       if (data.settings) {
@@ -1123,6 +1002,7 @@ const EditChannelModal = (props) => {
         pass_through_body_enabled: data.pass_through_body_enabled,
         system_prompt: data.system_prompt,
         system_prompt_override: data.system_prompt_override || false,
+        override_error_as_429: data.override_error_as_429 || false,
       });
       initialModelsRef.current = (data.models || [])
         .map((model) => (model || '').trim())
@@ -1522,10 +1402,11 @@ const EditChannelModal = (props) => {
       rpm_limit: 0,
       model_rpm_limits: '',
       proxy: '',
-      pass_through_body_enabled: false,
-      system_prompt: '',
-      system_prompt_override: false,
-    });
+    pass_through_body_enabled: false,
+    system_prompt: '',
+    system_prompt_override: false,
+    override_error_as_429: false,
+  });
     // 重置密钥模式状态
     setKeyMode('append');
     // 重置企业账户状态
@@ -1911,6 +1792,7 @@ const EditChannelModal = (props) => {
       pass_through_body_enabled: localInputs.pass_through_body_enabled || false,
       system_prompt: localInputs.system_prompt || '',
       system_prompt_override: localInputs.system_prompt_override || false,
+      override_error_as_429: localInputs.override_error_as_429 || false,
     };
     localInputs.setting = JSON.stringify(channelExtraSettings);
 
@@ -1998,6 +1880,7 @@ const EditChannelModal = (props) => {
     delete localInputs.pass_through_body_enabled;
     delete localInputs.system_prompt;
     delete localInputs.system_prompt_override;
+    delete localInputs.override_error_as_429;
     delete localInputs.is_enterprise_account;
     // 顶层的 vertex_key_type 不应发送给后端
     delete localInputs.vertex_key_type;
@@ -2699,6 +2582,7 @@ const EditChannelModal = (props) => {
 
                   <Form.TextArea field='system_prompt' label={t('系统提示词')} placeholder={t('输入系统提示词，用户的系统提示词将优先于此设置')} onChange={(value) => handleChannelSettingsChange('system_prompt', value)} autosize showClear extraText={t('用户优先：如果用户在请求中指定了系统提示词，将优先使用用户的设置')} />
                   <Form.Switch field='system_prompt_override' label={t('系统提示词拼接')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('system_prompt_override', value)} extraText={t('如果用户请求中包含系统提示词，则使用此设置拼接到用户的系统提示词前面')} />
+                  <Form.Switch field='override_error_as_429' label={t('覆盖错误为429')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('override_error_as_429', value)} extraText={t('开启后如果后端返回了自动禁用关键词，则返回429状态替代原始错误')} />
                 </div>
               </div>
             );
