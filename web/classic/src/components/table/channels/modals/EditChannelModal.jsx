@@ -281,11 +281,65 @@ const EditChannelModal = (props) => {
     model_rpm_limits: '',
     proxy: '',
     pass_through_body_enabled: false,
-      system_prompt: '',
-      system_prompt_override: false,
-      override_error_as_429: false,
-    });
-  }, [modelSearchMatchedCount, modelSearchValue, t]);
+    system_prompt: '',
+    system_prompt_override: false,
+    override_error_as_429: false,
+    settings: '',
+    // for Vertex: 密钥格式（存入 settings.vertex_key_type）
+    vertex_key_type: 'json',
+    // for AWS: 密钥格式和区域（存入 settings.aws_key_type / settings.aws_region）
+    aws_key_type: 'ak_sk',
+    // 企业账户设置
+    is_enterprise_account: false,
+    // 字段透传控制默认值
+    allow_service_tier: false,
+    disable_store: false,
+    allow_safety_identifier: false,
+    allow_include_obfuscation: false,
+    allow_inference_geo: false,
+    allow_speed: false,
+    claude_beta_query: false,
+    upstream_model_update_check_enabled: false,
+    upstream_model_update_auto_sync_enabled: false,
+    upstream_model_update_last_check_time: 0,
+    upstream_model_update_last_detected_models: [],
+    upstream_model_update_ignored_models: '',
+  };
+  const [batch, setBatch] = useState(false);
+  const [multiToSingle, setMultiToSingle] = useState(false);
+  const [multiKeyMode, setMultiKeyMode] = useState('random');
+  const [autoBan, setAutoBan] = useState(true);
+  const [inputs, setInputs] = useState(originInputs);
+  const [originModelOptions, setOriginModelOptions] = useState([]);
+  const [modelOptions, setModelOptions] = useState([]);
+  const [groupOptions, setGroupOptions] = useState([]);
+  const [basicModels, setBasicModels] = useState([]);
+  const [fullModels, setFullModels] = useState([]);
+  const [modelGroups, setModelGroups] = useState([]);
+  const [customModel, setCustomModel] = useState('');
+  const [modelSearchValue, setModelSearchValue] = useState('');
+  const [modalImageUrl, setModalImageUrl] = useState('');
+  const [isModalOpenurl, setIsModalOpenurl] = useState(false);
+  const [modelModalVisible, setModelModalVisible] = useState(false);
+  const [fetchedModels, setFetchedModels] = useState([]);
+  const [modelMappingValueModalVisible, setModelMappingValueModalVisible] =
+    useState(false);
+  const [modelMappingValueModalModels, setModelMappingValueModalModels] =
+    useState([]);
+  const [modelMappingValueKey, setModelMappingValueKey] = useState('');
+  const [modelMappingValueSelected, setModelMappingValueSelected] =
+    useState('');
+  const [ollamaModalVisible, setOllamaModalVisible] = useState(false);
+  const formApiRef = useRef(null);
+  const [vertexKeys, setVertexKeys] = useState([]);
+  const [vertexFileList, setVertexFileList] = useState([]);
+  const vertexErroredNames = useRef(new Set());
+  const [isMultiKeyChannel, setIsMultiKeyChannel] = useState(false);
+  const [channelSearchValue, setChannelSearchValue] = useState('');
+  const [useManualInput, setUseManualInput] = useState(false);
+  const [keyMode, setKeyMode] = useState('append');
+  const [isEnterpriseAccount, setIsEnterpriseAccount] = useState(false);
+  const [doubaoApiEditUnlocked, setDoubaoApiEditUnlocked] = useState(false);
   const paramOverrideMeta = useMemo(() => {
     const raw =
       typeof inputs.param_override === 'string'
