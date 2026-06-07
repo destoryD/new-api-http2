@@ -187,14 +187,27 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	}
 	relayInfo.RetryIndex = 0
 	relayInfo.LastError = nil
+	var sequentialRetryChannel *model.Channel
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		relayInfo.RetryIndex = retryParam.GetRetry()
-		channel, channelErr := getChannel(c, relayInfo, retryParam)
-		if channelErr != nil {
-			logger.LogError(c, channelErr.Error())
-			newAPIError = channelErr
-			break
+		var channel *model.Channel
+		if sequentialRetryChannel != nil {
+			channel = sequentialRetryChannel
+			sequentialRetryChannel = nil
+			if setupErr := middleware.SetupContextForSelectedChannel(c, channel, relayInfo.OriginModelName); setupErr != nil {
+				logger.LogError(c, setupErr.Error())
+				newAPIError = setupErr
+				break
+			}
+		} else {
+			var channelErr *types.NewAPIError
+			channel, channelErr = getChannel(c, relayInfo, retryParam)
+			if channelErr != nil {
+				logger.LogError(c, channelErr.Error())
+				newAPIError = channelErr
+				break
+			}
 		}
 
 		addUsedChannel(c, channel.Id)
@@ -248,7 +261,16 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 		newAPIError = overrideErrorIfMatchKeywords(c, newAPIError)
 
-		processChannelError(c, *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan()), newAPIError, originalErrForDisable)
+		channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
+		if shouldRetrySequentialMultiKey(channel, channelError, newAPIError, originalErrForDisable) {
+			if processChannelErrorSync(c, channelError, newAPIError, originalErrForDisable) {
+				sequentialRetryChannel = refreshSequentialRetryChannel(channel)
+				retryParam.ResetRetryNextTry()
+				continue
+			}
+		} else {
+			processChannelError(c, channelError, newAPIError, originalErrForDisable)
+		}
 
 		if !shouldRetry(c, newAPIError, common.RetryTimes-retryParam.GetRetry()) {
 			break
@@ -454,21 +476,58 @@ func shouldRetry(c *gin.Context, openaiErr *types.NewAPIError, retryTimes int) b
 }
 
 func processChannelError(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError, originalErr *types.NewAPIError) {
-	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, err.Error()))
-	// 不要使用context获取渠道信息，异步处理时可能会出现渠道信息不一致的情况
-	// do not use context to get channel info, there may be inconsistent channel info when processing asynchronously
+	processChannelErrorWithDisable(c, channelError, err, originalErr, false)
+}
+
+func processChannelErrorSync(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError, originalErr *types.NewAPIError) bool {
+	return processChannelErrorWithDisable(c, channelError, err, originalErr, true)
+}
+
+func shouldRetrySequentialMultiKey(channel *model.Channel, channelError types.ChannelError, err *types.NewAPIError, originalErr *types.NewAPIError) bool {
+	if channel == nil || !channel.ChannelInfo.IsMultiKey || channel.ChannelInfo.MultiKeyMode != constant.MultiKeyModeSequential {
+		return false
+	}
+	return shouldDisableChannelError(channelError, err, originalErr)
+}
+
+func refreshSequentialRetryChannel(channel *model.Channel) *model.Channel {
+	if channel == nil {
+		return nil
+	}
+	freshChannel, err := model.CacheGetChannel(channel.Id)
+	if err != nil || freshChannel == nil {
+		return channel
+	}
+	return freshChannel
+}
+
+func shouldDisableChannelError(channelError types.ChannelError, err *types.NewAPIError, originalErr *types.NewAPIError) bool {
 	disableErr := err
 	if originalErr != nil {
 		disableErr = originalErr
 	}
-	if service.ShouldDisableChannel(disableErr) && channelError.AutoBan {
-		gopool.Go(func() {
-			disableReason := err.ErrorWithStatusCode()
-			if originalErr != nil {
-				disableReason = originalErr.ErrorWithStatusCode()
-			}
+	return service.ShouldDisableChannel(disableErr) && channelError.AutoBan
+}
+
+func processChannelErrorWithDisable(c *gin.Context, channelError types.ChannelError, err *types.NewAPIError, originalErr *types.NewAPIError, syncDisable bool) bool {
+	logger.LogError(c, fmt.Sprintf("channel error (channel #%d, status code: %d): %s", channelError.ChannelId, err.StatusCode, err.Error()))
+	// 不要使用context获取渠道信息，异步处理时可能会出现渠道信息不一致的情况
+	// do not use context to get channel info, there may be inconsistent channel info when processing asynchronously
+	disabled := false
+	if shouldDisableChannelError(channelError, err, originalErr) {
+		disableReason := err.ErrorWithStatusCode()
+		if originalErr != nil {
+			disableReason = originalErr.ErrorWithStatusCode()
+		}
+		if syncDisable {
 			service.DisableChannel(channelError, disableReason)
-		})
+			disabled = true
+		} else {
+			gopool.Go(func() {
+				service.DisableChannel(channelError, disableReason)
+			})
+			disabled = true
+		}
 	}
 
 	if constant.ErrorLogEnabled && types.IsRecordErrorLog(err) {
@@ -506,6 +565,7 @@ func processChannelError(c *gin.Context, channelError types.ChannelError, err *t
 		model.RecordErrorLog(c, userId, channelId, modelName, tokenName, err.MaskSensitiveErrorWithStatusCode(), tokenId, useTimeSeconds, common.GetContextKeyBool(c, constant.ContextKeyIsStream), userGroup, other)
 	}
 
+	return disabled
 }
 
 func RelayMidjourney(c *gin.Context) {
@@ -620,11 +680,19 @@ func RelayTask(c *gin.Context) {
 		ModelName:  relayInfo.OriginModelName,
 		Retry:      common.GetPointer(0),
 	}
+	var sequentialRetryChannel *model.Channel
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		var channel *model.Channel
 
-		if lockedCh, ok := relayInfo.LockedChannel.(*model.Channel); ok && lockedCh != nil {
+		if sequentialRetryChannel != nil {
+			channel = sequentialRetryChannel
+			sequentialRetryChannel = nil
+			if setupErr := middleware.SetupContextForSelectedChannel(c, channel, relayInfo.OriginModelName); setupErr != nil {
+				taskErr = service.TaskErrorWrapperLocal(setupErr.Err, "setup_sequential_channel_failed", http.StatusInternalServerError)
+				break
+			}
+		} else if lockedCh, ok := relayInfo.LockedChannel.(*model.Channel); ok && lockedCh != nil {
 			channel = lockedCh
 			if retryParam.GetRetry() > 0 {
 				if setupErr := middleware.SetupContextForSelectedChannel(c, channel, relayInfo.OriginModelName); setupErr != nil {
@@ -667,10 +735,18 @@ func RelayTask(c *gin.Context) {
 		}
 
 		if !taskErr.LocalError {
-			processChannelError(c,
-				*types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey,
-					common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan()),
-				types.NewOpenAIError(taskErr.Error, types.ErrorCodeBadResponseStatusCode, taskErr.StatusCode), nil)
+			channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey,
+				common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
+			openAIError := types.NewOpenAIError(taskErr.Error, types.ErrorCodeBadResponseStatusCode, taskErr.StatusCode)
+			if shouldRetrySequentialMultiKey(channel, channelError, openAIError, nil) {
+				if processChannelErrorSync(c, channelError, openAIError, nil) {
+					sequentialRetryChannel = refreshSequentialRetryChannel(channel)
+					retryParam.ResetRetryNextTry()
+					continue
+				}
+			} else {
+				processChannelError(c, channelError, openAIError, nil)
+			}
 		}
 
 		if !shouldRetryTaskRelay(c, channel.Id, taskErr, common.RetryTimes-retryParam.GetRetry()) {

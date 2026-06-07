@@ -2151,6 +2151,7 @@ export function ChannelMutateDrawer({
                           items={[
                             { value: 'random', label: t('Random') },
                             { value: 'polling', label: t('Polling') },
+                            { value: 'sequential', label: t('Sequential') },
                           ]}
                           onValueChange={field.onChange}
                           value={field.value}
@@ -2168,6 +2169,9 @@ export function ChannelMutateDrawer({
                               <SelectItem value='polling'>
                                 {t('Polling')}
                               </SelectItem>
+                              <SelectItem value='sequential'>
+                                {t('Sequential')}
+                              </SelectItem>
                             </SelectGroup>
                           </SelectContent>
                         </Select>
@@ -2178,6 +2182,10 @@ export function ChannelMutateDrawer({
                                 'Polling mode requires Redis and memory cache, otherwise performance will be significantly degraded'
                               )}
                             </span>
+                          ) : multiKeyType === 'sequential' ? (
+                            t(
+                              'Sequentially use keys in order and continue with the next key after auto-disable'
+                            )
                           ) : (
                             t(
                               'Randomly select a key from the pool for each request'
