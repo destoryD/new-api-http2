@@ -2176,6 +2176,7 @@ export function ChannelMutateDrawer({
                                 items={[
                                   { value: 'random', label: t('Random') },
                                   { value: 'polling', label: t('Polling') },
+                            { value: 'sequential', label: t('Sequential') },
                                 ]}
                                 onValueChange={field.onChange}
                                 value={field.value}

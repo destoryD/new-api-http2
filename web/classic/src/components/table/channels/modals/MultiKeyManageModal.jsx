@@ -469,6 +469,8 @@ const MultiKeyManageModal = ({ visible, onCancel, channel, onRefresh }) => {
             <Tag size='small' shape='circle' color='white'>
               {channel.channel_info.multi_key_mode === 'random'
                 ? t('随机模式')
+                : channel.channel_info.multi_key_mode === 'sequential'
+                  ? t('按序模式')
                 : t('轮询模式')}
             </Tag>
           )}

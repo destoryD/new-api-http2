@@ -3293,6 +3293,7 @@ const EditChannelModal = (props) => {
                           optionList={[
                             { label: t('随机'), value: 'random' },
                             { label: t('轮询'), value: 'polling' },
+                            { label: t('按序'), value: 'sequential' },
                           ]}
                           style={{ width: '100%' }}
                           value={inputs.multi_key_mode || 'random'}
@@ -3306,6 +3307,15 @@ const EditChannelModal = (props) => {
                             type='warning'
                             description={t(
                               '轮询模式必须搭配Redis和内存缓存功能使用，否则性能将大幅降低，并且无法实现轮询功能',
+                            )}
+                            className='!rounded-lg mt-2'
+                          />
+                        )}
+                        {inputs.multi_key_mode === 'sequential' && (
+                          <Banner
+                            type='info'
+                            description={t(
+                              '按密钥顺序使用，当前密钥自动禁用后继续使用后一个密钥',
                             )}
                             className='!rounded-lg mt-2'
                           />

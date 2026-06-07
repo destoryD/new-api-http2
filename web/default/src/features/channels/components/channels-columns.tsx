@@ -686,7 +686,9 @@ export function useChannelsColumns(): ColumnDef<Channel>[] {
           const multiKeyTooltip =
             multiKeyMode === 'random'
               ? t('Multi-key: Random rotation')
-              : t('Multi-key: Polling rotation')
+              : multiKeyMode === 'sequential'
+                ? t('Multi-key: Sequential order')
+                : t('Multi-key: Polling rotation')
 
           const ionetMeta = parseIonetMeta(channel.other_info)
           const isIonet = ionetMeta?.source === 'ionet'
