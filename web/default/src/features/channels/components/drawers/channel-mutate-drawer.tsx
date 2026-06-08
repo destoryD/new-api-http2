@@ -240,6 +240,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.thinking_to_content ||
     values.enable_http2 ||
     values.disable_http2 ||
+    values.disable_connection_reuse ||
     values.model_name_override ||
     values.non_stream_to_stream ||
     (values.allowed_endpoint_types?.length ?? 0) > 0 ||
@@ -3233,6 +3234,31 @@ export function ChannelMutateDrawer({
                                     form.setValue('disable_http2', false)
                                   }
                                 }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='disable_connection_reuse'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>
+                                {t('Disable Connection Reuse')}
+                              </FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Create a new upstream connection for each request and do not keep idle connections'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
                               />
                             </FormControl>
                           </FormItem>

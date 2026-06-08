@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/setting/system_setting"
 
 	"golang.org/x/net/http2"
@@ -124,6 +125,12 @@ func configureHTTPOnlyTransport(transport *http.Transport) {
 	transport.TLSClientConfig.NextProtos = []string{"http/1.1"}
 }
 
+func configureNoReuseTransport(transport *http.Transport) {
+	transport.DisableKeepAlives = true
+	transport.MaxIdleConns = 0
+	transport.MaxIdleConnsPerHost = 0
+}
+
 func newHTTPOnlyClient(transport *http.Transport) *http.Client {
 	client := &http.Client{
 		Transport:     transport,
@@ -224,6 +231,41 @@ func GetHttpOnlyClientWithProxy(proxyURL string) (*http.Client, error) {
 		return GetHttpOnlyClient(), nil
 	}
 	return NewHTTPOnlyProxyHttpClient(proxyURL)
+}
+
+func GetNoReuseHttpClientWithProxy(proxyURL string) (*http.Client, error) {
+	return newNoReuseProxyHttpClient(proxyURL, false, false)
+}
+
+func GetNoReuseHttp2ClientWithProxy(proxyURL string) (*http.Client, error) {
+	return newNoReuseProxyHttpClient(proxyURL, true, false)
+}
+
+func GetNoReuseHTTPOnlyClientWithProxy(proxyURL string) (*http.Client, error) {
+	return newNoReuseProxyHttpClient(proxyURL, false, true)
+}
+
+func GetChannelHttpClient(setting dto.ChannelSettings) (*http.Client, error) {
+	enableHttp2 := setting.EnableHttp2
+	disableHttp2 := setting.DisableHttp2 && !enableHttp2
+
+	if setting.DisableConnectionReuse {
+		if enableHttp2 {
+			return GetNoReuseHttp2ClientWithProxy(setting.Proxy)
+		}
+		if disableHttp2 {
+			return GetNoReuseHTTPOnlyClientWithProxy(setting.Proxy)
+		}
+		return GetNoReuseHttpClientWithProxy(setting.Proxy)
+	}
+
+	if enableHttp2 {
+		return GetHttp2ClientWithProxy(setting.Proxy)
+	}
+	if disableHttp2 {
+		return GetHttpOnlyClientWithProxy(setting.Proxy)
+	}
+	return GetHttpClientWithProxy(setting.Proxy)
 }
 
 // ResetProxyClientCache 清空代理客户端缓存，确保下次使用时重新初始化
@@ -409,6 +451,65 @@ func NewHTTPOnlyProxyHttpClient(proxyURL string) (*http.Client, error) {
 	default:
 		return nil, fmt.Errorf("unsupported proxy scheme: %s, must be http, https, socks5 or socks5h", parsedURL.Scheme)
 	}
+}
+
+func newNoReuseProxyHttpClient(proxyURL string, strictHTTP2 bool, httpOnly bool) (*http.Client, error) {
+	transport := &http.Transport{
+		MaxIdleConns:        common.RelayMaxIdleConns,
+		MaxIdleConnsPerHost: common.RelayMaxIdleConnsPerHost,
+		ForceAttemptHTTP2:   true,
+	}
+	if proxyURL == "" {
+		transport.Proxy = http.ProxyFromEnvironment
+	}
+	if common.TLSInsecureSkipVerify {
+		transport.TLSClientConfig = common.InsecureTLSConfig
+	}
+
+	if proxyURL != "" {
+		parsedURL, err := url.Parse(proxyURL)
+		if err != nil {
+			return nil, err
+		}
+
+		switch parsedURL.Scheme {
+		case "http", "https":
+			transport.Proxy = http.ProxyURL(parsedURL)
+		case "socks5", "socks5h":
+			var auth *proxy.Auth
+			if parsedURL.User != nil {
+				auth = &proxy.Auth{
+					User:     parsedURL.User.Username(),
+					Password: "",
+				}
+				if password, ok := parsedURL.User.Password(); ok {
+					auth.Password = password
+				}
+			}
+
+			dialer, err := proxy.SOCKS5("tcp", parsedURL.Host, auth, proxy.Direct)
+			if err != nil {
+				return nil, err
+			}
+			transport.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return dialer.Dial(network, addr)
+			}
+		default:
+			return nil, fmt.Errorf("unsupported proxy scheme: %s, must be http, https, socks5 or socks5h", parsedURL.Scheme)
+		}
+	}
+
+	configureNoReuseTransport(transport)
+	if strictHTTP2 {
+		if err := configureStrictHTTP2Transport(transport); err != nil {
+			return nil, err
+		}
+		return newStrictHTTP2Client(transport), nil
+	}
+	if httpOnly {
+		configureHTTPOnlyTransport(transport)
+	}
+	return newHTTPOnlyClient(transport), nil
 }
 
 // NewHttp2ProxyHttpClient 创建支持代理的 HTTP/2 客户端

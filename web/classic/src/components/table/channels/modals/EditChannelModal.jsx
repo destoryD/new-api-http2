@@ -276,6 +276,7 @@ const EditChannelModal = (props) => {
     thinking_to_content: false,
     enable_http2: false,
     disable_http2: false,
+    disable_connection_reuse: false,
     model_name_override: false,
     non_stream_to_stream: false,
     allowed_endpoint_types: [],
@@ -607,6 +608,7 @@ const EditChannelModal = (props) => {
     thinking_to_content: false,
     enable_http2: false,
     disable_http2: false,
+    disable_connection_reuse: false,
     model_name_override: false,
     non_stream_to_stream: false,
     allowed_endpoint_types: [],
@@ -973,6 +975,8 @@ const EditChannelModal = (props) => {
             parsedSettings.thinking_to_content || false;
           data.enable_http2 = parsedSettings.enable_http2 || false;
           data.disable_http2 = parsedSettings.disable_http2 || false;
+          data.disable_connection_reuse =
+            parsedSettings.disable_connection_reuse || false;
           data.model_name_override =
             parsedSettings.model_name_override || false;
           data.non_stream_to_stream =
@@ -1001,6 +1005,7 @@ const EditChannelModal = (props) => {
           data.thinking_to_content = false;
           data.enable_http2 = false;
           data.disable_http2 = false;
+          data.disable_connection_reuse = false;
           data.model_name_override = false;
           data.non_stream_to_stream = false;
           data.allowed_endpoint_types = [];
@@ -1017,6 +1022,7 @@ const EditChannelModal = (props) => {
         data.thinking_to_content = false;
         data.enable_http2 = false;
         data.disable_http2 = false;
+        data.disable_connection_reuse = false;
         data.model_name_override = false;
         data.non_stream_to_stream = false;
         data.allowed_endpoint_types = [];
@@ -1134,6 +1140,7 @@ const EditChannelModal = (props) => {
         thinking_to_content: data.thinking_to_content,
         enable_http2: data.enable_http2,
         disable_http2: data.disable_http2,
+        disable_connection_reuse: data.disable_connection_reuse,
         model_name_override: data.model_name_override,
         non_stream_to_stream: data.non_stream_to_stream,
         allowed_endpoint_types: data.allowed_endpoint_types,
@@ -1185,6 +1192,7 @@ const EditChannelModal = (props) => {
         data.thinking_to_content ||
         data.enable_http2 ||
         data.disable_http2 ||
+        data.disable_connection_reuse ||
         data.model_name_override ||
         data.non_stream_to_stream ||
         (data.allowed_endpoint_types &&
@@ -1539,6 +1547,7 @@ const EditChannelModal = (props) => {
       thinking_to_content: false,
       enable_http2: false,
       disable_http2: false,
+      disable_connection_reuse: false,
       model_name_override: false,
       non_stream_to_stream: false,
       allowed_endpoint_types: [],
@@ -1922,6 +1931,7 @@ const EditChannelModal = (props) => {
       thinking_to_content: localInputs.thinking_to_content || false,
       enable_http2: localInputs.enable_http2 || false,
       disable_http2: localInputs.disable_http2 || false,
+      disable_connection_reuse: localInputs.disable_connection_reuse || false,
       model_name_override: localInputs.model_name_override || false,
       non_stream_to_stream: localInputs.non_stream_to_stream || false,
       allowed_endpoint_types: normalizeAllowedEndpointTypes(
@@ -2016,6 +2026,7 @@ const EditChannelModal = (props) => {
     delete localInputs.thinking_to_content;
     delete localInputs.enable_http2;
     delete localInputs.disable_http2;
+    delete localInputs.disable_connection_reuse;
     delete localInputs.model_name_override;
     delete localInputs.non_stream_to_stream;
     delete localInputs.allowed_endpoint_types;
@@ -2717,6 +2728,7 @@ const EditChannelModal = (props) => {
                   <Form.Switch field='thinking_to_content' label={t('思考内容转换')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('thinking_to_content', value)} extraText={t('将 reasoning_content 转换为 <think> 标签拼接到内容中')} />
                   <Form.Switch field='enable_http2' label={t('启用 HTTP/2')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('enable_http2', value)} extraText={t('强制使用 HTTP/2 请求；如果上游不支持，将记录错误并返回失败')} />
                   <Form.Switch field='disable_http2' label={t('仅使用 HTTP/1.1')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('disable_http2', value)} extraText={t('禁用上游请求的 HTTP/2 协商，仅使用 HTTP/1.1')} />
+                  <Form.Switch field='disable_connection_reuse' label={t('不复用连接')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('disable_connection_reuse', value)} extraText={t('每次上游请求都创建新连接，请求结束后不保留空闲连接')} />
                   <Form.Switch field='model_name_override' label={t('模型名称覆盖')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('model_name_override', value)} extraText={t('开启后使用用户请求中的模型名称覆盖返回数据里的模型名称')} />
                   <Form.Switch field='non_stream_to_stream' label={t('非流转流式')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('non_stream_to_stream', value)} extraText={t('将客户端非流请求转为上游流式请求，并聚合后作为非流响应返回')} />
                   <Form.Select field='allowed_endpoint_types' label={t('允许的访问端口类型')} placeholder={t('选择访问端口类型')} multiple optionList={CHANNEL_ENDPOINT_TYPE_OPTIONS} style={{ width: '100%' }} onChange={(value) => handleChannelSettingsChange('allowed_endpoint_types', normalizeAllowedEndpointTypes(value))} extraText={t('仅允许选中的端口类型使用该渠道，留空表示全部允许')} />
