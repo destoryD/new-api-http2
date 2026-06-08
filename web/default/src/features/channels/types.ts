@@ -84,6 +84,7 @@ export interface ChannelSettings {
   thinking_to_content?: boolean
   enable_http2?: boolean
   disable_http2?: boolean
+  disable_connection_reuse?: boolean
   model_name_override?: boolean
   non_stream_to_stream?: boolean
   allowed_endpoint_types?: string[]
