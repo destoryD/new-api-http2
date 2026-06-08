@@ -65,12 +65,15 @@ func newStrictHTTP2Client(transport *http.Transport) *http.Client {
 }
 
 var (
-	httpClient       *http.Client
-	http2Client      *http.Client
-	proxyClientLock  sync.Mutex
-	proxyClients     = make(map[string]*http.Client)
-	http2ProxyClients = make(map[string]*http.Client)
-	http2ClientLock  sync.Mutex
+	httpClient           *http.Client
+	http2Client          *http.Client
+	httpOnlyClient       *http.Client
+	proxyClientLock      sync.Mutex
+	proxyClients         = make(map[string]*http.Client)
+	http2ProxyClients    = make(map[string]*http.Client)
+	httpOnlyProxyClients = make(map[string]*http.Client)
+	http2ClientLock      sync.Mutex
+	httpOnlyClientLock   sync.Mutex
 )
 
 func checkRedirect(req *http.Request, via []*http.Request) error {
@@ -111,6 +114,41 @@ func InitHttpClient() {
 	}
 }
 
+func configureHTTPOnlyTransport(transport *http.Transport) {
+	transport.ForceAttemptHTTP2 = false
+	transport.TLSNextProto = map[string]func(string, *tls.Conn) http.RoundTripper{}
+	if transport.TLSClientConfig == nil {
+		transport.TLSClientConfig = &tls.Config{}
+	} else {
+		transport.TLSClientConfig = transport.TLSClientConfig.Clone()
+	}
+	transport.TLSClientConfig.NextProtos = []string{"http/1.1"}
+}
+
+func newHTTPOnlyClient(transport *http.Transport) *http.Client {
+	client := &http.Client{
+		Transport:     transport,
+		CheckRedirect: checkRedirect,
+	}
+	if common.RelayTimeout != 0 {
+		client.Timeout = time.Duration(common.RelayTimeout) * time.Second
+	}
+	return client
+}
+
+func InitHttpOnlyClient() {
+	transport := &http.Transport{
+		MaxIdleConns:        common.RelayMaxIdleConns,
+		MaxIdleConnsPerHost: common.RelayMaxIdleConnsPerHost,
+		Proxy:               http.ProxyFromEnvironment,
+	}
+	if common.TLSInsecureSkipVerify {
+		transport.TLSClientConfig = common.InsecureTLSConfig
+	}
+	configureHTTPOnlyTransport(transport)
+	httpOnlyClient = newHTTPOnlyClient(transport)
+}
+
 // InitHttp2Client 初始化 HTTP/2 客户端
 func InitHttp2Client() {
 	transport := &http.Transport{
@@ -135,6 +173,20 @@ func InitHttp2Client() {
 
 func GetHttpClient() *http.Client {
 	return httpClient
+}
+
+func GetHttpOnlyClient() *http.Client {
+	if httpOnlyClient == nil {
+		httpOnlyClientLock.Lock()
+		defer httpOnlyClientLock.Unlock()
+		if httpOnlyClient == nil {
+			InitHttpOnlyClient()
+		}
+	}
+	if httpOnlyClient == nil {
+		return GetHttpClient()
+	}
+	return httpOnlyClient
 }
 
 // GetHttp2Client 获取 HTTP/2 客户端
@@ -168,22 +220,34 @@ func GetHttp2ClientWithProxy(proxyURL string) (*http.Client, error) {
 	return NewHttp2ProxyHttpClient(proxyURL)
 }
 
+func GetHttpOnlyClientWithProxy(proxyURL string) (*http.Client, error) {
+	if proxyURL == "" {
+		return GetHttpOnlyClient(), nil
+	}
+	return NewHTTPOnlyProxyHttpClient(proxyURL)
+}
+
 // ResetProxyClientCache 清空代理客户端缓存，确保下次使用时重新初始化
 func ResetProxyClientCache() {
 	proxyClientLock.Lock()
 	defer proxyClientLock.Unlock()
-	
+
 	// 清理 HTTP/1.1 代理客户端
 	for _, client := range proxyClients {
 		client.CloseIdleConnections()
 	}
 	proxyClients = make(map[string]*http.Client)
-	
+
 	// 清理 HTTP/2 代理客户端
 	for _, client := range http2ProxyClients {
 		client.CloseIdleConnections()
 	}
 	http2ProxyClients = make(map[string]*http.Client)
+
+	for _, client := range httpOnlyProxyClients {
+		client.CloseIdleConnections()
+	}
+	httpOnlyProxyClients = make(map[string]*http.Client)
 }
 
 // NewProxyHttpClient 创建支持代理的 HTTP 客户端
@@ -266,6 +330,82 @@ func NewProxyHttpClient(proxyURL string) (*http.Client, error) {
 		client.Timeout = time.Duration(common.RelayTimeout) * time.Second
 		proxyClientLock.Lock()
 		proxyClients[proxyURL] = client
+		proxyClientLock.Unlock()
+		return client, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported proxy scheme: %s, must be http, https, socks5 or socks5h", parsedURL.Scheme)
+	}
+}
+
+func NewHTTPOnlyProxyHttpClient(proxyURL string) (*http.Client, error) {
+	if proxyURL == "" {
+		if client := GetHttpOnlyClient(); client != nil {
+			return client, nil
+		}
+		return http.DefaultClient, nil
+	}
+
+	proxyClientLock.Lock()
+	if client, ok := httpOnlyProxyClients[proxyURL]; ok {
+		proxyClientLock.Unlock()
+		return client, nil
+	}
+	proxyClientLock.Unlock()
+
+	parsedURL, err := url.Parse(proxyURL)
+	if err != nil {
+		return nil, err
+	}
+
+	switch parsedURL.Scheme {
+	case "http", "https":
+		transport := &http.Transport{
+			MaxIdleConns:        common.RelayMaxIdleConns,
+			MaxIdleConnsPerHost: common.RelayMaxIdleConnsPerHost,
+			Proxy:               http.ProxyURL(parsedURL),
+		}
+		if common.TLSInsecureSkipVerify {
+			transport.TLSClientConfig = common.InsecureTLSConfig
+		}
+		configureHTTPOnlyTransport(transport)
+		client := newHTTPOnlyClient(transport)
+		proxyClientLock.Lock()
+		httpOnlyProxyClients[proxyURL] = client
+		proxyClientLock.Unlock()
+		return client, nil
+
+	case "socks5", "socks5h":
+		var auth *proxy.Auth
+		if parsedURL.User != nil {
+			auth = &proxy.Auth{
+				User:     parsedURL.User.Username(),
+				Password: "",
+			}
+			if password, ok := parsedURL.User.Password(); ok {
+				auth.Password = password
+			}
+		}
+
+		dialer, err := proxy.SOCKS5("tcp", parsedURL.Host, auth, proxy.Direct)
+		if err != nil {
+			return nil, err
+		}
+
+		transport := &http.Transport{
+			MaxIdleConns:        common.RelayMaxIdleConns,
+			MaxIdleConnsPerHost: common.RelayMaxIdleConnsPerHost,
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				return dialer.Dial(network, addr)
+			},
+		}
+		if common.TLSInsecureSkipVerify {
+			transport.TLSClientConfig = common.InsecureTLSConfig
+		}
+		configureHTTPOnlyTransport(transport)
+		client := newHTTPOnlyClient(transport)
+		proxyClientLock.Lock()
+		httpOnlyProxyClients[proxyURL] = client
 		proxyClientLock.Unlock()
 		return client, nil
 
