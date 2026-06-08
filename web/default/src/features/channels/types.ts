@@ -83,6 +83,7 @@ export interface ChannelSettings {
   force_format?: boolean
   thinking_to_content?: boolean
   enable_http2?: boolean
+  disable_http2?: boolean
   model_name_override?: boolean
   non_stream_to_stream?: boolean
   allowed_endpoint_types?: string[]

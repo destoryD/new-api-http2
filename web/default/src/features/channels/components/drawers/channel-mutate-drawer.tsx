@@ -239,6 +239,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.force_format ||
     values.thinking_to_content ||
     values.enable_http2 ||
+    values.disable_http2 ||
     values.model_name_override ||
     values.non_stream_to_stream ||
     (values.allowed_endpoint_types?.length ?? 0) > 0 ||
@@ -3184,6 +3185,34 @@ export function ChannelMutateDrawer({
 
                       <FormField
                         control={form.control}
+                        name='disable_http2'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>{t('Only use HTTP/1.1')}</FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Disable HTTP/2 negotiation for upstream requests and only use HTTP/1.1'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked)
+                                  if (checked) {
+                                    form.setValue('enable_http2', false)
+                                  }
+                                }}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
                         name='enable_http2'
                         render={({ field }) => (
                           <FormItem className='flex items-center justify-between px-4 py-3'>
@@ -3198,7 +3227,12 @@ export function ChannelMutateDrawer({
                             <FormControl>
                               <Switch
                                 checked={field.value}
-                                onCheckedChange={field.onChange}
+                                onCheckedChange={(checked) => {
+                                  field.onChange(checked)
+                                  if (checked) {
+                                    form.setValue('disable_http2', false)
+                                  }
+                                }}
                               />
                             </FormControl>
                           </FormItem>

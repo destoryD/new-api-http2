@@ -8,6 +8,7 @@ type ChannelSettings struct {
 	SystemPrompt           string         `json:"system_prompt,omitempty"`
 	SystemPromptOverride   bool           `json:"system_prompt_override,omitempty"`
 	EnableHttp2            bool           `json:"enable_http2,omitempty"`
+	DisableHttp2           bool           `json:"disable_http2,omitempty"`
 	ModelNameOverride      bool           `json:"model_name_override,omitempty"`
 	NonStreamToStream      bool           `json:"non_stream_to_stream,omitempty"`
 	AllowedEndpointTypes   []string       `json:"allowed_endpoint_types,omitempty"`

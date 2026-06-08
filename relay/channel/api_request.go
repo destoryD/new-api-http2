@@ -487,15 +487,21 @@ func DoRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
 	var client *http.Client
 	var err error
-	
+
 	// 检查是否启用 HTTP/2
 	enableHttp2 := info.ChannelSetting.EnableHttp2
-	
+	disableHttp2 := info.ChannelSetting.DisableHttp2 && !enableHttp2
+
 	if info.ChannelSetting.Proxy != "" {
 		if enableHttp2 {
 			client, err = service.GetHttp2ClientWithProxy(info.ChannelSetting.Proxy)
 			if err != nil {
 				return nil, fmt.Errorf("get http2 proxy client failed: %w", err)
+			}
+		} else if disableHttp2 {
+			client, err = service.GetHttpOnlyClientWithProxy(info.ChannelSetting.Proxy)
+			if err != nil {
+				return nil, fmt.Errorf("get http-only proxy client failed: %w", err)
 			}
 		} else {
 			client, err = service.NewProxyHttpClient(info.ChannelSetting.Proxy)
@@ -509,6 +515,8 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 			if err != nil {
 				return nil, fmt.Errorf("get http2 client failed: %w", err)
 			}
+		} else if disableHttp2 {
+			client = service.GetHttpOnlyClient()
 		} else {
 			client = service.GetHttpClient()
 		}
