@@ -1,9 +1,12 @@
 package dto
 
+import "strings"
+
 type ChannelSettings struct {
 	ForceFormat            bool           `json:"force_format,omitempty"`
 	ThinkingToContent      bool           `json:"thinking_to_content,omitempty"`
 	Proxy                  string         `json:"proxy"`
+	ProxyPool              []string       `json:"proxy_pool,omitempty"`
 	PassThroughBodyEnabled bool           `json:"pass_through_body_enabled,omitempty"`
 	SystemPrompt           string         `json:"system_prompt,omitempty"`
 	SystemPromptOverride   bool           `json:"system_prompt_override,omitempty"`
@@ -16,6 +19,32 @@ type ChannelSettings struct {
 	RPMLimit               int            `json:"rpm_limit,omitempty"`
 	ModelRPMLimits         map[string]int `json:"model_rpm_limits,omitempty"`
 	OverrideErrorAs429     bool           `json:"override_error_as_429,omitempty"`
+}
+
+func NormalizeProxyPool(proxyPool []string) []string {
+	if len(proxyPool) == 0 {
+		return nil
+	}
+	normalized := make([]string, 0, len(proxyPool))
+	for _, proxyURL := range proxyPool {
+		proxyURL = strings.TrimSpace(proxyURL)
+		if proxyURL != "" {
+			normalized = append(normalized, proxyURL)
+		}
+	}
+	if len(normalized) == 0 {
+		return nil
+	}
+	return normalized
+}
+
+func (s ChannelSettings) WithProxyPoolIndex(index int) ChannelSettings {
+	proxyPool := NormalizeProxyPool(s.ProxyPool)
+	if len(proxyPool) == 0 || index < 0 {
+		return s
+	}
+	s.Proxy = proxyPool[index%len(proxyPool)]
+	return s
 }
 
 type VertexKeyType string

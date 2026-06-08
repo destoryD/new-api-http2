@@ -72,6 +72,7 @@ export const channelFormSchema = z.object({
         'Model RPM Limits must be a JSON object with non-negative integer values',
     }),
   proxy: z.string().optional(),
+  proxy_pool: z.string().optional(),
   pass_through_body_enabled: z.boolean().optional(),
   system_prompt: z.string().optional(),
   system_prompt_override: z.boolean().optional(),
@@ -139,6 +140,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   rpm_limit: 0,
   model_rpm_limits: '',
   proxy: '',
+  proxy_pool: '',
   pass_through_body_enabled: false,
   system_prompt: '',
   system_prompt_override: false,
@@ -184,6 +186,7 @@ export function transformChannelToFormDefaults(
     rpm_limit: 0,
     model_rpm_limits: '',
     proxy: '',
+    proxy_pool: '',
     pass_through_body_enabled: false,
     system_prompt: '',
     system_prompt_override: false,
@@ -207,6 +210,7 @@ export function transformChannelToFormDefaults(
         rpm_limit: Math.max(0, Math.floor(Number(parsed.rpm_limit) || 0)),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         proxy: parsed.proxy || '',
+        proxy_pool: formatProxyPool(parsed.proxy_pool),
         pass_through_body_enabled: parsed.pass_through_body_enabled || false,
         system_prompt: parsed.system_prompt || '',
         system_prompt_override: parsed.system_prompt_override || false,
@@ -327,12 +331,37 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     rpm_limit: Math.max(0, Math.floor(Number(formData.rpm_limit) || 0)),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     proxy: formData.proxy || '',
+    proxy_pool: parseProxyPool(formData.proxy_pool),
     pass_through_body_enabled: formData.pass_through_body_enabled || false,
     system_prompt: formData.system_prompt || '',
     system_prompt_override: formData.system_prompt_override || false,
     override_error_as_429: formData.override_error_as_429 || false,
   }
   return JSON.stringify(settingObj)
+}
+
+function formatProxyPool(value: unknown): string {
+  if (!Array.isArray(value)) {
+    return ''
+  }
+  return value
+    .map((proxy) => String(proxy).trim())
+    .filter(Boolean)
+    .join('\n')
+}
+
+function parseProxyPool(value: unknown): string[] {
+  if (typeof value !== 'string') {
+    return []
+  }
+  return Array.from(
+    new Set(
+      value
+        .split(/\r?\n/)
+        .map((proxy) => proxy.trim())
+        .filter(Boolean)
+    )
+  )
 }
 
 function normalizeAllowedEndpointTypes(value: unknown): string[] {

@@ -190,6 +190,30 @@ const formatModelRPMLimits = (value) => {
   return Object.keys(limits).length > 0 ? JSON.stringify(limits, null, 2) : '';
 };
 
+const parseProxyPool = (value) => {
+  if (!value || !String(value).trim()) {
+    return [];
+  }
+  return Array.from(
+    new Set(
+      String(value)
+        .split(/\r?\n/)
+        .map((proxy) => proxy.trim())
+        .filter(Boolean),
+    ),
+  );
+};
+
+const formatProxyPool = (value) => {
+  if (!Array.isArray(value)) {
+    return '';
+  }
+  return value
+    .map((proxy) => String(proxy).trim())
+    .filter(Boolean)
+    .join('\n');
+};
+
 const validateModelRPMLimits = (value) => {
   if (!value || !String(value).trim()) {
     return true;
@@ -283,6 +307,7 @@ const EditChannelModal = (props) => {
     rpm_limit: 0,
     model_rpm_limits: '',
     proxy: '',
+    proxy_pool: '',
     pass_through_body_enabled: false,
     system_prompt: '',
     system_prompt_override: false,
@@ -615,6 +640,7 @@ const EditChannelModal = (props) => {
     rpm_limit: 0,
     model_rpm_limits: '',
     proxy: '',
+    proxy_pool: '',
     pass_through_body_enabled: false,
     system_prompt: '',
   });
@@ -992,6 +1018,7 @@ const EditChannelModal = (props) => {
             parsedSettings.model_rpm_limits,
           );
           data.proxy = parsedSettings.proxy || '';
+          data.proxy_pool = formatProxyPool(parsedSettings.proxy_pool);
           data.pass_through_body_enabled =
             parsedSettings.pass_through_body_enabled || false;
           data.system_prompt = parsedSettings.system_prompt || '';
@@ -1012,6 +1039,7 @@ const EditChannelModal = (props) => {
           data.rpm_limit = 0;
           data.model_rpm_limits = '';
           data.proxy = '';
+          data.proxy_pool = '';
           data.pass_through_body_enabled = false;
           data.system_prompt = '';
           data.system_prompt_override = false;
@@ -1029,6 +1057,7 @@ const EditChannelModal = (props) => {
         data.rpm_limit = 0;
         data.model_rpm_limits = '';
         data.proxy = '';
+        data.proxy_pool = '';
         data.pass_through_body_enabled = false;
         data.system_prompt = '';
         data.system_prompt_override = false;
@@ -1147,6 +1176,7 @@ const EditChannelModal = (props) => {
         rpm_limit: data.rpm_limit,
         model_rpm_limits: data.model_rpm_limits,
         proxy: data.proxy,
+        proxy_pool: data.proxy_pool,
         pass_through_body_enabled: data.pass_through_body_enabled,
         system_prompt: data.system_prompt,
         system_prompt_override: data.system_prompt_override || false,
@@ -1188,6 +1218,7 @@ const EditChannelModal = (props) => {
         (data.priority && data.priority !== 0) ||
         (data.weight && data.weight !== 0) ||
         (data.proxy && data.proxy.trim()) ||
+        (data.proxy_pool && data.proxy_pool.trim()) ||
         (data.system_prompt && data.system_prompt.trim()) ||
         data.thinking_to_content ||
         data.enable_http2 ||
@@ -1554,11 +1585,12 @@ const EditChannelModal = (props) => {
       rpm_limit: 0,
       model_rpm_limits: '',
       proxy: '',
-    pass_through_body_enabled: false,
-    system_prompt: '',
-    system_prompt_override: false,
-    override_error_as_429: false,
-  });
+      proxy_pool: '',
+      pass_through_body_enabled: false,
+      system_prompt: '',
+      system_prompt_override: false,
+      override_error_as_429: false,
+    });
     // 重置密钥模式状态
     setKeyMode('append');
     // 重置企业账户状态
@@ -1943,6 +1975,7 @@ const EditChannelModal = (props) => {
       ),
       model_rpm_limits: parseModelRPMLimits(localInputs.model_rpm_limits),
       proxy: localInputs.proxy || '',
+      proxy_pool: parseProxyPool(localInputs.proxy_pool),
       pass_through_body_enabled: localInputs.pass_through_body_enabled || false,
       system_prompt: localInputs.system_prompt || '',
       system_prompt_override: localInputs.system_prompt_override || false,
@@ -2033,6 +2066,7 @@ const EditChannelModal = (props) => {
     delete localInputs.rpm_limit;
     delete localInputs.model_rpm_limits;
     delete localInputs.proxy;
+    delete localInputs.proxy_pool;
     delete localInputs.pass_through_body_enabled;
     delete localInputs.system_prompt;
     delete localInputs.system_prompt_override;
@@ -2737,6 +2771,8 @@ const EditChannelModal = (props) => {
                   <Form.Switch field='pass_through_body_enabled' label={t('透传请求体')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('pass_through_body_enabled', value)} extraText={t('启用请求体透传功能')} />
 
                   <Form.Input field='proxy' label={t('代理地址')} placeholder={t('例如: socks5://user:pass@host:port')} onChange={(value) => handleChannelSettingsChange('proxy', value)} showClear extraText={t('用于配置网络代理，支持 socks5 协议')} />
+
+                  <Form.TextArea field='proxy_pool' label={t('代理池')} placeholder={'socks5://user:pass@host1:port\nsocks5://user:pass@host2:port'} onChange={(value) => handleChannelSettingsChange('proxy_pool', value)} autosize showClear extraText={t('每行一个代理；多密钥轮询时，每个密钥按下标使用代理池中对应的代理')} />
 
                   <Form.TextArea field='system_prompt' label={t('系统提示词')} placeholder={t('输入系统提示词，用户的系统提示词将优先于此设置')} onChange={(value) => handleChannelSettingsChange('system_prompt', value)} autosize showClear extraText={t('用户优先：如果用户在请求中指定了系统提示词，将优先使用用户的设置')} />
                   <Form.Switch field='system_prompt_override' label={t('系统提示词拼接')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('system_prompt_override', value)} extraText={t('如果用户请求中包含系统提示词，则使用此设置拼接到用户的系统提示词前面')} />
