@@ -2772,7 +2772,7 @@ const EditChannelModal = (props) => {
 
                   <Form.Input field='proxy' label={t('代理地址')} placeholder={t('例如: socks5://user:pass@host:port')} onChange={(value) => handleChannelSettingsChange('proxy', value)} showClear extraText={t('用于配置网络代理，支持 socks5 协议')} />
 
-                  <Form.TextArea field='proxy_pool' label={t('代理池')} placeholder={'socks5://user:pass@host1:port\nsocks5://user:pass@host2:port'} onChange={(value) => handleChannelSettingsChange('proxy_pool', value)} autosize showClear extraText={t('每行一个代理；多密钥轮询时，每个密钥按下标使用代理池中对应的代理')} />
+                  <Form.TextArea field='proxy_pool' label={t('代理池')} placeholder={'socks5://user:pass@host1:port\nsocks5://user:pass@host2:port'} onChange={(value) => handleChannelSettingsChange('proxy_pool', value)} autosize showClear extraText={t('每行一个代理；多密钥轮询或按序模式时，每个密钥按下标使用代理池中对应的代理')} />
 
                   <Form.TextArea field='system_prompt' label={t('系统提示词')} placeholder={t('输入系统提示词，用户的系统提示词将优先于此设置')} onChange={(value) => handleChannelSettingsChange('system_prompt', value)} autosize showClear extraText={t('用户优先：如果用户在请求中指定了系统提示词，将优先使用用户的设置')} />
                   <Form.Switch field='system_prompt_override' label={t('系统提示词拼接')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('system_prompt_override', value)} extraText={t('如果用户请求中包含系统提示词，则使用此设置拼接到用户的系统提示词前面')} />

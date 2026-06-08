@@ -3461,7 +3461,7 @@ export function ChannelMutateDrawer({
                           <FormControl>
                             <Textarea
                               placeholder={t(
-                                'One proxy per line, for multi-key polling'
+                                'One proxy per line, for multi-key polling or sequential mode'
                               )}
                               rows={4}
                               {...field}
@@ -3469,7 +3469,7 @@ export function ChannelMutateDrawer({
                           </FormControl>
                           <FormDescription>
                             {t(
-                              'When multi-key polling is enabled, each key uses the proxy at the matching proxy pool position'
+                              'When multi-key polling or sequential mode is enabled, each key uses the proxy at the matching proxy pool position'
                             )}
                           </FormDescription>
                           <FormMessage />
