@@ -4937,6 +4937,9 @@
     "Zero retention": "Zero retention",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "Proxy Pool": "Proxy Pool",
+    "Proxy Pool Retry Status Codes": "Proxy Pool Retry Status Codes",
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry"
   }
 }

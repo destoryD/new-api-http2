@@ -4937,6 +4937,9 @@
     "Zero retention": "Không lưu dữ liệu",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "Proxy Pool": "Nh?m proxy",
+    "Proxy Pool Retry Status Codes": "M? tr?ng th?i th? l?i c?a nh?m proxy",
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Khi upstream tr? v? c?c m? tr?ng th?i HTTP n?y, t? ??ng chuy?n sang proxy ti?p theo trong nh?m proxy v? th? l?i"
   }
 }

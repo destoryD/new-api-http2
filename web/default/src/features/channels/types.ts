@@ -91,6 +91,8 @@ export interface ChannelSettings {
   rpm_limit?: number
   model_rpm_limits?: Record<string, number>
   proxy?: string
+  proxy_pool?: string[]
+  proxy_pool_retry_status_codes?: number[]
   pass_through_body_enabled?: boolean
   system_prompt?: string
   system_prompt_override?: boolean

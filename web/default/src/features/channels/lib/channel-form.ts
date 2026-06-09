@@ -202,6 +202,8 @@ export const channelFormSchema = z
     allowed_endpoint_types: z.array(z.string()).optional(),
     override_error_as_429: z.boolean().optional(),
     proxy: z.string().optional(),
+    proxy_pool: z.string().optional(),
+    proxy_pool_retry_status_codes: z.string().optional().refine(validateStatusCodeList, 'Status codes must be comma-separated integers from 100 to 599'),
     pass_through_body_enabled: z.boolean().optional(),
     system_prompt: z.string().optional(),
     system_prompt_override: z.boolean().optional(),
@@ -351,6 +353,8 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   allowed_endpoint_types: [],
   override_error_as_429: false,
   proxy: '',
+  proxy_pool: '',
+  proxy_pool_retry_status_codes: '',
   pass_through_body_enabled: false,
   system_prompt: '',
   system_prompt_override: false,
@@ -394,6 +398,8 @@ export function transformChannelToFormDefaults(
     model_rpm_limits: '',
     allowed_endpoint_types: [] as string[],
     proxy: '',
+    proxy_pool: '',
+    proxy_pool_retry_status_codes: '',
     pass_through_body_enabled: false,
     system_prompt: '',
     system_prompt_override: false,
@@ -417,6 +423,10 @@ export function transformChannelToFormDefaults(
         ),
         override_error_as_429: parsed.override_error_as_429 || false,
         proxy: parsed.proxy || '',
+        proxy_pool: formatProxyPool(parsed.proxy_pool),
+        proxy_pool_retry_status_codes: formatStatusCodeList(
+          parsed.proxy_pool_retry_status_codes
+        ),
         pass_through_body_enabled: parsed.pass_through_body_enabled || false,
         system_prompt: parsed.system_prompt || '',
         system_prompt_override: parsed.system_prompt_override || false,
@@ -545,11 +555,50 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     ),
     override_error_as_429: formData.override_error_as_429 || false,
     proxy: formData.proxy || '',
+    proxy_pool: parseProxyPool(formData.proxy_pool),
+    proxy_pool_retry_status_codes: parseStatusCodeList(
+      formData.proxy_pool_retry_status_codes
+    ),
     pass_through_body_enabled: formData.pass_through_body_enabled || false,
     system_prompt: formData.system_prompt || '',
     system_prompt_override: formData.system_prompt_override || false,
   }
   return JSON.stringify(settingObj)
+}
+
+function parseProxyPool(value: string | undefined): string[] {
+  return String(value || '')
+    .split(/\r?\n/)
+    .map((proxy) => proxy.trim())
+    .filter(Boolean)
+}
+
+function formatProxyPool(value: unknown): string {
+  if (!Array.isArray(value)) return ''
+  return value.map((proxy) => String(proxy).trim()).filter(Boolean).join('\n')
+}
+
+function parseStatusCodeList(value: string | undefined): number[] {
+  return String(value || '')
+    .split(',')
+    .map((code) => Number(code.trim()))
+    .filter((code) => Number.isInteger(code) && code >= 100 && code <= 599)
+}
+
+function formatStatusCodeList(value: unknown): string {
+  if (!Array.isArray(value)) return ''
+  return value
+    .map((code) => Number(code))
+    .filter((code) => Number.isInteger(code) && code >= 100 && code <= 599)
+    .join(', ')
+}
+
+function validateStatusCodeList(value: string | undefined): boolean {
+  if (!value?.trim()) return true
+  return value.split(',').every((code) => {
+    const statusCode = Number(code.trim())
+    return Number.isInteger(statusCode) && statusCode >= 100 && statusCode <= 599
+  })
 }
 
 function normalizeAllowedEndpointTypes(value: unknown): string[] {

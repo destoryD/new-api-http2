@@ -12,6 +12,7 @@ import (
 	"time"
 
 	common2 "github.com/QuantumNous/new-api/common"
+	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
@@ -304,6 +305,43 @@ func applyHeaderOverrideToRequest(req *http.Request, headerOverride map[string]s
 	}
 }
 
+func ensureReplayableRequestBody(req *http.Request, requestBody io.Reader) {
+	if req == nil || requestBody == nil || req.GetBody != nil {
+		return
+	}
+	readSeeker, ok := requestBody.(io.ReadSeeker)
+	if !ok {
+		return
+	}
+	req.GetBody = func() (io.ReadCloser, error) {
+		if _, err := readSeeker.Seek(0, io.SeekStart); err != nil {
+			return nil, err
+		}
+		return io.NopCloser(readSeeker), nil
+	}
+}
+
+func cloneRequestForProxyPoolRetry(req *http.Request) (*http.Request, error) {
+	if req == nil {
+		return nil, errors.New("request is nil")
+	}
+	cloned := req.Clone(req.Context())
+	if req.GetBody != nil {
+		body, err := req.GetBody()
+		if err != nil {
+			return nil, err
+		}
+		cloned.Body = body
+		cloned.GetBody = req.GetBody
+		return cloned, nil
+	}
+	if req.Body == nil || req.Body == http.NoBody {
+		cloned.Body = http.NoBody
+		return cloned, nil
+	}
+	return nil, errors.New("request body is not replayable")
+}
+
 func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*http.Response, error) {
 	fullRequestURL, err := a.GetRequestURL(info)
 	if err != nil {
@@ -315,6 +353,7 @@ func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		return nil, fmt.Errorf("new request failed: %w", err)
 	}
 	applyUpstreamContentLength(req, info)
+	ensureReplayableRequestBody(req, requestBody)
 	headers := req.Header
 	err = a.SetupRequestHeader(c, &headers, info)
 	if err != nil {
@@ -345,6 +384,7 @@ func DoFormRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBod
 		return nil, fmt.Errorf("new request failed: %w", err)
 	}
 	applyUpstreamContentLength(req, info)
+	ensureReplayableRequestBody(req, requestBody)
 	// set form data
 	req.Header.Set("Content-Type", c.Request.Header.Get("Content-Type"))
 	headers := req.Header
@@ -522,6 +562,10 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	if resp == nil {
 		return nil, errors.New("resp is nil")
 	}
+	resp, err = retryWithNextProxyPoolOnStatusCode(c, req, info, resp)
+	if err != nil {
+		return nil, err
+	}
 	if enableHttp2 && resp.ProtoMajor != 2 {
 		err = fmt.Errorf("HTTP/2 is enabled for this channel but upstream responded with %s; the upstream backend may not support HTTP/2", resp.Proto)
 		logger.LogError(c, err.Error())
@@ -540,6 +584,65 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	return resp, nil
 }
 
+func retryWithNextProxyPoolOnStatusCode(c *gin.Context, req *http.Request, info *common.RelayInfo, resp *http.Response) (*http.Response, error) {
+	proxyPool := dto.NormalizeProxyPool(info.ChannelSetting.ProxyPool)
+	if resp == nil || len(proxyPool) == 0 || len(info.ChannelSetting.ProxyPoolRetryStatusCodes) == 0 {
+		return resp, nil
+	}
+	if !info.ChannelSetting.ShouldRetryWithProxyPoolStatusCode(resp.StatusCode) {
+		return resp, nil
+	}
+
+	baseIndex := -1
+	if info.ChannelMeta != nil && info.ChannelIsMultiKey {
+		baseIndex = info.ChannelMultiKeyIndex
+	}
+	maxRetries := len(proxyPool)
+	if info.ChannelSetting.Proxy != "" {
+		for i, proxyURL := range proxyPool {
+			if proxyURL == info.ChannelSetting.Proxy {
+				baseIndex = i
+				maxRetries = len(proxyPool) - 1
+				break
+			}
+		}
+	}
+	if maxRetries <= 0 {
+		return resp, nil
+	}
+
+	lastResp := resp
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if !info.ChannelSetting.ShouldRetryWithProxyPoolStatusCode(lastResp.StatusCode) {
+			return lastResp, nil
+		}
+
+		retryReq, err := cloneRequestForProxyPoolRetry(req)
+		if err != nil {
+			logger.LogError(c, "proxy pool retry skipped: "+err.Error())
+			return lastResp, nil
+		}
+		if lastResp.Body != nil {
+			_ = lastResp.Body.Close()
+		}
+		retrySetting := info.ChannelSetting.WithProxyPoolIndex(baseIndex + attempt)
+		retryClient, err := service.GetChannelHttpClient(retrySetting)
+		if err != nil {
+			return nil, fmt.Errorf("get proxy pool retry client failed: %w", err)
+		}
+		logger.LogInfo(c, fmt.Sprintf("proxy pool retry: status code %d, switching proxy to index %d", lastResp.StatusCode, (baseIndex+attempt)%len(proxyPool)))
+		lastResp, err = retryClient.Do(retryReq)
+		if err != nil {
+			logger.LogError(c, "proxy pool retry request failed: "+err.Error())
+			return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: proxy pool retry failed"))
+		}
+		if lastResp == nil {
+			return nil, errors.New("resp is nil")
+		}
+	}
+	return lastResp, nil
+}
+
 func DoTaskApiRequest(a TaskAdaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*http.Response, error) {
 	fullRequestURL, err := a.BuildRequestURL(info)
 	if err != nil {
@@ -550,8 +653,11 @@ func DoTaskApiRequest(a TaskAdaptor, c *gin.Context, info *common.RelayInfo, req
 		return nil, fmt.Errorf("new request failed: %w", err)
 	}
 	applyUpstreamContentLength(req, info)
-	req.GetBody = func() (io.ReadCloser, error) {
-		return io.NopCloser(requestBody), nil
+	ensureReplayableRequestBody(req, requestBody)
+	if req.GetBody == nil {
+		req.GetBody = func() (io.ReadCloser, error) {
+			return io.NopCloser(requestBody), nil
+		}
 	}
 
 	err = a.BuildRequestHeader(c, req, info)

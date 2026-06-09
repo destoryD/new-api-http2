@@ -216,6 +216,8 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.priority ||
     values.weight ||
     values.proxy?.trim() ||
+    values.proxy_pool?.trim() ||
+    values.proxy_pool_retry_status_codes?.trim() ||
     values.system_prompt?.trim() ||
     values.force_format ||
     values.thinking_to_content ||
@@ -3323,6 +3325,52 @@ export function ChannelMutateDrawer({
                             <FormDescription>
                               {t(
                                 'Network proxy for this channel (supports socks5 protocol)'
+                              )}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='proxy_pool'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('Proxy Pool')}</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder={t(
+                                  'One proxy per line, for multi-key polling or sequential mode'
+                                )}
+                                rows={3}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'When multi-key polling or sequential mode is enabled, each key uses the proxy at the matching proxy pool position'
+                              )}
+                            </FormDescription>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='proxy_pool_retry_status_codes'
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>
+                              {t('Proxy Pool Retry Status Codes')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input placeholder='503, 502' {...field} />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry'
                               )}
                             </FormDescription>
                             <FormMessage />
