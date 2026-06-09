@@ -3,22 +3,23 @@ package dto
 import "strings"
 
 type ChannelSettings struct {
-	ForceFormat            bool           `json:"force_format,omitempty"`
-	ThinkingToContent      bool           `json:"thinking_to_content,omitempty"`
-	Proxy                  string         `json:"proxy"`
-	ProxyPool              []string       `json:"proxy_pool,omitempty"`
-	PassThroughBodyEnabled bool           `json:"pass_through_body_enabled,omitempty"`
-	SystemPrompt           string         `json:"system_prompt,omitempty"`
-	SystemPromptOverride   bool           `json:"system_prompt_override,omitempty"`
-	EnableHttp2            bool           `json:"enable_http2,omitempty"`
-	DisableHttp2           bool           `json:"disable_http2,omitempty"`
-	DisableConnectionReuse bool           `json:"disable_connection_reuse,omitempty"`
-	ModelNameOverride      bool           `json:"model_name_override,omitempty"`
-	NonStreamToStream      bool           `json:"non_stream_to_stream,omitempty"`
-	AllowedEndpointTypes   []string       `json:"allowed_endpoint_types,omitempty"`
-	RPMLimit               int            `json:"rpm_limit,omitempty"`
-	ModelRPMLimits         map[string]int `json:"model_rpm_limits,omitempty"`
-	OverrideErrorAs429     bool           `json:"override_error_as_429,omitempty"`
+	ForceFormat               bool           `json:"force_format,omitempty"`
+	ThinkingToContent         bool           `json:"thinking_to_content,omitempty"`
+	Proxy                     string         `json:"proxy"`
+	ProxyPool                 []string       `json:"proxy_pool,omitempty"`
+	ProxyPoolRetryStatusCodes []int          `json:"proxy_pool_retry_status_codes,omitempty"`
+	PassThroughBodyEnabled    bool           `json:"pass_through_body_enabled,omitempty"`
+	SystemPrompt              string         `json:"system_prompt,omitempty"`
+	SystemPromptOverride      bool           `json:"system_prompt_override,omitempty"`
+	EnableHttp2               bool           `json:"enable_http2,omitempty"`
+	DisableHttp2              bool           `json:"disable_http2,omitempty"`
+	DisableConnectionReuse    bool           `json:"disable_connection_reuse,omitempty"`
+	ModelNameOverride         bool           `json:"model_name_override,omitempty"`
+	NonStreamToStream         bool           `json:"non_stream_to_stream,omitempty"`
+	AllowedEndpointTypes      []string       `json:"allowed_endpoint_types,omitempty"`
+	RPMLimit                  int            `json:"rpm_limit,omitempty"`
+	ModelRPMLimits            map[string]int `json:"model_rpm_limits,omitempty"`
+	OverrideErrorAs429        bool           `json:"override_error_as_429,omitempty"`
 }
 
 func NormalizeProxyPool(proxyPool []string) []string {
@@ -45,6 +46,18 @@ func (s ChannelSettings) WithProxyPoolIndex(index int) ChannelSettings {
 	}
 	s.Proxy = proxyPool[index%len(proxyPool)]
 	return s
+}
+
+func (s ChannelSettings) ShouldRetryWithProxyPoolStatusCode(statusCode int) bool {
+	if statusCode < 100 || statusCode > 599 || len(s.ProxyPoolRetryStatusCodes) == 0 {
+		return false
+	}
+	for _, code := range s.ProxyPoolRetryStatusCodes {
+		if code == statusCode {
+			return true
+		}
+	}
+	return false
 }
 
 type VertexKeyType string

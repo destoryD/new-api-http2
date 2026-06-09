@@ -214,6 +214,32 @@ const formatProxyPool = (value) => {
     .join('\n');
 };
 
+const parseStatusCodeList = (value) => {
+  if (!value || !String(value).trim()) {
+    return [];
+  }
+  return Array.from(
+    new Set(
+      String(value)
+        .split(/[,\s]+/)
+        .map((code) => Number(String(code).trim()))
+        .filter(
+          (code) => Number.isInteger(code) && code >= 100 && code <= 599,
+        ),
+    ),
+  );
+};
+
+const formatStatusCodeList = (value) => {
+  if (!Array.isArray(value)) {
+    return '';
+  }
+  return value
+    .map((code) => Number(code))
+    .filter((code) => Number.isInteger(code) && code >= 100 && code <= 599)
+    .join(', ');
+};
+
 const validateModelRPMLimits = (value) => {
   if (!value || !String(value).trim()) {
     return true;
@@ -308,6 +334,7 @@ const EditChannelModal = (props) => {
     model_rpm_limits: '',
     proxy: '',
     proxy_pool: '',
+    proxy_pool_retry_status_codes: '',
     pass_through_body_enabled: false,
     system_prompt: '',
     system_prompt_override: false,
@@ -641,6 +668,7 @@ const EditChannelModal = (props) => {
     model_rpm_limits: '',
     proxy: '',
     proxy_pool: '',
+    proxy_pool_retry_status_codes: '',
     pass_through_body_enabled: false,
     system_prompt: '',
   });
@@ -1019,6 +1047,9 @@ const EditChannelModal = (props) => {
           );
           data.proxy = parsedSettings.proxy || '';
           data.proxy_pool = formatProxyPool(parsedSettings.proxy_pool);
+          data.proxy_pool_retry_status_codes = formatStatusCodeList(
+            parsedSettings.proxy_pool_retry_status_codes,
+          );
           data.pass_through_body_enabled =
             parsedSettings.pass_through_body_enabled || false;
           data.system_prompt = parsedSettings.system_prompt || '';
@@ -1040,6 +1071,7 @@ const EditChannelModal = (props) => {
           data.model_rpm_limits = '';
           data.proxy = '';
           data.proxy_pool = '';
+          data.proxy_pool_retry_status_codes = '';
           data.pass_through_body_enabled = false;
           data.system_prompt = '';
           data.system_prompt_override = false;
@@ -1058,6 +1090,7 @@ const EditChannelModal = (props) => {
         data.model_rpm_limits = '';
         data.proxy = '';
         data.proxy_pool = '';
+        data.proxy_pool_retry_status_codes = '';
         data.pass_through_body_enabled = false;
         data.system_prompt = '';
         data.system_prompt_override = false;
@@ -1177,6 +1210,7 @@ const EditChannelModal = (props) => {
         model_rpm_limits: data.model_rpm_limits,
         proxy: data.proxy,
         proxy_pool: data.proxy_pool,
+        proxy_pool_retry_status_codes: data.proxy_pool_retry_status_codes,
         pass_through_body_enabled: data.pass_through_body_enabled,
         system_prompt: data.system_prompt,
         system_prompt_override: data.system_prompt_override || false,
@@ -1219,6 +1253,8 @@ const EditChannelModal = (props) => {
         (data.weight && data.weight !== 0) ||
         (data.proxy && data.proxy.trim()) ||
         (data.proxy_pool && data.proxy_pool.trim()) ||
+        (data.proxy_pool_retry_status_codes &&
+          data.proxy_pool_retry_status_codes.trim()) ||
         (data.system_prompt && data.system_prompt.trim()) ||
         data.thinking_to_content ||
         data.enable_http2 ||
@@ -1586,6 +1622,7 @@ const EditChannelModal = (props) => {
       model_rpm_limits: '',
       proxy: '',
       proxy_pool: '',
+      proxy_pool_retry_status_codes: '',
       pass_through_body_enabled: false,
       system_prompt: '',
       system_prompt_override: false,
@@ -1976,6 +2013,9 @@ const EditChannelModal = (props) => {
       model_rpm_limits: parseModelRPMLimits(localInputs.model_rpm_limits),
       proxy: localInputs.proxy || '',
       proxy_pool: parseProxyPool(localInputs.proxy_pool),
+      proxy_pool_retry_status_codes: parseStatusCodeList(
+        localInputs.proxy_pool_retry_status_codes,
+      ),
       pass_through_body_enabled: localInputs.pass_through_body_enabled || false,
       system_prompt: localInputs.system_prompt || '',
       system_prompt_override: localInputs.system_prompt_override || false,
@@ -2067,6 +2107,7 @@ const EditChannelModal = (props) => {
     delete localInputs.model_rpm_limits;
     delete localInputs.proxy;
     delete localInputs.proxy_pool;
+    delete localInputs.proxy_pool_retry_status_codes;
     delete localInputs.pass_through_body_enabled;
     delete localInputs.system_prompt;
     delete localInputs.system_prompt_override;
@@ -2773,6 +2814,8 @@ const EditChannelModal = (props) => {
                   <Form.Input field='proxy' label={t('代理地址')} placeholder={t('例如: socks5://user:pass@host:port')} onChange={(value) => handleChannelSettingsChange('proxy', value)} showClear extraText={t('用于配置网络代理，支持 socks5 协议')} />
 
                   <Form.TextArea field='proxy_pool' label={t('代理池')} placeholder={'socks5://user:pass@host1:port\nsocks5://user:pass@host2:port'} onChange={(value) => handleChannelSettingsChange('proxy_pool', value)} autosize showClear extraText={t('每行一个代理；多密钥轮询或按序模式时，每个密钥按下标使用代理池中对应的代理')} />
+
+                  <Form.Input field='proxy_pool_retry_status_codes' label={t('代理池切换状态码')} placeholder='503, 502' onChange={(value) => handleChannelSettingsChange('proxy_pool_retry_status_codes', value)} showClear extraText={t('上游返回这些 HTTP 状态码时，自动切换到代理池中的下一个代理重试')} />
 
                   <Form.TextArea field='system_prompt' label={t('系统提示词')} placeholder={t('输入系统提示词，用户的系统提示词将优先于此设置')} onChange={(value) => handleChannelSettingsChange('system_prompt', value)} autosize showClear extraText={t('用户优先：如果用户在请求中指定了系统提示词，将优先使用用户的设置')} />
                   <Form.Switch field='system_prompt_override' label={t('系统提示词拼接')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('system_prompt_override', value)} extraText={t('如果用户请求中包含系统提示词，则使用此设置拼接到用户的系统提示词前面')} />
