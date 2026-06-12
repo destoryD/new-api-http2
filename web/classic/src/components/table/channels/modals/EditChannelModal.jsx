@@ -330,6 +330,7 @@ const EditChannelModal = (props) => {
     allowed_endpoint_types: [],
     rpm_limit: 0,
     multi_key_rpm_limit: 0,
+    multi_key_429_skip_seconds: 60,
     model_rpm_limits: '',
     proxy: '',
     proxy_pool: '',
@@ -664,6 +665,7 @@ const EditChannelModal = (props) => {
     allowed_endpoint_types: [],
     rpm_limit: 0,
     multi_key_rpm_limit: 0,
+    multi_key_429_skip_seconds: 60,
     model_rpm_limits: '',
     proxy: '',
     proxy_pool: '',
@@ -1045,6 +1047,10 @@ const EditChannelModal = (props) => {
             0,
             Math.floor(Number(parsedSettings.multi_key_rpm_limit) || 0),
           );
+          data.multi_key_429_skip_seconds = Math.max(
+            0,
+            Math.floor(Number(parsedSettings.multi_key_429_skip_seconds) || 60),
+          );
           data.model_rpm_limits = formatModelRPMLimits(
             parsedSettings.model_rpm_limits,
           );
@@ -1072,6 +1078,7 @@ const EditChannelModal = (props) => {
           data.allowed_endpoint_types = [];
           data.rpm_limit = 0;
           data.multi_key_rpm_limit = 0;
+          data.multi_key_429_skip_seconds = 60;
           data.model_rpm_limits = '';
           data.proxy = '';
           data.proxy_pool = '';
@@ -1092,6 +1099,7 @@ const EditChannelModal = (props) => {
         data.allowed_endpoint_types = [];
         data.rpm_limit = 0;
         data.multi_key_rpm_limit = 0;
+        data.multi_key_429_skip_seconds = 60;
         data.model_rpm_limits = '';
         data.proxy = '';
         data.proxy_pool = '';
@@ -1213,6 +1221,7 @@ const EditChannelModal = (props) => {
         allowed_endpoint_types: data.allowed_endpoint_types,
         rpm_limit: data.rpm_limit,
         multi_key_rpm_limit: data.multi_key_rpm_limit,
+        multi_key_429_skip_seconds: data.multi_key_429_skip_seconds,
         model_rpm_limits: data.model_rpm_limits,
         proxy: data.proxy,
         proxy_pool: data.proxy_pool,
@@ -1272,6 +1281,7 @@ const EditChannelModal = (props) => {
           data.allowed_endpoint_types.length > 0) ||
         data.rpm_limit ||
         data.multi_key_rpm_limit ||
+        data.multi_key_429_skip_seconds !== 60 ||
         (data.model_rpm_limits && data.model_rpm_limits.trim()) ||
         data.pass_through_body_enabled ||
         data.force_format ||
@@ -1622,6 +1632,7 @@ const EditChannelModal = (props) => {
       allowed_endpoint_types: [],
       rpm_limit: 0,
       multi_key_rpm_limit: 0,
+      multi_key_429_skip_seconds: 60,
       model_rpm_limits: '',
       proxy: '',
       proxy_pool: '',
@@ -2017,6 +2028,10 @@ const EditChannelModal = (props) => {
         0,
         Math.floor(Number(localInputs.multi_key_rpm_limit) || 0),
       ),
+      multi_key_429_skip_seconds: Math.max(
+        0,
+        Math.floor(Number(localInputs.multi_key_429_skip_seconds) || 60),
+      ),
       model_rpm_limits: parseModelRPMLimits(localInputs.model_rpm_limits),
       proxy: localInputs.proxy || '',
       proxy_pool: parseProxyPool(localInputs.proxy_pool),
@@ -2112,6 +2127,7 @@ const EditChannelModal = (props) => {
     delete localInputs.allowed_endpoint_types;
     delete localInputs.rpm_limit;
     delete localInputs.multi_key_rpm_limit;
+    delete localInputs.multi_key_429_skip_seconds;
     delete localInputs.model_rpm_limits;
     delete localInputs.proxy;
     delete localInputs.proxy_pool;
@@ -2817,6 +2833,7 @@ const EditChannelModal = (props) => {
                   <Form.Select field='allowed_endpoint_types' label={t('允许的访问端口类型')} placeholder={t('选择访问端口类型')} multiple optionList={CHANNEL_ENDPOINT_TYPE_OPTIONS} style={{ width: '100%' }} onChange={(value) => handleChannelSettingsChange('allowed_endpoint_types', normalizeAllowedEndpointTypes(value))} extraText={t('仅允许选中的端口类型使用该渠道，留空表示全部允许')} />
                   <Form.InputNumber field='rpm_limit' label={t('渠道 RPM 限制')} min={0} step={1} placeholder='0' onNumberChange={(value) => handleChannelSettingsChange('rpm_limit', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('限制该渠道每分钟请求数，0 表示不限制')} />
                   <Form.InputNumber field='multi_key_rpm_limit' label={t('单密钥 RPM 限制')} min={0} step={1} placeholder='0' onNumberChange={(value) => handleChannelSettingsChange('multi_key_rpm_limit', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('多密钥轮询模式下，当前密钥达到该每分钟请求数后切换到下一个密钥；0 表示保持普通轮询')} />
+                  <Form.InputNumber field='multi_key_429_skip_seconds' label={t('按序 429 跳过时长')} min={0} step={1} placeholder='60' onNumberChange={(value) => handleChannelSettingsChange('multi_key_429_skip_seconds', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('多密钥按序模式下，密钥返回 429 后临时跳过的秒数；0 表示使用 60 秒')} />
                   <Form.TextArea field='model_rpm_limits' label={t('模型 RPM 限制')} placeholder='{"gpt-4o": 60}' onChange={(value) => handleChannelSettingsChange('model_rpm_limits', value)} autosize showClear extraText={t('按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制')} />
                   <Form.Switch field='pass_through_body_enabled' label={t('透传请求体')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('pass_through_body_enabled', value)} extraText={t('启用请求体透传功能')} />
 

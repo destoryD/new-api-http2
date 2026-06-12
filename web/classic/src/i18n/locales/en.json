@@ -89,6 +89,8 @@
     "按量计费": "Pay as you go",
     "按量计费下需要先填写输入价格，才能保存其它价格项。": "For per-token billing, fill in the input price before saving other price fields.",
     "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Limit requests per minute per model for this channel. JSON object; leave empty for unlimited.",
+    "按序 429 跳过时长": "Sequential 429 skip duration",
+    "多密钥按序模式下，密钥返回 429 后临时跳过的秒数；0 表示使用 60 秒": "In sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds.",
     "按顺序替换content中的变量占位符": "Replace variable placeholders in content in order",
     "按照如下格式输入：AccessKey|SecretAccessKey|Region": "Enter in the format: AccessKey|SecretAccessKey|Region",
     "按K显示单位": "Display in K",
