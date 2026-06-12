@@ -1939,6 +1939,7 @@
     "footer.defaultCopyright": "版权所有。",
     "footer.new\u0061pi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "对于 2025 年 5 月 10 日之后添加的渠道，在部署时无需从模型名称中移除 \".\"",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "????????????????????????????????0 ????????",
     "For private deployments, format: https://fastgpt.run/api/openapi": "对于私有部署，格式为：https://fastgpt.run/api/openapi",
     "Force a syntactically valid JSON response": "强制返回语法合法的 JSON",
     "Force AUTH LOGIN": "强制 AUTH LOGIN",
@@ -3999,6 +4000,7 @@
     "Simple mode only returns message; status code and error type use system defaults.": "简洁模式仅返回 message；状态码和错误类型将使用系统默认值。",
     "Simple mode: prune objects by type, e.g. redacted_thinking.": "简洁模式：按 type 全量清理对象，例如 redacted_thinking。",
     "Single Key": "单密钥",
+    "Single-Key RPM Limit": "单 Key RPM 限制",
     "Site & Branding": "站点与品牌",
     "Site Key": "站点密钥",
     "Size:": "大小：",
@@ -4940,6 +4942,7 @@
     "Zoom": "缩放",
     "Proxy Pool": "???",
     "Proxy Pool Retry Status Codes": "????????",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "?????? HTTP ??????????????????????"
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "?????? HTTP ??????????????????????",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "限制多密钥渠道中每个密钥的每分钟请求数，0 表示不限制"
   }
 }

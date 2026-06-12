@@ -1939,6 +1939,7 @@
     "footer.defaultCopyright": "All rights reserved.",
     "footer.new\u0061pi.projectAttributionSuffix": "All rights reserved. Designed and developed by the project contributors.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling",
     "For private deployments, format: https://fastgpt.run/api/openapi": "For private deployments, format: https://fastgpt.run/api/openapi",
     "Force a syntactically valid JSON response": "Force a syntactically valid JSON response",
     "Force AUTH LOGIN": "Force AUTH LOGIN",
@@ -3999,6 +4000,7 @@
     "Simple mode only returns message; status code and error type use system defaults.": "Simple mode only returns message; status code and error type use system defaults.",
     "Simple mode: prune objects by type, e.g. redacted_thinking.": "Simple mode: prune objects by type, e.g. redacted_thinking.",
     "Single Key": "Single Key",
+    "Single-Key RPM Limit": "Single-Key RPM Limit",
     "Site & Branding": "Site & Branding",
     "Site Key": "Site Key",
     "Size:": "Size:",
@@ -4940,6 +4942,7 @@
     "Zoom": "Zoom",
     "Proxy Pool": "Proxy Pool",
     "Proxy Pool Retry Status Codes": "Proxy Pool Retry Status Codes",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry"
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited"
   }
 }

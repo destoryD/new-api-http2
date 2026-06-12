@@ -23,6 +23,7 @@ type ChannelSettings struct {
 	AllowedEndpointTypes      []string       `json:"allowed_endpoint_types,omitempty"`
 	RPMLimit                  int            `json:"rpm_limit,omitempty"`
 	ModelRPMLimits            map[string]int `json:"model_rpm_limits,omitempty"`
+	MultiKeyRPMLimit          int            `json:"multi_key_rpm_limit,omitempty"`
 	OverrideErrorAs429        bool           `json:"override_error_as_429,omitempty"`
 }
 

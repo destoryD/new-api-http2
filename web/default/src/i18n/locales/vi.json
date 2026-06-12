@@ -1939,6 +1939,7 @@
     "footer.defaultCopyright": "Bản quyền được bảo lưu.",
     "footer.new\u0061pi.projectAttributionSuffix": "Bản quyền được bảo lưu. Được thiết kế và phát triển bởi các cộng tác viên dự án.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Đối với các kênh được thêm sau ngày 10 tháng 5 năm 2025, không cần loại bỏ \".\" khỏi tên mô hình trong quá trình triển khai",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "Trong ch? ?? xoay v?ng nhi?u kh?a, ti?p t?c d?ng kh?a hi?n t?i cho ??n khi ??t gi?i h?n y?u c?u m?i ph?t n?y; 0 gi? c?ch xoay v?ng b?nh th??ng",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Đối với các triển khai riêng tư, định dạng: https://fastgpt.run/api/openapi",
     "Force a syntactically valid JSON response": "Buộc phản hồi JSON hợp lệ về cú pháp",
     "Force AUTH LOGIN": "Bắt buộc AUTH LOGIN",
@@ -3999,6 +4000,7 @@
     "Simple mode only returns message; status code and error type use system defaults.": "Chế độ đơn giản chỉ trả về message; mã trạng thái và loại lỗi sử dụng giá trị mặc định.",
     "Simple mode: prune objects by type, e.g. redacted_thinking.": "Chế độ đơn giản: dọn dẹp đối tượng theo type, ví dụ redacted_thinking.",
     "Single Key": "Khóa đơn",
+    "Single-Key RPM Limit": "Gioi han RPM tung khoa",
     "Site & Branding": "Trang web & thương hiệu",
     "Site Key": "Khóa trang web",
     "Size:": "Kích thước:",
@@ -4940,6 +4942,7 @@
     "Zoom": "Zoom",
     "Proxy Pool": "Nh?m proxy",
     "Proxy Pool Retry Status Codes": "M? tr?ng th?i th? l?i c?a nh?m proxy",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Khi upstream tr? v? c?c m? tr?ng th?i HTTP n?y, t? ??ng chuy?n sang proxy ti?p theo trong nh?m proxy v? th? l?i"
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Khi upstream tr? v? c?c m? tr?ng th?i HTTP n?y, t? ??ng chuy?n sang proxy ti?p theo trong nh?m proxy v? th? l?i",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Gioi han moi khoa trong kenh nhieu khoa theo so yeu cau moi phut nay; 0 la khong gioi han"
   }
 }

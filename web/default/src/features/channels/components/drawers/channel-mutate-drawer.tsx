@@ -3592,6 +3592,42 @@ export function ChannelMutateDrawer({
 
                       <FormField
                         control={form.control}
+                        name='multi_key_rpm_limit'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>
+                              {t('Single-Key RPM Limit')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                step={1}
+                                inputMode='numeric'
+                                placeholder='0'
+                                value={field.value ?? 0}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(event) => {
+                                  const value = Math.max(
+                                    0,
+                                    Math.floor(Number(event.target.value) || 0)
+                                  )
+                                  field.onChange(value)
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited'
+                              )}
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
                         name='model_rpm_limits'
                         render={({ field }) => (
                           <FormItem className='space-y-3 px-4 py-3'>

@@ -1,13 +1,17 @@
 package model
 
 import (
+	"context"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"time"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/constant"
@@ -18,6 +22,20 @@ import (
 	"github.com/samber/lo"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
+)
+
+const (
+	multiKeyRPMWindow = 60 * time.Second
+	multiKeyRPMTTL    = 2 * time.Minute
+)
+
+var (
+	multiKeyRPMStore = struct {
+		sync.Mutex
+		items         map[string][]int64
+		lastCleanupMs int64
+	}{items: make(map[string][]int64)}
+	multiKeyRPMSeq uint64
 )
 
 type Channel struct {
@@ -246,6 +264,7 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 		return keys[selectedIdx], selectedIdx, nil
 	case constant.MultiKeyModePolling:
 		// Use channel-specific lock to ensure thread-safe polling
+		multiKeyRPMLimit := channel.GetSetting().MultiKeyRPMLimit
 
 		channelInfo, err := CacheGetChannelInfo(channel.Id)
 		if err != nil {
@@ -268,11 +287,31 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 		}
 		for i := 0; i < len(keys); i++ {
 			idx := (start + i) % len(keys)
-			if getStatus(idx) == common.ChannelStatusEnabled {
-				// update polling index for next call (point to the next position)
-				channel.ChannelInfo.MultiKeyPollingIndex = (idx + 1) % len(keys)
+			if getStatus(idx) != common.ChannelStatusEnabled {
+				continue
+			}
+			if multiKeyRPMLimit > 0 {
+				allowed, err := allowMultiKeyRPM(channel.Id, idx, multiKeyRPMLimit)
+				if err != nil {
+					return "", 0, types.NewError(err, types.ErrorCodeChannelRateLimited, types.ErrOptionWithSkipRetry())
+				}
+				if !allowed {
+					continue
+				}
+				channel.ChannelInfo.MultiKeyPollingIndex = idx
 				return keys[idx], idx, nil
 			}
+			// update polling index for next call (point to the next position)
+			channel.ChannelInfo.MultiKeyPollingIndex = (idx + 1) % len(keys)
+			return keys[idx], idx, nil
+		}
+		if multiKeyRPMLimit > 0 {
+			return "", 0, types.NewErrorWithStatusCode(
+				fmt.Errorf("all multi-key polling keys exceeded single-key RPM limit; current single-key RPM limit is %d requests per minute", multiKeyRPMLimit),
+				types.ErrorCodeChannelRateLimited,
+				http.StatusTooManyRequests,
+				types.ErrOptionWithSkipRetry(),
+			)
 		}
 		// Fallback – should not happen, but return first enabled key
 		return keys[enabledIdx[0]], enabledIdx[0], nil
@@ -286,6 +325,110 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 
 func (channel *Channel) SaveChannelInfo() error {
 	return DB.Model(channel).Update("channel_info", channel.ChannelInfo).Error
+}
+
+func (channel *Channel) AdvanceMultiKeyPollingIndexAfter(index int) {
+	if channel == nil || !channel.ChannelInfo.IsMultiKey || channel.ChannelInfo.MultiKeyMode != constant.MultiKeyModePolling {
+		return
+	}
+	keys := channel.GetKeys()
+	if len(keys) == 0 || index < 0 {
+		return
+	}
+	lock := GetChannelPollingLock(channel.Id)
+	lock.Lock()
+	defer lock.Unlock()
+	channel.ChannelInfo.MultiKeyPollingIndex = (index + 1) % len(keys)
+	if !common.MemoryCacheEnabled {
+		_ = channel.SaveChannelInfo()
+	}
+}
+
+func allowMultiKeyRPM(channelID int, keyIndex int, rpmLimit int) (bool, error) {
+	if channelID <= 0 || keyIndex < 0 || rpmLimit <= 0 {
+		return true, nil
+	}
+	key := fmt.Sprintf("multi_key_rpm:%d:%d", channelID, keyIndex)
+	if common.RedisEnabled && common.RDB != nil {
+		return allowMultiKeyRPMRedis(context.Background(), key, rpmLimit)
+	}
+	return allowMultiKeyRPMMemory(key, rpmLimit), nil
+}
+
+func allowMultiKeyRPMMemory(key string, rpmLimit int) bool {
+	nowMs := time.Now().UnixMilli()
+	cutoffMs := nowMs - multiKeyRPMWindow.Milliseconds()
+
+	multiKeyRPMStore.Lock()
+	defer multiKeyRPMStore.Unlock()
+
+	if nowMs-multiKeyRPMStore.lastCleanupMs >= multiKeyRPMTTL.Milliseconds() {
+		cleanupMultiKeyRPMStoreLocked(cutoffMs)
+		multiKeyRPMStore.lastCleanupMs = nowMs
+	}
+
+	queue := multiKeyRPMStore.items[key]
+	queue = pruneMultiKeyRPMQueue(queue, cutoffMs)
+	if len(queue) >= rpmLimit {
+		multiKeyRPMStore.items[key] = queue
+		return false
+	}
+	multiKeyRPMStore.items[key] = append(queue, nowMs)
+	return true
+}
+
+func cleanupMultiKeyRPMStoreLocked(cutoffMs int64) {
+	for key, queue := range multiKeyRPMStore.items {
+		queue = pruneMultiKeyRPMQueue(queue, cutoffMs)
+		if len(queue) == 0 {
+			delete(multiKeyRPMStore.items, key)
+		} else {
+			multiKeyRPMStore.items[key] = queue
+		}
+	}
+}
+
+func pruneMultiKeyRPMQueue(queue []int64, cutoffMs int64) []int64 {
+	keepFrom := 0
+	for keepFrom < len(queue) && queue[keepFrom] <= cutoffMs {
+		keepFrom++
+	}
+	if keepFrom == 0 {
+		return queue
+	}
+	return queue[keepFrom:]
+}
+
+func allowMultiKeyRPMRedis(ctx context.Context, key string, rpmLimit int) (bool, error) {
+	now := time.Now()
+	nowMs := now.UnixMilli()
+	cutoffMs := now.Add(-multiKeyRPMWindow).UnixMilli()
+	member := fmt.Sprintf("%d-%d", nowMs, atomic.AddUint64(&multiKeyRPMSeq, 1))
+	script := `
+redis.call("ZREMRANGEBYSCORE", KEYS[1], "-inf", ARGV[2])
+local count = redis.call("ZCARD", KEYS[1])
+if count >= tonumber(ARGV[4]) then
+  redis.call("EXPIRE", KEYS[1], ARGV[3])
+  return 0
+end
+redis.call("ZADD", KEYS[1], ARGV[1], ARGV[5])
+redis.call("EXPIRE", KEYS[1], ARGV[3])
+return 1
+`
+	result, err := common.RDB.Eval(
+		ctx,
+		script,
+		[]string{key},
+		nowMs,
+		cutoffMs,
+		int64(multiKeyRPMTTL.Seconds()),
+		rpmLimit,
+		member,
+	).Int()
+	if err != nil {
+		return false, err
+	}
+	return result == 1, nil
 }
 
 func (channel *Channel) GetModels() []string {

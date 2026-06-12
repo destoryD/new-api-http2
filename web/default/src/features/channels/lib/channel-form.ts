@@ -192,6 +192,7 @@ export const channelFormSchema = z
     model_name_override: z.boolean().optional(),
     non_stream_to_stream: z.boolean().optional(),
     rpm_limit: z.number().int().min(0).optional(),
+    multi_key_rpm_limit: z.number().int().min(0).optional(),
     model_rpm_limits: z
       .string()
       .optional()
@@ -203,7 +204,13 @@ export const channelFormSchema = z
     override_error_as_429: z.boolean().optional(),
     proxy: z.string().optional(),
     proxy_pool: z.string().optional(),
-    proxy_pool_retry_status_codes: z.string().optional().refine(validateStatusCodeList, 'Status codes must be comma-separated integers from 100 to 599'),
+    proxy_pool_retry_status_codes: z
+      .string()
+      .optional()
+      .refine(
+        validateStatusCodeList,
+        'Status codes must be comma-separated integers from 100 to 599'
+      ),
     pass_through_body_enabled: z.boolean().optional(),
     system_prompt: z.string().optional(),
     system_prompt_override: z.boolean().optional(),
@@ -349,6 +356,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   model_name_override: false,
   non_stream_to_stream: false,
   rpm_limit: 0,
+  multi_key_rpm_limit: 0,
   model_rpm_limits: '',
   allowed_endpoint_types: [],
   override_error_as_429: false,
@@ -395,6 +403,7 @@ export function transformChannelToFormDefaults(
     enable_http2: false,
     model_name_override: false,
     rpm_limit: 0,
+    multi_key_rpm_limit: 0,
     model_rpm_limits: '',
     allowed_endpoint_types: [] as string[],
     proxy: '',
@@ -417,6 +426,10 @@ export function transformChannelToFormDefaults(
         model_name_override: parsed.model_name_override || false,
         non_stream_to_stream: parsed.non_stream_to_stream || false,
         rpm_limit: Math.max(0, Math.floor(Number(parsed.rpm_limit) || 0)),
+        multi_key_rpm_limit: Math.max(
+          0,
+          Math.floor(Number(parsed.multi_key_rpm_limit) || 0)
+        ),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         allowed_endpoint_types: normalizeAllowedEndpointTypes(
           parsed.allowed_endpoint_types
@@ -549,6 +562,10 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     model_name_override: formData.model_name_override || false,
     non_stream_to_stream: formData.non_stream_to_stream || false,
     rpm_limit: Math.max(0, Math.floor(Number(formData.rpm_limit) || 0)),
+    multi_key_rpm_limit: Math.max(
+      0,
+      Math.floor(Number(formData.multi_key_rpm_limit) || 0)
+    ),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     allowed_endpoint_types: normalizeAllowedEndpointTypes(
       formData.allowed_endpoint_types
