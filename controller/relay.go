@@ -188,6 +188,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	relayInfo.RetryIndex = 0
 	relayInfo.LastError = nil
 	var sequentialRetryChannel *model.Channel
+	sequential429RetryCount := 0
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		relayInfo.RetryIndex = retryParam.GetRetry()
@@ -263,8 +264,10 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 
 		channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
 		advanceMultiKeyPollingOn429(c, channel, newAPIError)
-		if retryChannel, ok := retrySequentialMultiKeyAfter429(c, channel, newAPIError); ok {
+		if retryChannel, ok := retrySequentialMultiKeyAfter429(c, channel, newAPIError, sequential429RetryCount); ok {
+			sequential429RetryCount++
 			sequentialRetryChannel = retryChannel
+			retryParam.ResetRetryNextTry()
 			continue
 		}
 		if shouldRetrySequentialMultiKey(channel, channelError, newAPIError, originalErrForDisable) {
@@ -313,7 +316,7 @@ func advanceMultiKeyPollingOn429(c *gin.Context, channel *model.Channel, err *ty
 	channel.AdvanceMultiKeyPollingIndexAfter(common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex))
 }
 
-func retrySequentialMultiKeyAfter429(c *gin.Context, channel *model.Channel, err *types.NewAPIError) (*model.Channel, bool) {
+func retrySequentialMultiKeyAfter429(c *gin.Context, channel *model.Channel, err *types.NewAPIError, retryCount int) (*model.Channel, bool) {
 	if channel == nil || err == nil || err.StatusCode != http.StatusTooManyRequests {
 		return nil, false
 	}
@@ -322,6 +325,9 @@ func retrySequentialMultiKeyAfter429(c *gin.Context, channel *model.Channel, err
 	}
 	keyIndex := common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex)
 	model.MarkSequentialMultiKeyIndexSkipped(channel.Id, keyIndex, time.Minute)
+	if retryCount >= channel.EnabledMultiKeyCount()-1 {
+		return nil, false
+	}
 	logger.LogInfo(c, fmt.Sprintf("sequential multi-key 429: skipping key index %d for channel #%d", keyIndex, channel.Id))
 	return refreshSequentialRetryChannel(channel), true
 }
@@ -718,6 +724,7 @@ func RelayTask(c *gin.Context) {
 		Retry:      common.GetPointer(0),
 	}
 	var sequentialRetryChannel *model.Channel
+	sequential429RetryCount := 0
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		var channel *model.Channel
@@ -776,8 +783,10 @@ func RelayTask(c *gin.Context) {
 				common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
 			openAIError := types.NewOpenAIError(taskErr.Error, types.ErrorCodeBadResponseStatusCode, taskErr.StatusCode)
 			advanceMultiKeyPollingOn429(c, channel, openAIError)
-			if retryChannel, ok := retrySequentialMultiKeyAfter429(c, channel, openAIError); ok {
+			if retryChannel, ok := retrySequentialMultiKeyAfter429(c, channel, openAIError, sequential429RetryCount); ok {
+				sequential429RetryCount++
 				sequentialRetryChannel = retryChannel
+				retryParam.ResetRetryNextTry()
 				continue
 			}
 			if shouldRetrySequentialMultiKey(channel, channelError, openAIError, nil) {
