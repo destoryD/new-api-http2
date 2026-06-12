@@ -89,6 +89,8 @@
     "按量计费": "Paiement à l'utilisation",
     "按量计费下需要先填写输入价格，才能保存其它价格项。": "En facturation au volume, il faut d'abord renseigner le prix d'entrée avant d'enregistrer les autres prix.",
     "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Limite les requêtes par minute par modèle pour ce canal. Objet JSON ; laisser vide pour illimité.",
+    "按序 429 跳过时长": "Durée d’ignorance 429 séquentielle",
+    "多密钥按序模式下，密钥返回 429 后临时跳过的秒数；0 表示使用 60 秒": "En mode multi-clés séquentiel, ignore temporairement une clé pendant ce nombre de secondes après un retour 429 ; 0 utilise 60 secondes.",
     "按顺序替换content中的变量占位符": "Remplacer les espaces réservés de variable dans le contenu dans l'ordre",
     "按照如下格式输入：AccessKey|SecretAccessKey|Region": "Entrez au format : AccessKey|SecretAccessKey|Region",
     "按K显示单位": "Afficher en K",

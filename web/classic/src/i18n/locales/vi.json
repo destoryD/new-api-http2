@@ -83,6 +83,8 @@
     "按量计费": "Trả tiền theo mức sử dụng",
     "按量计费下需要先填写输入价格，才能保存其它价格项。": "Ở chế độ tính phí theo lượng, cần điền giá đầu vào trước thì mới lưu được các mục giá khác.",
     "按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制": "Giới hạn số yêu cầu mỗi phút theo mô hình cho kênh này. Đối tượng JSON; để trống nghĩa là không giới hạn.",
+    "按序 429 跳过时长": "Thời gian bỏ qua 429 tuần tự",
+    "多密钥按序模式下，密钥返回 429 后临时跳过的秒数；0 表示使用 60 秒": "Ở chế độ nhiều khóa tuần tự, tạm bỏ qua khóa trong số giây này sau khi khóa trả về 429; 0 dùng 60 giây.",
     "按顺序替换content中的变量占位符": "Thay thế các trình giữ chỗ biến trong nội dung theo thứ tự",
     "按照如下格式输入：AccessKey|SecretAccessKey|Region": "Enter in the format: AccessKey|SecretAccessKey|Region",
     "按K显示单位": "Hiển thị theo K",
