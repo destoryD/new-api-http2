@@ -301,7 +301,7 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 	}
 }
 
-func (channel *Channel) EnabledMultiKeyCount() int {
+func (channel *Channel) MultiKeyCount() int {
 	if channel == nil {
 		return 0
 	}
@@ -311,21 +311,7 @@ func (channel *Channel) EnabledMultiKeyCount() int {
 		}
 		return 1
 	}
-	keys := channel.GetKeys()
-	statusList := channel.ChannelInfo.MultiKeyStatusList
-	enabledCount := 0
-	for i := range keys {
-		status := common.ChannelStatusEnabled
-		if statusList != nil {
-			if configuredStatus, ok := statusList[i]; ok {
-				status = configuredStatus
-			}
-		}
-		if status == common.ChannelStatusEnabled {
-			enabledCount++
-		}
-	}
-	return enabledCount
+	return len(channel.GetKeys())
 }
 
 func MarkSequentialMultiKeyIndexSkipped(channelID int, keyIndex int, duration time.Duration) {
