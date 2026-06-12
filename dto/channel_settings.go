@@ -24,7 +24,15 @@ type ChannelSettings struct {
 	RPMLimit                  int            `json:"rpm_limit,omitempty"`
 	ModelRPMLimits            map[string]int `json:"model_rpm_limits,omitempty"`
 	MultiKeyRPMLimit          int            `json:"multi_key_rpm_limit,omitempty"`
+	MultiKey429SkipSeconds    int            `json:"multi_key_429_skip_seconds,omitempty"`
 	OverrideErrorAs429        bool           `json:"override_error_as_429,omitempty"`
+}
+
+func (s ChannelSettings) GetMultiKey429SkipSeconds() int {
+	if s.MultiKey429SkipSeconds <= 0 {
+		return 60
+	}
+	return s.MultiKey429SkipSeconds
 }
 
 func NormalizeProxyPool(proxyPool []string) []string {

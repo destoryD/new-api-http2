@@ -193,6 +193,7 @@ export const channelFormSchema = z
     non_stream_to_stream: z.boolean().optional(),
     rpm_limit: z.number().int().min(0).optional(),
     multi_key_rpm_limit: z.number().int().min(0).optional(),
+    multi_key_429_skip_seconds: z.number().int().min(0).optional(),
     model_rpm_limits: z
       .string()
       .optional()
@@ -357,6 +358,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   non_stream_to_stream: false,
   rpm_limit: 0,
   multi_key_rpm_limit: 0,
+  multi_key_429_skip_seconds: 60,
   model_rpm_limits: '',
   allowed_endpoint_types: [],
   override_error_as_429: false,
@@ -404,6 +406,7 @@ export function transformChannelToFormDefaults(
     model_name_override: false,
     rpm_limit: 0,
     multi_key_rpm_limit: 0,
+    multi_key_429_skip_seconds: 60,
     model_rpm_limits: '',
     allowed_endpoint_types: [] as string[],
     proxy: '',
@@ -429,6 +432,10 @@ export function transformChannelToFormDefaults(
         multi_key_rpm_limit: Math.max(
           0,
           Math.floor(Number(parsed.multi_key_rpm_limit) || 0)
+        ),
+        multi_key_429_skip_seconds: Math.max(
+          0,
+          Math.floor(Number(parsed.multi_key_429_skip_seconds) || 60)
         ),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         allowed_endpoint_types: normalizeAllowedEndpointTypes(
@@ -565,6 +572,10 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     multi_key_rpm_limit: Math.max(
       0,
       Math.floor(Number(formData.multi_key_rpm_limit) || 0)
+    ),
+    multi_key_429_skip_seconds: Math.max(
+      0,
+      Math.floor(Number(formData.multi_key_429_skip_seconds) || 60)
     ),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     allowed_endpoint_types: normalizeAllowedEndpointTypes(

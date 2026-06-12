@@ -90,6 +90,7 @@ export interface ChannelSettings {
   allowed_endpoint_types?: string[]
   rpm_limit?: number
   multi_key_rpm_limit?: number
+  multi_key_429_skip_seconds?: number
   model_rpm_limits?: Record<string, number>
   proxy?: string
   proxy_pool?: string[]

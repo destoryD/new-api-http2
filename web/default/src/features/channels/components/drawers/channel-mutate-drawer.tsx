@@ -3628,6 +3628,42 @@ export function ChannelMutateDrawer({
 
                       <FormField
                         control={form.control}
+                        name='multi_key_429_skip_seconds'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>
+                              {t('Sequential 429 Skip Duration')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                step={1}
+                                inputMode='numeric'
+                                placeholder='60'
+                                value={field.value ?? 60}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(event) => {
+                                  const value = Math.max(
+                                    0,
+                                    Math.floor(Number(event.target.value) || 0)
+                                  )
+                                  field.onChange(value)
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'For sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds'
+                              )}
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
                         name='model_rpm_limits'
                         render={({ field }) => (
                           <FormItem className='space-y-3 px-4 py-3'>
