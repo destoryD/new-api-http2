@@ -36,6 +36,11 @@ var (
 		lastCleanupMs int64
 	}{items: make(map[string][]int64)}
 	multiKeyRPMSeq uint64
+
+	sequentialMultiKeySkipStore = struct {
+		sync.Mutex
+		items map[int]map[int]int64
+	}{items: make(map[int]map[int]int64)}
 )
 
 type Channel struct {
@@ -316,11 +321,50 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 		// Fallback – should not happen, but return first enabled key
 		return keys[enabledIdx[0]], enabledIdx[0], nil
 	case constant.MultiKeyModeSequential:
+		for _, idx := range enabledIdx {
+			if !isSequentialMultiKeyIndexSkipped(channel.Id, idx) {
+				return keys[idx], idx, nil
+			}
+		}
 		return keys[enabledIdx[0]], enabledIdx[0], nil
 	default:
 		// Unknown mode, default to first enabled key (or original key string)
 		return keys[enabledIdx[0]], enabledIdx[0], nil
 	}
+}
+
+func MarkSequentialMultiKeyIndexSkipped(channelID int, keyIndex int, duration time.Duration) {
+	if channelID <= 0 || keyIndex < 0 || duration <= 0 {
+		return
+	}
+	sequentialMultiKeySkipStore.Lock()
+	defer sequentialMultiKeySkipStore.Unlock()
+	if sequentialMultiKeySkipStore.items[channelID] == nil {
+		sequentialMultiKeySkipStore.items[channelID] = make(map[int]int64)
+	}
+	sequentialMultiKeySkipStore.items[channelID][keyIndex] = time.Now().Add(duration).UnixMilli()
+}
+
+func isSequentialMultiKeyIndexSkipped(channelID int, keyIndex int) bool {
+	nowMs := time.Now().UnixMilli()
+	sequentialMultiKeySkipStore.Lock()
+	defer sequentialMultiKeySkipStore.Unlock()
+	indexes, ok := sequentialMultiKeySkipStore.items[channelID]
+	if !ok {
+		return false
+	}
+	expiresAt, ok := indexes[keyIndex]
+	if !ok {
+		return false
+	}
+	if expiresAt <= nowMs {
+		delete(indexes, keyIndex)
+		if len(indexes) == 0 {
+			delete(sequentialMultiKeySkipStore.items, channelID)
+		}
+		return false
+	}
+	return true
 }
 
 func (channel *Channel) SaveChannelInfo() error {
