@@ -333,6 +333,33 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 	}
 }
 
+func (channel *Channel) EnabledMultiKeyCount() int {
+	if channel == nil {
+		return 0
+	}
+	if !channel.ChannelInfo.IsMultiKey {
+		if strings.TrimSpace(channel.Key) == "" {
+			return 0
+		}
+		return 1
+	}
+	keys := channel.GetKeys()
+	statusList := channel.ChannelInfo.MultiKeyStatusList
+	enabledCount := 0
+	for i := range keys {
+		status := common.ChannelStatusEnabled
+		if statusList != nil {
+			if configuredStatus, ok := statusList[i]; ok {
+				status = configuredStatus
+			}
+		}
+		if status == common.ChannelStatusEnabled {
+			enabledCount++
+		}
+	}
+	return enabledCount
+}
+
 func MarkSequentialMultiKeyIndexSkipped(channelID int, keyIndex int, duration time.Duration) {
 	if channelID <= 0 || keyIndex < 0 || duration <= 0 {
 		return
