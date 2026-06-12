@@ -262,6 +262,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		newAPIError = overrideErrorIfMatchKeywords(c, newAPIError)
 
 		channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
+		advanceMultiKeyPollingOn429(c, channel, newAPIError)
 		if shouldRetrySequentialMultiKey(channel, channelError, newAPIError, originalErrForDisable) {
 			if processChannelErrorSync(c, channelError, newAPIError, originalErrForDisable) {
 				sequentialRetryChannel = refreshSequentialRetryChannel(channel)
@@ -287,6 +288,25 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 			perfmetrics.RecordRelaySample(relayInfo, false, 0)
 		})
 	}
+}
+
+func advanceMultiKeyPollingOn429(c *gin.Context, channel *model.Channel, err *types.NewAPIError) {
+	if channel == nil || err == nil || err.StatusCode != http.StatusTooManyRequests {
+		return
+	}
+	if !channel.ChannelInfo.IsMultiKey || channel.ChannelInfo.MultiKeyMode != constant.MultiKeyModePolling {
+		return
+	}
+	channelSetting := channel.GetSetting()
+	if channelSetting.MultiKeyRPMLimit <= 0 {
+		if ctxSetting, ok := common.GetContextKeyType[dto.ChannelSettings](c, constant.ContextKeyChannelSetting); ok {
+			channelSetting = ctxSetting
+		}
+	}
+	if channelSetting.MultiKeyRPMLimit <= 0 {
+		return
+	}
+	channel.AdvanceMultiKeyPollingIndexAfter(common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex))
 }
 
 var upgrader = websocket.Upgrader{
@@ -738,6 +758,7 @@ func RelayTask(c *gin.Context) {
 			channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey,
 				common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
 			openAIError := types.NewOpenAIError(taskErr.Error, types.ErrorCodeBadResponseStatusCode, taskErr.StatusCode)
+			advanceMultiKeyPollingOn429(c, channel, openAIError)
 			if shouldRetrySequentialMultiKey(channel, channelError, openAIError, nil) {
 				if processChannelErrorSync(c, channelError, openAIError, nil) {
 					sequentialRetryChannel = refreshSequentialRetryChannel(channel)

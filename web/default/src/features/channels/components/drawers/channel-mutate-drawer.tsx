@@ -247,6 +247,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.non_stream_to_stream ||
     (values.allowed_endpoint_types?.length ?? 0) > 0 ||
     values.rpm_limit ||
+    values.multi_key_rpm_limit ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
@@ -3405,6 +3406,42 @@ export function ChannelMutateDrawer({
                               />
                             </FormControl>
                             <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='multi_key_rpm_limit'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>
+                              {t('Single-Key RPM Limit')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                step={1}
+                                inputMode='numeric'
+                                placeholder='0'
+                                value={field.value ?? 0}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(event) => {
+                                  const value = Math.max(
+                                    0,
+                                    Math.floor(Number(event.target.value) || 0)
+                                  )
+                                  field.onChange(value)
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling'
+                              )}
+                            </FormDescription>
                           </FormItem>
                         )}
                       />
