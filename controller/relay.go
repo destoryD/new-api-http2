@@ -326,7 +326,7 @@ func retrySequentialMultiKeyAfter429(c *gin.Context, channel *model.Channel, err
 	}
 	keyIndex := common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex)
 	model.MarkSequentialMultiKeyIndexSkipped(channel.Id, keyIndex, time.Minute)
-	if retryCount >= channel.EnabledMultiKeyCount()-1 {
+	if retryCount >= channel.MultiKeyCount()-1 {
 		return nil, false
 	}
 	logger.LogInfo(c, fmt.Sprintf("sequential multi-key 429: skipping key index %d for channel #%d", keyIndex, channel.Id))
