@@ -1939,7 +1939,7 @@
     "footer.defaultCopyright": "Bản quyền được bảo lưu.",
     "footer.new\u0061pi.projectAttributionSuffix": "Bản quyền được bảo lưu. Được thiết kế và phát triển bởi các cộng tác viên dự án.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Đối với các kênh được thêm sau ngày 10 tháng 5 năm 2025, không cần loại bỏ \".\" khỏi tên mô hình trong quá trình triển khai",
-    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "Trong ch? ?? xoay v?ng nhi?u kh?a, ti?p t?c d?ng kh?a hi?n t?i cho ??n khi ??t gi?i h?n y?u c?u m?i ph?t n?y; 0 gi? c?ch xoay v?ng b?nh th??ng",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "Voi che do polling nhieu khoa, tiep tuc dung khoa hien tai den khi dat gioi han yeu cau moi phut nay; 0 giu polling binh thuong",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Đối với các triển khai riêng tư, định dạng: https://fastgpt.run/api/openapi",
     "For sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds": "Voi che do nhieu khoa tuan tu, tam bo qua mot khoa trong so giay nay sau khi tra ve 429; 0 dung 60 giay",
     "Force a syntactically valid JSON response": "Buộc phản hồi JSON hợp lệ về cú pháp",
@@ -4942,9 +4942,11 @@
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
     "Zoom": "Zoom",
-    "Proxy Pool": "Nh?m proxy",
-    "Proxy Pool Retry Status Codes": "M? tr?ng th?i th? l?i c?a nh?m proxy",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Khi upstream tr? v? c?c m? tr?ng th?i HTTP n?y, t? ??ng chuy?n sang proxy ti?p theo trong nh?m proxy v? th? l?i",
-    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Gioi han moi khoa trong kenh nhieu khoa theo so yeu cau moi phut nay; 0 la khong gioi han"
+    "Proxy Pool": "Nhom proxy",
+    "Proxy Pool Retry Status Codes": "Ma trang thai thu lai cua nhom proxy",
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Khi upstream tra ve cac ma trang thai HTTP nay, tu dong chuyen sang proxy tiep theo trong nhom proxy va thu lai",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Gioi han moi khoa trong kenh nhieu khoa theo so yeu cau moi phut nay; 0 la khong gioi han",
+    "Native Messages forwarding": "Chuyen tiep Messages native",
+    "Forward /v1/messages directly to the upstream native Messages API": "Chuyen tiep /v1/messages truc tiep den upstream native Messages API"
   }
 }

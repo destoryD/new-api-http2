@@ -1939,7 +1939,7 @@
     "footer.defaultCopyright": "Tous droits réservés.",
     "footer.new\u0061pi.projectAttributionSuffix": "Tous droits réservés. Conçu et développé par les contributeurs du projet.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Pour les canaux ajoutés après le 10 mai 2025, pas besoin de supprimer \".\" des noms de modèles lors du déploiement",
-    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "En mode rotation multi-cles, conserver la cle actuelle jusqu a cette limite de requetes par minute ; 0 conserve la rotation normale",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "En mode multi-cles polling, continuer a utiliser la cle actuelle jusqu a cette limite de requetes par minute; 0 garde le polling normal",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Pour les déploiements privés, format : https://fastgpt.run/api/openapi",
     "For sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds": "En mode multi-cles sequentiel, ignorer temporairement une cle pendant ce nombre de secondes apres un 429; 0 utilise 60 secondes",
     "Force a syntactically valid JSON response": "Imposer une réponse JSON syntaxiquement valide",
@@ -4943,8 +4943,10 @@
     "Zhipu V4": "Zhipu V4",
     "Zoom": "Zoom",
     "Proxy Pool": "Pool de proxy",
-    "Proxy Pool Retry Status Codes": "Codes d??tat de retry du pool de proxy",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Lorsque l?amont renvoie ces codes d??tat HTTP, passer automatiquement au proxy suivant du pool et r?essayer",
-    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Limiter chaque cle d un canal multi-cles a ce nombre de requetes par minute; 0 signifie illimite"
+    "Proxy Pool Retry Status Codes": "Codes d etat de retry du pool de proxy",
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "Lorsque l upstream renvoie ces codes d etat HTTP, passer automatiquement au proxy suivant du pool et reessayer",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Limiter chaque cle d un canal multi-cles a ce nombre de requetes par minute; 0 signifie illimite",
+    "Native Messages forwarding": "Transfert Messages natif",
+    "Forward /v1/messages directly to the upstream native Messages API": "Transmettre /v1/messages directement a l API Messages native upstream"
   }
 }

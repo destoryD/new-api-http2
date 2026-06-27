@@ -232,6 +232,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
+    values.native_messages_enabled ||
     values.claude_beta_query ||
     values.upstream_model_update_check_enabled ||
     values.upstream_model_update_auto_sync_enabled ||
@@ -3214,6 +3215,31 @@ export function ChannelMutateDrawer({
 
                       <div className='divide-border space-y-0 divide-y border-y'>
                         {currentType === 1 && (
+                          <FormField
+                            control={form.control}
+                            name='native_messages_enabled'
+                            render={({ field }) => (
+                              <FormItem className='flex items-center justify-between gap-3 px-4 py-3'>
+                                <div className='space-y-0.5'>
+                                  <FormLabel className='text-sm'>
+                                    {t('Native Messages forwarding')}
+                                  </FormLabel>
+                                  <FormDescription>
+                                    {t(
+                                      'Forward /v1/messages directly to the upstream native Messages API'
+                                    )}
+                                  </FormDescription>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+
                           <FormField
                             control={form.control}
                             name='force_format'

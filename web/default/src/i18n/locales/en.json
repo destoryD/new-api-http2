@@ -4945,6 +4945,8 @@
     "Proxy Pool": "Proxy Pool",
     "Proxy Pool Retry Status Codes": "Proxy Pool Retry Status Codes",
     "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry",
-    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited"
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited",
+    "Native Messages forwarding": "Native Messages forwarding",
+    "Forward /v1/messages directly to the upstream native Messages API": "Forward /v1/messages directly to the upstream native Messages API"
   }
 }

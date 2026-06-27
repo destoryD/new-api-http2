@@ -1939,7 +1939,7 @@
     "footer.defaultCopyright": "すべての権利を留保します。",
     "footer.new\u0061pi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "2025 年 5 月 10 日以降に追加されたチャネルの場合、デプロイ時にモデル名から「.」を削除する必要はありません",
-    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "?????????????????????????????????????????????0 ???????????????",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "マルチキーのポーリングモードでは、現在のキーがこの 1 分あたりのリクエスト上限に達するまで使い続けます；0 は通常のポーリングを維持します",
     "For private deployments, format: https://fastgpt.run/api/openapi": "プライベートデプロイメントの場合、形式: https://fastgpt.run/api/openapi",
     "For sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds": "マルチキーの順番モードでは、キーが 429 を返した後、この秒数だけ一時的にスキップします；0 は 60 秒を使用します",
     "Force a syntactically valid JSON response": "構文的に有効な JSON 応答を強制",
@@ -4942,9 +4942,11 @@
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V 4",
     "Zoom": "ズーム",
-    "Proxy Pool": "???????",
-    "Proxy Pool Retry Status Codes": "???????????????????",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "??????? HTTP ??????????????????????????????????????????????",
-    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "マルチキーチャネルの各キーの 1 分あたりのリクエスト数を制限します；0 は無制限を意味します"
+    "Proxy Pool": "プロキシプール",
+    "Proxy Pool Retry Status Codes": "プロキシプールの再試行ステータスコード",
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "上流がこれらの HTTP ステータスコードを返した場合、プロキシプール内の次のプロキシへ自動的に切り替えて再試行します",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "マルチキーチャネルの各キーの 1 分あたりのリクエスト数を制限します；0 は無制限を意味します",
+    "Native Messages forwarding": "ネイティブ Messages 転送",
+    "Forward /v1/messages directly to the upstream native Messages API": "/v1/messages を上流のネイティブ Messages API に直接転送します"
   }
 }

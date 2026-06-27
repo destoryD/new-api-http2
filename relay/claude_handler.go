@@ -147,6 +147,7 @@ func ClaudeHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *typ
 	if !passThroughGlobal &&
 		!info.StreamForcedForNonStream &&
 		!info.ChannelSetting.PassThroughBodyEnabled &&
+		!(info.ChannelType == constant.ChannelTypeOpenAI && info.ChannelOtherSettings.NativeMessagesEnabled) &&
 		service.ShouldChatCompletionsUseResponsesGlobal(info.ChannelId, info.ChannelType, info.OriginModelName) {
 		openAIRequest, convErr := service.ClaudeToOpenAIRequest(*request, info)
 		if convErr != nil {

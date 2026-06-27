@@ -1939,7 +1939,7 @@
     "footer.defaultCopyright": "版权所有。",
     "footer.new\u0061pi.projectAttributionSuffix": "版权所有，由项目贡献者设计与开发。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "对于 2025 年 5 月 10 日之后添加的渠道，在部署时无需从模型名称中移除 \".\"",
-    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "????????????????????????????????0 ????????",
+    "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "多密钥轮询模式下，当前密钥达到该每分钟请求上限前持续使用它；0 保持普通轮询",
     "For private deployments, format: https://fastgpt.run/api/openapi": "对于私有部署，格式为：https://fastgpt.run/api/openapi",
     "For sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds": "在多密钥顺序模式下，某个密钥返回 429 后暂时跳过指定秒数；0 表示使用 60 秒",
     "Force a syntactically valid JSON response": "强制返回语法合法的 JSON",
@@ -4942,9 +4942,11 @@
     "Zhipu": "智谱",
     "Zhipu V4": "智谱 V4",
     "Zoom": "缩放",
-    "Proxy Pool": "???",
-    "Proxy Pool Retry Status Codes": "????????",
-    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "?????? HTTP ??????????????????????",
-    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "限制多密钥渠道中每个密钥的每分钟请求数，0 表示不限制"
+    "Proxy Pool": "代理池",
+    "Proxy Pool Retry Status Codes": "代理池重试状态码",
+    "When upstream returns these HTTP status codes, automatically switch to the next proxy in the proxy pool and retry": "上游返回这些 HTTP 状态码时，自动切换到代理池中的下一个代理重试",
+    "Limit each key in a multi-key channel to this many requests per minute; 0 means unlimited": "限制多密钥渠道中每个密钥的每分钟请求数，0 表示不限制",
+    "Native Messages forwarding": "原生 Messages 转发",
+    "Forward /v1/messages directly to the upstream native Messages API": "将 /v1/messages 直接转发到上游原生 Messages API"
   }
 }
