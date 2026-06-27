@@ -190,6 +190,7 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 	relayInfo.LastError = nil
 	var sequentialRetryChannel *model.Channel
 	sequential429RetryCount := 0
+	multiKeyDisableRetryCount := 0
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		relayInfo.RetryIndex = retryParam.GetRetry()
@@ -264,6 +265,12 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		newAPIError = overrideErrorIfMatchKeywords(c, newAPIError)
 
 		channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey, common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
+		if retryChannel, ok := retryMultiKeyAfterDisable(c, channel, channelError, newAPIError, originalErrForDisable, multiKeyDisableRetryCount); ok {
+			multiKeyDisableRetryCount++
+			sequentialRetryChannel = retryChannel
+			retryParam.ResetRetryNextTry()
+			continue
+		}
 		advanceMultiKeyPollingOn429(c, channel, newAPIError)
 		if retryChannel, ok := retrySequentialMultiKeyAfter429(c, channel, newAPIError, sequential429RetryCount); ok {
 			sequential429RetryCount++
@@ -315,6 +322,24 @@ func advanceMultiKeyPollingOn429(c *gin.Context, channel *model.Channel, err *ty
 		return
 	}
 	channel.AdvanceMultiKeyPollingIndexAfter(common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex))
+}
+
+func retryMultiKeyAfterDisable(c *gin.Context, channel *model.Channel, channelError types.ChannelError, err *types.NewAPIError, originalErr *types.NewAPIError, retryCount int) (*model.Channel, bool) {
+	if channel == nil || !channel.ChannelInfo.IsMultiKey {
+		return nil, false
+	}
+	if retryCount >= channel.MultiKeyCount()-1 {
+		return nil, false
+	}
+	if !shouldDisableChannelError(channelError, err, originalErr) {
+		return nil, false
+	}
+	if !processChannelErrorSync(c, channelError, err, originalErr) {
+		return nil, false
+	}
+	keyIndex := common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex)
+	logger.LogInfo(c, fmt.Sprintf("multi-key disable retry: disabled key index %d for channel #%d, retrying with next key", keyIndex, channel.Id))
+	return refreshSequentialRetryChannel(channel), true
 }
 
 func retrySequentialMultiKeyAfter429(c *gin.Context, channel *model.Channel, err *types.NewAPIError, retryCount int) (*model.Channel, bool) {
@@ -728,6 +753,7 @@ func RelayTask(c *gin.Context) {
 	}
 	var sequentialRetryChannel *model.Channel
 	sequential429RetryCount := 0
+	multiKeyDisableRetryCount := 0
 
 	for ; retryParam.GetRetry() <= common.RetryTimes; retryParam.IncreaseRetry() {
 		var channel *model.Channel
@@ -785,6 +811,12 @@ func RelayTask(c *gin.Context) {
 			channelError := *types.NewChannelError(channel.Id, channel.Type, channel.Name, channel.ChannelInfo.IsMultiKey,
 				common.GetContextKeyString(c, constant.ContextKeyChannelKey), channel.GetAutoBan())
 			openAIError := types.NewOpenAIError(taskErr.Error, types.ErrorCodeBadResponseStatusCode, taskErr.StatusCode)
+			if retryChannel, ok := retryMultiKeyAfterDisable(c, channel, channelError, openAIError, nil, multiKeyDisableRetryCount); ok {
+				multiKeyDisableRetryCount++
+				sequentialRetryChannel = retryChannel
+				retryParam.ResetRetryNextTry()
+				continue
+			}
 			advanceMultiKeyPollingOn429(c, channel, openAIError)
 			if retryChannel, ok := retrySequentialMultiKeyAfter429(c, channel, openAIError, sequential429RetryCount); ok {
 				sequential429RetryCount++
@@ -912,7 +944,6 @@ func overrideErrorIfMatchKeywords(c *gin.Context, err *types.NewAPIError) *types
 			types.ErrorCodeChannelRateLimited,
 			http.StatusTooManyRequests,
 			types.ErrOptionWithNoRecordErrorLog(),
-			types.ErrOptionWithSkipRetry(),
 		)
 	}
 	return err
