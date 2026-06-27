@@ -349,6 +349,7 @@ const EditChannelModal = (props) => {
     // 企业账户设置
     is_enterprise_account: false,
     // 字段透传控制默认值
+    native_messages_enabled: false,
     allow_service_tier: false,
     disable_store: false,
     allow_safety_identifier: false,
@@ -1126,6 +1127,8 @@ const EditChannelModal = (props) => {
           data.is_enterprise_account =
             parsedSettings.openrouter_enterprise === true;
           // 读取字段透传控制设置
+          data.native_messages_enabled =
+            parsedSettings.native_messages_enabled || false;
           data.allow_service_tier = parsedSettings.allow_service_tier || false;
           data.disable_store = parsedSettings.disable_store || false;
           data.allow_safety_identifier =
@@ -1159,6 +1162,7 @@ const EditChannelModal = (props) => {
           data.vertex_key_type = 'json';
           data.aws_key_type = 'ak_sk';
           data.is_enterprise_account = false;
+          data.native_messages_enabled = false;
           data.allow_service_tier = false;
           data.disable_store = false;
           data.allow_safety_identifier = false;
@@ -1177,6 +1181,7 @@ const EditChannelModal = (props) => {
         data.vertex_key_type = 'json';
         data.aws_key_type = 'ak_sk';
         data.is_enterprise_account = false;
+        data.native_messages_enabled = false;
         data.allow_service_tier = false;
         data.disable_store = false;
         data.allow_safety_identifier = false;
@@ -1288,6 +1293,7 @@ const EditChannelModal = (props) => {
         (data.model_rpm_limits && data.model_rpm_limits.trim()) ||
         data.pass_through_body_enabled ||
         data.force_format ||
+        data.native_messages_enabled ||
         data.claude_beta_query ||
         data.system_prompt_override;
       if (hasAdvancedValues) {
@@ -2086,6 +2092,8 @@ const EditChannelModal = (props) => {
       settings.allow_service_tier = localInputs.allow_service_tier === true;
       // 仅 OpenAI 渠道需要 store / safety_identifier / include_obfuscation
       if (localInputs.type === 1) {
+        settings.native_messages_enabled =
+          localInputs.native_messages_enabled === true;
         settings.disable_store = localInputs.disable_store === true;
         settings.allow_safety_identifier =
           localInputs.allow_safety_identifier === true;
@@ -2150,6 +2158,7 @@ const EditChannelModal = (props) => {
     // 顶层的 aws_key_type 不应发送给后端
     delete localInputs.aws_key_type;
     // 清理字段透传控制的临时字段
+    delete localInputs.native_messages_enabled;
     delete localInputs.allow_service_tier;
     delete localInputs.disable_store;
     delete localInputs.allow_safety_identifier;
@@ -2829,7 +2838,10 @@ const EditChannelModal = (props) => {
                   )}
 
                   {inputs.type === 1 && (
-                    <Form.Switch field='force_format' label={t('强制格式化')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('force_format', value)} extraText={t('强制将响应格式化为 OpenAI 标准格式（只适用于OpenAI渠道类型）')} />
+                    <>
+                      <Form.Switch field='native_messages_enabled' label={t('原生转发 v1/messages')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelOtherSettingsChange('native_messages_enabled', value)} extraText={t('开启后，OpenAI 兼容渠道的 /v1/messages 将直接请求上游原生 Messages 接口，不再转换为 chat/completions')} />
+                      <Form.Switch field='force_format' label={t('强制格式化')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('force_format', value)} extraText={t('强制将响应格式化为 OpenAI 标准格式（只适用于OpenAI渠道类型）')} />
+                    </>
                   )}
 
                   <Form.Switch field='thinking_to_content' label={t('思考内容转换')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('thinking_to_content', value)} extraText={t('将 reasoning_content 转换为 <think> 标签拼接到内容中')} />

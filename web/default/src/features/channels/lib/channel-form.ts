@@ -90,6 +90,7 @@ export const channelFormSchema = z.object({
   vertex_key_type: z.enum(['json', 'api_key']).optional(), // Vertex AI specific
   aws_key_type: z.enum(['ak_sk', 'api_key']).optional(), // AWS specific
   azure_responses_version: z.string().optional(), // Azure specific
+  native_messages_enabled: z.boolean().optional(), // OpenAI compatible native Messages API
   // Field passthrough controls (stored in settings JSON)
   allow_service_tier: z.boolean().optional(), // OpenAI/Anthropic
   disable_store: z.boolean().optional(), // OpenAI only
@@ -161,6 +162,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   vertex_key_type: 'json',
   aws_key_type: 'ak_sk',
   azure_responses_version: '',
+  native_messages_enabled: false,
   // Field passthrough controls
   allow_service_tier: false,
   disable_store: false,
@@ -251,6 +253,7 @@ export function transformChannelToFormDefaults(
   let vertexKeyType: 'json' | 'api_key' = 'json'
   let azureResponsesVersion = ''
   let isEnterpriseAccount = false
+  let nativeMessagesEnabled = false
   let awsKeyType: 'ak_sk' | 'api_key' = 'ak_sk'
   let allowServiceTier = false
   let disableStore = false
@@ -269,6 +272,7 @@ export function transformChannelToFormDefaults(
       vertexKeyType = parsed.vertex_key_type || 'json'
       azureResponsesVersion = parsed.azure_responses_version || ''
       isEnterpriseAccount = parsed.openrouter_enterprise === true
+      nativeMessagesEnabled = parsed.native_messages_enabled === true
       awsKeyType = parsed.aws_key_type || 'ak_sk'
       allowServiceTier = parsed.allow_service_tier === true
       disableStore = parsed.disable_store === true
@@ -322,6 +326,7 @@ export function transformChannelToFormDefaults(
     ...extraSettings,
     // Type-specific settings
     is_enterprise_account: isEnterpriseAccount,
+    native_messages_enabled: nativeMessagesEnabled,
     vertex_key_type: vertexKeyType,
     azure_responses_version: azureResponsesVersion,
     aws_key_type: awsKeyType,
@@ -559,6 +564,8 @@ function buildSettingsJSON(formData: ChannelFormValues): string {
   }
 
   if (formData.type === 1) {
+    settingsObj.native_messages_enabled =
+      formData.native_messages_enabled === true
     settingsObj.disable_store = formData.disable_store === true
     settingsObj.allow_safety_identifier =
       formData.allow_safety_identifier === true
@@ -566,6 +573,8 @@ function buildSettingsJSON(formData: ChannelFormValues): string {
       formData.allow_include_obfuscation === true
     settingsObj.allow_inference_geo = formData.allow_inference_geo === true
   } else {
+    if ('native_messages_enabled' in settingsObj)
+      delete settingsObj.native_messages_enabled
     if ('disable_store' in settingsObj) delete settingsObj.disable_store
     if ('allow_safety_identifier' in settingsObj)
       delete settingsObj.allow_safety_identifier

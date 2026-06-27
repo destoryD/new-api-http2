@@ -18,6 +18,7 @@ import (
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/channel"
 	"github.com/QuantumNous/new-api/relay/channel/ai360"
+	"github.com/QuantumNous/new-api/relay/channel/claude"
 	"github.com/QuantumNous/new-api/relay/channel/lingyiwanwu"
 
 	//"github.com/QuantumNous/new-api/relay/channel/minimax"
@@ -40,6 +41,13 @@ type Adaptor struct {
 	ResponseFormat string
 }
 
+func nativeMessagesEnabled(info *relaycommon.RelayInfo) bool {
+	return info != nil &&
+		info.RelayFormat == types.RelayFormatClaude &&
+		info.ChannelType == constant.ChannelTypeOpenAI &&
+		info.ChannelOtherSettings.NativeMessagesEnabled
+}
+
 func (a *Adaptor) ConvertGeminiRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.GeminiChatRequest) (any, error) {
 	// 使用 service.GeminiToOpenAIRequest 转换请求格式
 	openaiRequest, err := service.GeminiToOpenAIRequest(request, info)
@@ -50,6 +58,9 @@ func (a *Adaptor) ConvertGeminiRequest(c *gin.Context, info *relaycommon.RelayIn
 }
 
 func (a *Adaptor) ConvertClaudeRequest(c *gin.Context, info *relaycommon.RelayInfo, request *dto.ClaudeRequest) (any, error) {
+	if nativeMessagesEnabled(info) {
+		return request, nil
+	}
 	//if !strings.Contains(request.Model, "claude") {
 	//	return nil, fmt.Errorf("you are using openai channel type with path /v1/messages, only claude model supported convert, but got %s", request.Model)
 	//}
@@ -165,7 +176,8 @@ func (a *Adaptor) GetRequestURL(info *relaycommon.RelayInfo) (string, error) {
 	default:
 		if (info.RelayFormat == types.RelayFormatClaude || info.RelayFormat == types.RelayFormatGemini) &&
 			info.RelayMode != relayconstant.RelayModeResponses &&
-			info.RelayMode != relayconstant.RelayModeResponsesCompact {
+			info.RelayMode != relayconstant.RelayModeResponsesCompact &&
+			!nativeMessagesEnabled(info) {
 			return fmt.Sprintf("%s/v1/chat/completions", info.ChannelBaseUrl), nil
 		}
 		return relaycommon.GetFullRequestURL(info.ChannelBaseUrl, info.RequestURLPath, info.ChannelType), nil
@@ -221,6 +233,21 @@ func (a *Adaptor) SetupRequestHeader(c *gin.Context, header *http.Header, info *
 		}
 		if header.Get("X-OpenRouter-Title") == "" {
 			header.Set("X-OpenRouter-Title", "New API")
+		}
+	}
+	if nativeMessagesEnabled(info) {
+		if header.Get("x-api-key") == "" {
+			header.Set("x-api-key", info.ApiKey)
+		}
+		if header.Get("anthropic-version") == "" {
+			anthropicVersion := c.Request.Header.Get("anthropic-version")
+			if anthropicVersion == "" {
+				anthropicVersion = "2023-06-01"
+			}
+			header.Set("anthropic-version", anthropicVersion)
+		}
+		if anthropicBeta := c.Request.Header.Get("anthropic-beta"); anthropicBeta != "" && header.Get("anthropic-beta") == "" {
+			header.Set("anthropic-beta", anthropicBeta)
 		}
 	}
 	return nil
@@ -613,6 +640,16 @@ func (a *Adaptor) DoRequest(c *gin.Context, info *relaycommon.RelayInfo, request
 }
 
 func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycommon.RelayInfo) (usage any, err *types.NewAPIError) {
+	if nativeMessagesEnabled(info) {
+		info.FinalRequestRelayFormat = types.RelayFormatClaude
+		if info.IsStream {
+			if info.StreamForcedForNonStream {
+				return claude.ClaudeStreamToNonStreamHandler(c, resp, info)
+			}
+			return claude.ClaudeStreamHandler(c, resp, info)
+		}
+		return claude.ClaudeHandler(c, resp, info)
+	}
 	switch info.RelayMode {
 	case relayconstant.RelayModeRealtime:
 		err, usage = OpenaiRealtimeHandler(c, info)
