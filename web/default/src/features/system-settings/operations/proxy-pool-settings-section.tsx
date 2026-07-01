@@ -18,9 +18,10 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import * as z from 'zod'
 import { useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
+import { Button } from '@/components/ui/button'
 import {
   Form,
   FormControl,
@@ -33,12 +34,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  SettingsForm,
-  SettingsSwitchContent,
-  SettingsSwitchItem,
-} from '../components/settings-form-layout'
-import { SettingsPageFormActions } from '../components/settings-page-context'
 import { SettingsSection } from '../components/settings-section'
 import { useResetForm } from '../hooks/use-reset-form'
 import { useUpdateOption } from '../hooks/use-update-option'
@@ -128,7 +123,7 @@ export function ProxyPoolSettingsSection({
   )
 
   const form = useForm<ProxyPoolFormValues>({
-    resolver: zodResolver(proxyPoolSchema),
+    resolver: zodResolver(proxyPoolSchema) as unknown as Resolver<ProxyPoolFormValues>,
     defaultValues: formDefaults,
   })
 
@@ -172,33 +167,33 @@ export function ProxyPoolSettingsSection({
   return (
     <SettingsSection title={t('Global Proxy Pool')}>
       <Form {...form}>
-        <SettingsForm onSubmit={form.handleSubmit(onSubmit)} autoComplete='off'>
-          <SettingsPageFormActions
-            onSave={form.handleSubmit(onSubmit)}
-            isSaving={updateOption.isPending}
-            saveLabel='Save proxy pool settings'
-          />
-
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          autoComplete='off'
+          className='space-y-6'
+        >
           <FormField
             control={form.control}
             name='proxy_pool_setting.enabled'
             render={({ field }) => (
-              <SettingsSwitchItem>
-                <SettingsSwitchContent>
-                  <FormLabel>{t('Enable global proxy pool')}</FormLabel>
+              <FormItem className='flex flex-row items-center justify-between rounded-lg border p-4'>
+                <div className='space-y-0.5'>
+                  <FormLabel className='text-base'>
+                    {t('Enable global proxy pool')}
+                  </FormLabel>
                   <FormDescription>
                     {t(
                       'Channels can opt in to receive a monitored proxy from this shared pool.'
                     )}
                   </FormDescription>
-                </SettingsSwitchContent>
+                </div>
                 <FormControl>
                   <Switch
                     checked={field.value}
                     onCheckedChange={field.onChange}
                   />
                 </FormControl>
-              </SettingsSwitchItem>
+              </FormItem>
             )}
           />
 
@@ -286,7 +281,11 @@ export function ProxyPoolSettingsSection({
               </FormItem>
             )}
           />
-        </SettingsForm>
+
+          <Button type='submit' disabled={updateOption.isPending}>
+            {t('Save proxy pool settings')}
+          </Button>
+        </form>
       </Form>
     </SettingsSection>
   )

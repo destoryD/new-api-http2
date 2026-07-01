@@ -843,6 +843,7 @@
     "Configure model deployment provider settings": "配置模型部署提供商设置",
     "Configure model pricing ratios and tool prices": "配置模型定价倍率和工具价格",
     "Configure model, caching, and group ratios used for billing": "配置用于计费的模型、缓存和分组比例",
+    "Configure monitored shared proxy resources": "配置受监测的共享代理资源",
     "Configure monitoring status page groups for the dashboard": "配置用于仪表板的监控状态页面分组",
     "Configure outgoing email server for notifications": "配置用于通知的发送邮件服务器",
     "Configure Passkey (WebAuthn) login settings": "配置 Passkey (WebAuthn) 登录设置",

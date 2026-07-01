@@ -843,6 +843,7 @@
     "Configure model deployment provider settings": "Cấu hình nhà cung cấp triển khai mô hình",
     "Configure model pricing ratios and tool prices": "Cấu hình tỷ lệ định giá mô hình và giá công cụ",
     "Configure model, caching, and group ratios used for billing": "Cấu hình mô hình, bộ nhớ đệm và tỷ lệ nhóm được sử dụng để tính phí.",
+    "Configure monitored shared proxy resources": "Cau hinh tai nguyen proxy dung chung duoc giam sat",
     "Configure monitoring status page groups for the dashboard": "Cấu hình các nhóm trang trạng thái giám sát cho bảng điều khiển",
     "Configure outgoing email server for notifications": "Cấu hình máy chủ email gửi đi cho thông báo",
     "Configure Passkey (WebAuthn) login settings": "Cấu hình cài đặt đăng nhập Passkey (WebAuthn)",

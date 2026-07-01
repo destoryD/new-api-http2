@@ -87,6 +87,7 @@ const OPERATIONS_SECTIONS = [
   {
     id: 'proxy-pool',
     titleKey: 'Global Proxy Pool',
+    descriptionKey: 'Configure monitored shared proxy resources',
     build: (settings: OperationsSettings) => (
       <ProxyPoolSettingsSection
         defaultValues={{

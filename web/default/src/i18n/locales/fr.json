@@ -843,6 +843,7 @@
     "Configure model deployment provider settings": "Configurer les paramètres du fournisseur de déploiement de modèles",
     "Configure model pricing ratios and tool prices": "Configurer les ratios de tarification des modèles et les prix des outils",
     "Configure model, caching, and group ratios used for billing": "Configurer les ratios de modèle, de mise en cache et de groupe utilisés pour la facturation",
+    "Configure monitored shared proxy resources": "Configurer les ressources proxy partagees surveillees",
     "Configure monitoring status page groups for the dashboard": "Configurer les groupes de pages d'état de surveillance pour le tableau de bord",
     "Configure outgoing email server for notifications": "Configurer le serveur de messagerie sortant pour les notifications",
     "Configure Passkey (WebAuthn) login settings": "Configurer les paramètres de connexion Passkey (WebAuthn)",

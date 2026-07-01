@@ -843,6 +843,7 @@
     "Configure model deployment provider settings": "モデルデプロイプロバイダー設定を構成します",
     "Configure model pricing ratios and tool prices": "モデル料金倍率とツール料金を設定します",
     "Configure model, caching, and group ratios used for billing": "請求に使用されるモデル、キャッシュ、およびグループ比率を設定します。",
+    "Configure monitored shared proxy resources": "監視対象の共有プロキシリソースを設定",
     "Configure monitoring status page groups for the dashboard": "ダッシュボードの監視ステータスページグループを設定します。",
     "Configure outgoing email server for notifications": "通知用の送信メールサーバーを設定します。",
     "Configure Passkey (WebAuthn) login settings": "パスキー (WebAuthn) ログイン設定を設定",
