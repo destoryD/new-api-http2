@@ -13,7 +13,6 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
-	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/types"
 
@@ -262,9 +261,6 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 
 	channelSetting, ok := common.GetContextKeyType[dto.ChannelSettings](c, constant.ContextKeyChannelSetting)
 	if ok {
-		if err := service.ApplyGlobalProxyPoolToChannelSetting(&channelSetting, channelMeta.ChannelId, channelMeta.ChannelMultiKeyIndex, channelMeta.ApiKey); err != nil {
-			common.SysLog(fmt.Sprintf("failed to assign global proxy pool: channel_id=%d, error=%v", channelMeta.ChannelId, err))
-		}
 		channelMeta.ChannelSetting = channelSetting
 	}
 
