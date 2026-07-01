@@ -6,6 +6,7 @@ type ChannelSettings struct {
 	ForceFormat               bool           `json:"force_format,omitempty"`
 	ThinkingToContent         bool           `json:"thinking_to_content,omitempty"`
 	Proxy                     string         `json:"proxy"`
+	UseGlobalProxyPool        bool           `json:"use_global_proxy_pool,omitempty"`
 	ProxyPool                 []string       `json:"proxy_pool,omitempty"`
 	ProxyPoolRetryStatusCodes []int          `json:"proxy_pool_retry_status_codes,omitempty"`
 	PassThroughBodyEnabled    bool           `json:"pass_through_body_enabled,omitempty"`

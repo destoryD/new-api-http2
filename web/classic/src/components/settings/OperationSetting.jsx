@@ -27,6 +27,7 @@ import SettingsLog from '../../pages/Setting/Operation/SettingsLog';
 import SettingsMonitoring from '../../pages/Setting/Operation/SettingsMonitoring';
 import SettingsCreditLimit from '../../pages/Setting/Operation/SettingsCreditLimit';
 import SettingsCheckin from '../../pages/Setting/Operation/SettingsCheckin';
+import SettingsProxyPool from '../../pages/Setting/Operation/SettingsProxyPool';
 import { API, showError, toBoolean } from '../../helpers';
 
 const OperationSetting = () => {
@@ -78,6 +79,14 @@ const OperationSetting = () => {
     'checkin_setting.enabled': false,
     'checkin_setting.min_quota': 1000,
     'checkin_setting.max_quota': 10000,
+
+    /* 全局代理池 */
+    'proxy_pool_setting.enabled': false,
+    'proxy_pool_setting.proxies': '',
+    'proxy_pool_setting.health_check_url': 'https://api.openai.com',
+    'proxy_pool_setting.health_check_interval_seconds': 300,
+    'proxy_pool_setting.health_check_timeout_seconds': 10,
+    'proxy_pool_setting.assignment_cooldown_seconds': 60,
 
     /* 令牌设置 */
     'token_setting.max_user_tokens': 1000,
@@ -145,6 +154,10 @@ const OperationSetting = () => {
         {/* 监控设置 */}
         <Card style={{ marginTop: '10px' }}>
           <SettingsMonitoring options={inputs} refresh={onRefresh} />
+        </Card>
+        {/* 全局代理池 */}
+        <Card style={{ marginTop: '10px' }}>
+          <SettingsProxyPool options={inputs} refresh={onRefresh} />
         </Card>
         {/* 额度设置 */}
         <Card style={{ marginTop: '10px' }}>

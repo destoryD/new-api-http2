@@ -334,6 +334,7 @@ const EditChannelModal = (props) => {
     multi_key_rpm_limit: 0,
     multi_key_429_skip_seconds: 60,
     model_rpm_limits: '',
+    use_global_proxy_pool: false,
     proxy: '',
     proxy_pool: '',
     proxy_pool_retry_status_codes: '',
@@ -671,6 +672,7 @@ const EditChannelModal = (props) => {
     multi_key_rpm_limit: 0,
     multi_key_429_skip_seconds: 60,
     model_rpm_limits: '',
+    use_global_proxy_pool: false,
     proxy: '',
     proxy_pool: '',
     proxy_pool_retry_status_codes: '',
@@ -1058,6 +1060,8 @@ const EditChannelModal = (props) => {
           data.model_rpm_limits = formatModelRPMLimits(
             parsedSettings.model_rpm_limits,
           );
+          data.use_global_proxy_pool =
+            parsedSettings.use_global_proxy_pool || false;
           data.proxy = parsedSettings.proxy || '';
           data.proxy_pool = formatProxyPool(parsedSettings.proxy_pool);
           data.proxy_pool_retry_status_codes = formatStatusCodeList(
@@ -1084,6 +1088,7 @@ const EditChannelModal = (props) => {
           data.multi_key_rpm_limit = 0;
           data.multi_key_429_skip_seconds = 60;
           data.model_rpm_limits = '';
+          data.use_global_proxy_pool = false;
           data.proxy = '';
           data.proxy_pool = '';
           data.proxy_pool_retry_status_codes = '';
@@ -1105,6 +1110,7 @@ const EditChannelModal = (props) => {
         data.multi_key_rpm_limit = 0;
         data.multi_key_429_skip_seconds = 60;
         data.model_rpm_limits = '';
+        data.use_global_proxy_pool = false;
         data.proxy = '';
         data.proxy_pool = '';
         data.proxy_pool_retry_status_codes = '';
@@ -1231,6 +1237,7 @@ const EditChannelModal = (props) => {
         multi_key_rpm_limit: data.multi_key_rpm_limit,
         multi_key_429_skip_seconds: data.multi_key_429_skip_seconds,
         model_rpm_limits: data.model_rpm_limits,
+        use_global_proxy_pool: data.use_global_proxy_pool,
         proxy: data.proxy,
         proxy_pool: data.proxy_pool,
         proxy_pool_retry_status_codes: data.proxy_pool_retry_status_codes,
@@ -1274,6 +1281,7 @@ const EditChannelModal = (props) => {
         (data.remark && data.remark.trim()) ||
         (data.priority && data.priority !== 0) ||
         (data.weight && data.weight !== 0) ||
+        data.use_global_proxy_pool ||
         (data.proxy && data.proxy.trim()) ||
         (data.proxy_pool && data.proxy_pool.trim()) ||
         (data.proxy_pool_retry_status_codes &&
@@ -2047,6 +2055,7 @@ const EditChannelModal = (props) => {
         Math.floor(Number(localInputs.multi_key_429_skip_seconds) || 60),
       ),
       model_rpm_limits: parseModelRPMLimits(localInputs.model_rpm_limits),
+      use_global_proxy_pool: localInputs.use_global_proxy_pool === true,
       proxy: localInputs.proxy || '',
       proxy_pool: parseProxyPool(localInputs.proxy_pool),
       proxy_pool_retry_status_codes: parseStatusCodeList(
@@ -2145,6 +2154,7 @@ const EditChannelModal = (props) => {
     delete localInputs.multi_key_rpm_limit;
     delete localInputs.multi_key_429_skip_seconds;
     delete localInputs.model_rpm_limits;
+    delete localInputs.use_global_proxy_pool;
     delete localInputs.proxy;
     delete localInputs.proxy_pool;
     delete localInputs.proxy_pool_retry_status_codes;
@@ -2857,6 +2867,7 @@ const EditChannelModal = (props) => {
                   <Form.TextArea field='model_rpm_limits' label={t('模型 RPM 限制')} placeholder='{"gpt-4o": 60}' onChange={(value) => handleChannelSettingsChange('model_rpm_limits', value)} autosize showClear extraText={t('按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制')} />
                   <Form.Switch field='pass_through_body_enabled' label={t('透传请求体')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('pass_through_body_enabled', value)} extraText={t('启用请求体透传功能')} />
 
+                  <Form.Switch field='use_global_proxy_pool' label={t('使用全局代理池')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('use_global_proxy_pool', value)} extraText={t('为此渠道使用的每个 key 动态分配受监测的全局代理')} />
                   <Form.Input field='proxy' label={t('代理地址')} placeholder={t('例如: socks5://user:pass@host:port')} onChange={(value) => handleChannelSettingsChange('proxy', value)} showClear extraText={t('用于配置网络代理，支持 socks5 协议')} />
 
                   <Form.TextArea field='proxy_pool' label={t('代理池')} placeholder={'socks5://user:pass@host1:port\nsocks5://user:pass@host2:port'} onChange={(value) => handleChannelSettingsChange('proxy_pool', value)} autosize showClear extraText={t('每行一个代理；多密钥轮询或按序模式时，每个密钥按下标使用代理池中对应的代理')} />

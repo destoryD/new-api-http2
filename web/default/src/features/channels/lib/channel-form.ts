@@ -73,6 +73,7 @@ export const channelFormSchema = z.object({
       message:
         'Model RPM Limits must be a JSON object with non-negative integer values',
     }),
+  use_global_proxy_pool: z.boolean().optional(),
   proxy: z.string().optional(),
   proxy_pool: z.string().optional(),
   proxy_pool_retry_status_codes: z
@@ -150,6 +151,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   multi_key_rpm_limit: 0,
   multi_key_429_skip_seconds: 60,
   model_rpm_limits: '',
+  use_global_proxy_pool: false,
   proxy: '',
   proxy_pool: '',
   proxy_pool_retry_status_codes: '',
@@ -200,6 +202,7 @@ export function transformChannelToFormDefaults(
     multi_key_rpm_limit: 0,
     multi_key_429_skip_seconds: 60,
     model_rpm_limits: '',
+    use_global_proxy_pool: false,
     proxy: '',
     proxy_pool: '',
     proxy_pool_retry_status_codes: '',
@@ -233,6 +236,7 @@ export function transformChannelToFormDefaults(
           Math.floor(Number(parsed.multi_key_429_skip_seconds) || 60)
         ),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
+        use_global_proxy_pool: parsed.use_global_proxy_pool || false,
         proxy: parsed.proxy || '',
         proxy_pool: formatProxyPool(parsed.proxy_pool),
         proxy_pool_retry_status_codes: formatStatusCodeList(
@@ -368,6 +372,7 @@ function buildSettingJSON(formData: ChannelFormValues): string {
       Math.floor(Number(formData.multi_key_429_skip_seconds) || 60)
     ),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
+    use_global_proxy_pool: formData.use_global_proxy_pool === true,
     proxy: formData.proxy || '',
     proxy_pool: parseProxyPool(formData.proxy_pool),
     proxy_pool_retry_status_codes: parseStatusCodeList(

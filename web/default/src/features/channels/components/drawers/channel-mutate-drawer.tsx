@@ -234,6 +234,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.remark?.trim() ||
     values.priority ||
     values.weight ||
+    values.use_global_proxy_pool ||
     values.proxy?.trim() ||
     values.proxy_pool?.trim() ||
     values.proxy_pool_retry_status_codes?.trim() ||
@@ -3531,6 +3532,29 @@ export function ChannelMutateDrawer({
                       />
                     </div>
 
+                    <FormField
+                      control={form.control}
+                      name='use_global_proxy_pool'
+                      render={({ field }) => (
+                        <FormItem className='flex flex-row items-center justify-between rounded-lg border p-3'>
+                          <div className='space-y-0.5'>
+                            <FormLabel>{t('Use Global Proxy Pool')}</FormLabel>
+                            <FormDescription>
+                              {t(
+                                'Dynamically assign a monitored global proxy to each key used by this channel'
+                              )}
+                            </FormDescription>
+                          </div>
+                          <FormControl>
+                            <Switch
+                              checked={field.value || false}
+                              onCheckedChange={field.onChange}
+                              disabled={isSubmitting}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
                     <FormField
                       control={form.control}
                       name='proxy'

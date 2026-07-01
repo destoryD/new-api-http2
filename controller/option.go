@@ -304,6 +304,24 @@ func UpdateOption(c *gin.Context) {
 			})
 			return
 		}
+	case "proxy_pool_setting.proxies":
+		var resources []operation_setting.ProxyPoolResource
+		err = common.UnmarshalJsonStr(option.Value.(string), &resources)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
+		err = operation_setting.ValidateProxyPoolResources(resources)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": err.Error(),
+			})
+			return
+		}
 	case "console_setting.api_info":
 		err = console_setting.ValidateConsoleSettings(option.Value.(string), "ApiInfo")
 		if err != nil {
