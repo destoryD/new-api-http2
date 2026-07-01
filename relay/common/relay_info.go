@@ -13,6 +13,7 @@ import (
 	"github.com/QuantumNous/new-api/dto"
 	"github.com/QuantumNous/new-api/pkg/billingexpr"
 	relayconstant "github.com/QuantumNous/new-api/relay/constant"
+	"github.com/QuantumNous/new-api/service"
 	"github.com/QuantumNous/new-api/setting/model_setting"
 	"github.com/QuantumNous/new-api/types"
 
@@ -97,32 +98,32 @@ type RelayInfo struct {
 	FirstResponseTime time.Time
 	isFirstResponse   bool
 	//SendLastReasoningResponse bool
-	IsStream               bool
-	IsGeminiBatchEmbedding bool
-	IsPlayground           bool
-	UsePrice               bool
-	RelayMode              int
-	OriginModelName        string
-	RequestURLPath         string
-	RequestHeaders         map[string]string
+	IsStream                 bool
+	IsGeminiBatchEmbedding   bool
+	IsPlayground             bool
+	UsePrice                 bool
+	RelayMode                int
+	OriginModelName          string
+	RequestURLPath           string
+	RequestHeaders           map[string]string
 	ShouldIncludeUsage       bool
 	StreamForcedForNonStream bool
-	DisablePing            bool // 是否禁止向下游发送自定义 Ping
-	ClientWs               *websocket.Conn
-	TargetWs               *websocket.Conn
-	InputAudioFormat       string
-	OutputAudioFormat      string
-	RealtimeTools          []dto.RealTimeTool
-	IsFirstRequest         bool
-	AudioUsage             bool
-	ReasoningEffort        string
-	UserSetting            dto.UserSetting
-	UserEmail              string
-	UserQuota              int
-	RelayFormat            types.RelayFormat
-	SendResponseCount      int
-	ReceivedResponseCount  int
-	FinalPreConsumedQuota  int // 最终预消耗的配额
+	DisablePing              bool // 是否禁止向下游发送自定义 Ping
+	ClientWs                 *websocket.Conn
+	TargetWs                 *websocket.Conn
+	InputAudioFormat         string
+	OutputAudioFormat        string
+	RealtimeTools            []dto.RealTimeTool
+	IsFirstRequest           bool
+	AudioUsage               bool
+	ReasoningEffort          string
+	UserSetting              dto.UserSetting
+	UserEmail                string
+	UserQuota                int
+	RelayFormat              types.RelayFormat
+	SendResponseCount        int
+	ReceivedResponseCount    int
+	FinalPreConsumedQuota    int // 最终预消耗的配额
 	// ForcePreConsume 为 true 时禁用 BillingSession 的信任额度旁路，
 	// 强制预扣全额。用于异步任务（视频/音乐生成等），因为请求返回后任务仍在运行，
 	// 必须在提交前锁定全额。
@@ -269,6 +270,9 @@ func (info *RelayInfo) InitChannelMeta(c *gin.Context) {
 
 	channelSetting, ok := common.GetContextKeyType[dto.ChannelSettings](c, constant.ContextKeyChannelSetting)
 	if ok {
+		if err := service.ApplyGlobalProxyPoolToChannelSetting(&channelSetting, channelMeta.ChannelId, channelMeta.ChannelMultiKeyIndex, channelMeta.ApiKey); err != nil {
+			common.SysLog(fmt.Sprintf("failed to assign global proxy pool: channel_id=%d, error=%v", channelMeta.ChannelId, err))
+		}
 		channelMeta.ChannelSetting = channelSetting
 	}
 

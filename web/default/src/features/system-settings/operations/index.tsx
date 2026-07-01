@@ -55,6 +55,12 @@ const defaultOperationsSettings: OperationsSettings = {
   'perf_metrics_setting.flush_interval': 5,
   'perf_metrics_setting.bucket_time': 'hour',
   'perf_metrics_setting.retention_days': 0,
+  'proxy_pool_setting.enabled': false,
+  'proxy_pool_setting.proxies': '[]',
+  'proxy_pool_setting.health_check_url': 'https://api.openai.com',
+  'proxy_pool_setting.health_check_interval_seconds': 300,
+  'proxy_pool_setting.health_check_timeout_seconds': 10,
+  'proxy_pool_setting.assignment_cooldown_seconds': 60,
 }
 
 export function OperationsSettings() {

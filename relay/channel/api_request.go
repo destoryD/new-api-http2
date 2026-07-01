@@ -557,7 +557,14 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 		} else {
 			logger.LogError(c, "do request failed: "+err.Error())
 		}
-		return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: do request failed"))
+		retryResp, retryErr := retryWithGlobalProxyPoolOnError(c, req, info, err)
+		if retryErr != nil {
+			logger.LogError(c, "global proxy pool retry failed: "+retryErr.Error())
+		}
+		if retryResp == nil {
+			return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: do request failed"))
+		}
+		resp = retryResp
 	}
 	if resp == nil {
 		return nil, errors.New("resp is nil")
@@ -584,6 +591,36 @@ func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 	return resp, nil
 }
 
+func retryWithGlobalProxyPoolOnError(c *gin.Context, req *http.Request, info *common.RelayInfo, requestErr error) (*http.Response, error) {
+	if info == nil || info.ChannelMeta == nil || !info.ChannelSetting.UseGlobalProxyPool {
+		return nil, nil
+	}
+	retryReq, err := cloneRequestForProxyPoolRetry(req)
+	if err != nil {
+		return nil, err
+	}
+	retrySetting, switched, err := service.ReportGlobalProxyPoolFailure(
+		info.ChannelSetting,
+		info.ChannelId,
+		info.ChannelMultiKeyIndex,
+		info.ApiKey,
+		requestErr.Error(),
+	)
+	if err != nil || !switched {
+		return nil, err
+	}
+	retryClient, err := service.GetChannelHttpClient(retrySetting)
+	if err != nil {
+		return nil, err
+	}
+	logger.LogInfo(c, fmt.Sprintf("global proxy pool retry: switching proxy for channel %d", info.ChannelId))
+	resp, err := retryClient.Do(retryReq)
+	if err != nil {
+		return nil, err
+	}
+	info.ChannelSetting = retrySetting
+	return resp, nil
+}
 func retryWithNextProxyPoolOnStatusCode(c *gin.Context, req *http.Request, info *common.RelayInfo, resp *http.Response) (*http.Response, error) {
 	proxyPool := dto.NormalizeProxyPool(info.ChannelSetting.ProxyPool)
 	if resp == nil || len(proxyPool) == 0 || len(info.ChannelSetting.ProxyPoolRetryStatusCodes) == 0 {

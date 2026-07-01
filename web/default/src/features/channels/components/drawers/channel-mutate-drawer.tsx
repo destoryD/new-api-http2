@@ -3338,6 +3338,29 @@ export function ChannelMutateDrawer({
 
                       <FormField
                         control={form.control}
+                        name='use_global_proxy_pool'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>{t('Use Global Proxy Pool')}</FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Dynamically assign a monitored global proxy to each key used by this channel'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
                         name='proxy'
                         render={({ field }) => (
                           <FormItem>

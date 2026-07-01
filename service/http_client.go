@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -247,6 +248,9 @@ func GetNoReuseHTTPOnlyClientWithProxy(proxyURL string) (*http.Client, error) {
 }
 
 func GetChannelHttpClient(setting dto.ChannelSettings) (*http.Client, error) {
+	if setting.UseGlobalProxyPool && strings.TrimSpace(setting.Proxy) == "" {
+		return nil, fmt.Errorf("global proxy pool is enabled but no proxy is assigned")
+	}
 	enableHttp2 := setting.EnableHttp2
 	disableHttp2 := setting.DisableHttp2 && !enableHttp2
 

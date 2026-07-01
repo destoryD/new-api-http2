@@ -20,6 +20,7 @@ import { SystemBehaviorSection } from '../general/system-behavior-section'
 import { EmailSettingsSection } from '../integrations/email-settings-section'
 import { MonitoringSettingsSection } from '../integrations/monitoring-settings-section'
 import { WorkerSettingsSection } from '../integrations/worker-settings-section'
+import { ProxyPoolSettingsSection } from './proxy-pool-settings-section'
 import { LogSettingsSection } from '../maintenance/log-settings-section'
 import { PerformanceSection } from '../maintenance/performance-section'
 import { UpdateCheckerSection } from '../maintenance/update-checker-section'
@@ -74,6 +75,26 @@ const OPERATIONS_SECTIONS = [
           SMTPStartTLSEnabled: settings.SMTPStartTLSEnabled,
           SMTPInsecureSkipVerify: settings.SMTPInsecureSkipVerify,
           SMTPForceAuthLogin: settings.SMTPForceAuthLogin,
+        }}
+      />
+    ),
+  },
+  {
+    id: 'proxy-pool',
+    titleKey: 'Global Proxy Pool',
+    build: (settings: OperationsSettings) => (
+      <ProxyPoolSettingsSection
+        defaultValues={{
+          'proxy_pool_setting.enabled': settings['proxy_pool_setting.enabled'],
+          'proxy_pool_setting.proxies': settings['proxy_pool_setting.proxies'],
+          'proxy_pool_setting.health_check_url':
+            settings['proxy_pool_setting.health_check_url'],
+          'proxy_pool_setting.health_check_interval_seconds':
+            settings['proxy_pool_setting.health_check_interval_seconds'],
+          'proxy_pool_setting.health_check_timeout_seconds':
+            settings['proxy_pool_setting.health_check_timeout_seconds'],
+          'proxy_pool_setting.assignment_cooldown_seconds':
+            settings['proxy_pool_setting.assignment_cooldown_seconds'],
         }}
       />
     ),

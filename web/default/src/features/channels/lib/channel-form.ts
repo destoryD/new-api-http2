@@ -204,6 +204,7 @@ export const channelFormSchema = z
     allowed_endpoint_types: z.array(z.string()).optional(),
     override_error_as_429: z.boolean().optional(),
     proxy: z.string().optional(),
+    use_global_proxy_pool: z.boolean().optional(),
     proxy_pool: z.string().optional(),
     proxy_pool_retry_status_codes: z
       .string()
@@ -364,6 +365,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   allowed_endpoint_types: [],
   override_error_as_429: false,
   proxy: '',
+  use_global_proxy_pool: false,
   proxy_pool: '',
   proxy_pool_retry_status_codes: '',
   pass_through_body_enabled: false,
@@ -412,6 +414,7 @@ export function transformChannelToFormDefaults(
     model_rpm_limits: '',
     allowed_endpoint_types: [] as string[],
     proxy: '',
+    use_global_proxy_pool: false,
     proxy_pool: '',
     proxy_pool_retry_status_codes: '',
     pass_through_body_enabled: false,
@@ -445,6 +448,7 @@ export function transformChannelToFormDefaults(
         ),
         override_error_as_429: parsed.override_error_as_429 || false,
         proxy: parsed.proxy || '',
+        use_global_proxy_pool: parsed.use_global_proxy_pool === true,
         proxy_pool: formatProxyPool(parsed.proxy_pool),
         proxy_pool_retry_status_codes: formatStatusCodeList(
           parsed.proxy_pool_retry_status_codes
@@ -588,6 +592,7 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     ),
     override_error_as_429: formData.override_error_as_429 || false,
     proxy: formData.proxy || '',
+    use_global_proxy_pool: formData.use_global_proxy_pool || false,
     proxy_pool: parseProxyPool(formData.proxy_pool),
     proxy_pool_retry_status_codes: parseStatusCodeList(
       formData.proxy_pool_retry_status_codes

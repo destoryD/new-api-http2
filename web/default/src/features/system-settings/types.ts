@@ -359,6 +359,12 @@ export type OperationsSettings = {
   'perf_metrics_setting.flush_interval': number
   'perf_metrics_setting.bucket_time': 'hour' | 'minute' | '5min'
   'perf_metrics_setting.retention_days': number
+  'proxy_pool_setting.enabled': boolean
+  'proxy_pool_setting.proxies': string
+  'proxy_pool_setting.health_check_url': string
+  'proxy_pool_setting.health_check_interval_seconds': number
+  'proxy_pool_setting.health_check_timeout_seconds': number
+  'proxy_pool_setting.assignment_cooldown_seconds': number
 }
 
 export type SecuritySettings = {
