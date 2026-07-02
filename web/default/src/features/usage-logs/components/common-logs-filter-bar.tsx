@@ -47,11 +47,7 @@ import {
 } from '@/components/ui/tooltip'
 import { DataTableToolbar } from '@/components/data-table'
 import { LOG_TYPES } from '../constants'
-import {
-  downloadBillingLogs,
-  fetchBillingExportLogs,
-  type BillingExportFormat,
-} from '../lib/export'
+import { downloadBillingLogs, type BillingExportFormat } from '../lib/export'
 import { buildSearchParams } from '../lib/filter'
 import { buildApiParams, getDefaultTimeRange } from '../lib/utils'
 import type { CommonLogFilters } from '../types'
@@ -185,12 +181,7 @@ export function CommonLogsFilterBar<TData>(
           columnFilters: props.table.getState().columnFilters,
           isAdmin,
         })
-        const logs = await fetchBillingExportLogs(params, isAdmin)
-        if (logs.length === 0) {
-          toast.info(t('No logs to export'))
-          return
-        }
-        downloadBillingLogs(logs, format, t)
+        await downloadBillingLogs(params, isAdmin, format)
         toast.success(t('Billing logs exported'))
       } catch (error) {
         toast.error(

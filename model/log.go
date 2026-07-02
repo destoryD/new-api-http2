@@ -17,24 +17,24 @@ import (
 )
 
 type Log struct {
-	Id               int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2"`
-	UserId           int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1"`
-	CreatedAt        int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type"`
-	Type             int    `json:"type" gorm:"index:idx_created_at_type"`
-	Content          string `json:"content"`
-	Username         string `json:"username" gorm:"index;index:index_username_model_name,priority:2;default:''"`
-	TokenName        string `json:"token_name" gorm:"index;default:''"`
-	ModelName        string `json:"model_name" gorm:"index;index:index_username_model_name,priority:1;default:''"`
-	Quota            int    `json:"quota" gorm:"default:0"`
-	PromptTokens     int    `json:"prompt_tokens" gorm:"default:0"`
-	CompletionTokens int    `json:"completion_tokens" gorm:"default:0"`
-	UseTime          int    `json:"use_time" gorm:"default:0"`
-	IsStream         bool   `json:"is_stream"`
-	ChannelId        int    `json:"channel" gorm:"index"`
-	ChannelName      string `json:"channel_name" gorm:"->"`
-	TokenId          int    `json:"token_id" gorm:"default:0;index"`
-	Group            string `json:"group" gorm:"index"`
-	Ip               string `json:"ip" gorm:"index;default:''"`
+	Id                int    `json:"id" gorm:"index:idx_created_at_id,priority:1;index:idx_user_id_id,priority:2"`
+	UserId            int    `json:"user_id" gorm:"index;index:idx_user_id_id,priority:1"`
+	CreatedAt         int64  `json:"created_at" gorm:"bigint;index:idx_created_at_id,priority:2;index:idx_created_at_type"`
+	Type              int    `json:"type" gorm:"index:idx_created_at_type"`
+	Content           string `json:"content"`
+	Username          string `json:"username" gorm:"index;index:index_username_model_name,priority:2;default:''"`
+	TokenName         string `json:"token_name" gorm:"index;default:''"`
+	ModelName         string `json:"model_name" gorm:"index;index:index_username_model_name,priority:1;default:''"`
+	Quota             int    `json:"quota" gorm:"default:0"`
+	PromptTokens      int    `json:"prompt_tokens" gorm:"default:0"`
+	CompletionTokens  int    `json:"completion_tokens" gorm:"default:0"`
+	UseTime           int    `json:"use_time" gorm:"default:0"`
+	IsStream          bool   `json:"is_stream"`
+	ChannelId         int    `json:"channel" gorm:"index"`
+	ChannelName       string `json:"channel_name" gorm:"->"`
+	TokenId           int    `json:"token_id" gorm:"default:0;index"`
+	Group             string `json:"group" gorm:"index"`
+	Ip                string `json:"ip" gorm:"index;default:''"`
 	RequestId         string `json:"request_id,omitempty" gorm:"type:varchar(64);index:idx_logs_request_id;default:''"`
 	UpstreamRequestId string `json:"upstream_request_id,omitempty" gorm:"type:varchar(128);index:idx_logs_upstream_request_id;default:''"`
 	Other             string `json:"other"`
@@ -300,7 +300,7 @@ func RecordTaskBillingLog(params RecordTaskBillingLogParams) {
 	}
 }
 
-func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+func buildAllLogsQuery(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string, requestId string, upstreamRequestId string) *gorm.DB {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
 		tx = LOG_DB
@@ -335,6 +335,11 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 	if group != "" {
 		tx = tx.Where("logs."+logGroupCol+" = ?", group)
 	}
+	return tx
+}
+
+func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, startIdx int, num int, channel int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+	tx := buildAllLogsQuery(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group, requestId, upstreamRequestId)
 	err = tx.Model(&Log{}).Count(&total).Error
 	if err != nil {
 		return nil, 0, err
@@ -344,6 +349,12 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 		return nil, 0, err
 	}
 
+	err = fillLogChannelNames(logs)
+	return logs, total, err
+}
+
+func fillLogChannelNames(logs []*Log) error {
+	var err error
 	channelIds := types.NewSet[int]()
 	for _, log := range logs {
 		if log.ChannelId != 0 {
@@ -372,7 +383,7 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 		} else {
 			// Bulk query channels from DB
 			if err = DB.Table("channels").Select("id, name").Where("id IN ?", channelIds.Items()).Find(&channels).Error; err != nil {
-				return logs, total, err
+				return err
 			}
 		}
 		channelMap := make(map[int]string, len(channels))
@@ -384,12 +395,12 @@ func GetAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName
 		}
 	}
 
-	return logs, total, err
+	return nil
 }
 
 const logSearchCountLimit = 10000
 
-func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+func buildUserLogsQuery(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, group string, requestId string, upstreamRequestId string) (*gorm.DB, error) {
 	var tx *gorm.DB
 	if logType == LogTypeUnknown {
 		tx = LOG_DB.Where("logs.user_id = ?", userId)
@@ -422,6 +433,14 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 	if group != "" {
 		tx = tx.Where("logs."+logGroupCol+" = ?", group)
 	}
+	return tx, nil
+}
+
+func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, startIdx int, num int, group string, requestId string, upstreamRequestId string) (logs []*Log, total int64, err error) {
+	tx, err := buildUserLogsQuery(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, group, requestId, upstreamRequestId)
+	if err != nil {
+		return nil, 0, err
+	}
 	err = tx.Model(&Log{}).Limit(logSearchCountLimit).Count(&total).Error
 	if err != nil {
 		common.SysError("failed to count user logs: " + err.Error())
@@ -435,6 +454,55 @@ func GetUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int
 
 	formatUserLogs(logs, startIdx)
 	return logs, total, err
+}
+
+func ExportAllLogs(logType int, startTimestamp int64, endTimestamp int64, modelName string, username string, tokenName string, channel int, group string, requestId string, upstreamRequestId string, batchSize int, handle func([]*Log) error) error {
+	tx := buildAllLogsQuery(logType, startTimestamp, endTimestamp, modelName, username, tokenName, channel, group, requestId, upstreamRequestId)
+	return exportLogsByBatch(tx, batchSize, false, handle)
+}
+
+func ExportUserLogs(userId int, logType int, startTimestamp int64, endTimestamp int64, modelName string, tokenName string, group string, requestId string, upstreamRequestId string, batchSize int, handle func([]*Log) error) error {
+	tx, err := buildUserLogsQuery(userId, logType, startTimestamp, endTimestamp, modelName, tokenName, group, requestId, upstreamRequestId)
+	if err != nil {
+		return err
+	}
+	return exportLogsByBatch(tx, batchSize, true, handle)
+}
+
+func exportLogsByBatch(tx *gorm.DB, batchSize int, forUser bool, handle func([]*Log) error) error {
+	if batchSize <= 0 {
+		batchSize = 1000
+	}
+	lastId := 0
+	exported := 0
+
+	for {
+		query := tx.Session(&gorm.Session{})
+		if lastId > 0 {
+			query = query.Where("logs.id < ?", lastId)
+		}
+
+		var logs []*Log
+		if err := query.Order("logs.id desc").Limit(batchSize).Find(&logs).Error; err != nil {
+			return err
+		}
+		if len(logs) == 0 {
+			return nil
+		}
+
+		nextLastId := logs[len(logs)-1].Id
+		if forUser {
+			formatUserLogs(logs, exported)
+		} else if err := fillLogChannelNames(logs); err != nil {
+			return err
+		}
+
+		if err := handle(logs); err != nil {
+			return err
+		}
+		exported += len(logs)
+		lastId = nextLastId
+	}
 }
 
 type Stat struct {

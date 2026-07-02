@@ -264,16 +264,7 @@ export const useLogsData = () => {
     };
   };
 
-  const getLogTypeText = (type) => {
-    const typeMap = {
-      1: t('充值'),
-      2: t('消费'),
-      3: t('管理'),
-    };
-    return typeMap[type] || t('全部');
-  };
-
-  const buildLogsUrl = (page, size, customLogType = null) => {
+  const buildLogQueryParams = (page, size, customLogType = null) => {
     const {
       username,
       token_name,
@@ -310,79 +301,53 @@ export const useLogsData = () => {
       params.set('channel', channel);
     }
 
+    return params;
+  };
+
+  const buildLogsUrl = (page, size, customLogType = null) => {
+    const params = buildLogQueryParams(page, size, customLogType);
     return `${isAdminUser ? '/api/log/' : '/api/log/self/'}?${params.toString()}`;
   };
 
-  const escapeExportValue = (value, separator) => {
-    if (value === null || value === undefined) {
-      return '';
-    }
-    const text =
-      typeof value === 'object' ? JSON.stringify(value) : String(value);
-    const normalized = text.replace(/\r?\n/g, ' ');
+  const exportBillingLogs = async (format) => {
+    setExportingFormat(format);
 
-    if (
-      separator === ',' &&
-      (normalized.includes(',') ||
-        normalized.includes('"') ||
-        normalized.includes('\n'))
-    ) {
-      return `"${normalized.replace(/"/g, '""')}"`;
+    try {
+      const params = buildLogQueryParams(1, 100);
+      params.set('format', format);
+      const endpoint = isAdminUser ? '/api/log/export' : '/api/log/self/export';
+      const res = await API.get(`${endpoint}?${params.toString()}`, {
+        responseType: 'blob',
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
+      const filename =
+        getFilenameFromDisposition(res.headers['content-disposition']) ||
+        `billing-logs-${getExportTimestamp()}.${format}`;
+      downloadExportBlob(res.data, filename);
+      showSuccess(t('账单日志已导出'));
+    } catch (error) {
+      showError(error?.message || t('导出账单日志失败'));
+    } finally {
+      setExportingFormat(null);
     }
-
-    return normalized;
   };
 
-  const buildBillingExportContent = (exportLogs, format) => {
-    const columns = [
-      { label: t('ID'), value: (log) => log.id },
-      {
-        label: t('时间'),
-        value: (log) =>
-          log.created_at ? timestamp2string(log.created_at) : log.timestamp,
-      },
-      { label: t('类型'), value: (log) => getLogTypeText(log.type) },
-      { label: t('用户名'), value: (log) => log.username },
-      { label: t('用户ID'), value: (log) => log.user_id },
-      { label: t('令牌名称'), value: (log) => log.token_name },
-      { label: t('令牌ID'), value: (log) => log.token_id },
-      { label: t('模型'), value: (log) => log.model_name },
-      { label: t('渠道ID'), value: (log) => log.channel },
-      { label: t('渠道'), value: (log) => log.channel_name },
-      { label: t('分组'), value: (log) => log.group },
-      { label: t('花费额度'), value: (log) => log.quota },
-      { label: t('提示令牌'), value: (log) => log.prompt_tokens },
-      { label: t('补全令牌'), value: (log) => log.completion_tokens },
-      {
-        label: t('总令牌'),
-        value: (log) => (log.prompt_tokens || 0) + (log.completion_tokens || 0),
-      },
-      { label: t('用时'), value: (log) => log.use_time },
-      { label: t('流式'), value: (log) => (log.is_stream ? 'true' : 'false') },
-      { label: t('请求ID'), value: (log) => log.request_id },
-      { label: t('上游请求ID'), value: (log) => log.upstream_request_id },
-      { label: t('IP'), value: (log) => log.ip },
-      { label: t('内容'), value: (log) => log.content },
-      { label: t('详情'), value: (log) => log.other },
-    ];
-    const separator = format === 'csv' ? ',' : '\t';
-    const lines = [
-      columns
-        .map((column) => escapeExportValue(column.label, separator))
-        .join(separator),
-      ...exportLogs.map((log) =>
-        columns
-          .map((column) => escapeExportValue(column.value(log), separator))
-          .join(separator),
-      ),
-    ];
-
-    return `${format === 'csv' ? '\uFEFF' : ''}${lines.join('\n')}`;
+  const getFilenameFromDisposition = (disposition) => {
+    if (!disposition) {
+      return null;
+    }
+    const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match?.[1]) {
+      return decodeURIComponent(utf8Match[1]);
+    }
+    const match = disposition.match(/filename="?([^"]+)"?/i);
+    return match?.[1] || null;
   };
 
-  const downloadBillingExport = (exportLogs, format) => {
+  const getExportTimestamp = () => {
     const now = new Date();
-    const timestamp = [
+    return [
       now.getFullYear(),
       String(now.getMonth() + 1).padStart(2, '0'),
       String(now.getDate()).padStart(2, '0'),
@@ -391,64 +356,18 @@ export const useLogsData = () => {
       String(now.getMinutes()).padStart(2, '0'),
       String(now.getSeconds()).padStart(2, '0'),
     ].join('');
-    const content = buildBillingExportContent(exportLogs, format);
-    const blob = new Blob([content], {
-      type:
-        format === 'csv'
-          ? 'text/csv;charset=utf-8'
-          : 'text/plain;charset=utf-8',
-    });
+  };
+
+  const downloadExportBlob = (blob, filename) => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = `billing-logs-${timestamp}.${format}`;
+    link.download = filename;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
-  };
-
-  const exportBillingLogs = async (format) => {
-    const exportPageSize = 100;
-    let page = 1;
-    let total = Number.POSITIVE_INFINITY;
-    const exportLogs = [];
-
-    setExportingFormat(format);
-
-    try {
-      while (exportLogs.length < total) {
-        const res = await API.get(buildLogsUrl(page, exportPageSize));
-        const { success, message, data } = res.data;
-
-        if (!success) {
-          showError(message);
-          return;
-        }
-
-        const items = data.items || [];
-        total = data.total || exportLogs.length + items.length;
-        exportLogs.push(...items);
-
-        if (items.length < exportPageSize) {
-          break;
-        }
-        page += 1;
-      }
-
-      if (exportLogs.length === 0) {
-        showError(t('没有可导出的日志'));
-        return;
-      }
-
-      downloadBillingExport(exportLogs, format);
-      showSuccess(t('账单日志已导出'));
-    } catch (error) {
-      showError(error?.message || t('导出账单日志失败'));
-    } finally {
-      setExportingFormat(null);
-    }
   };
 
   // Statistics functions
