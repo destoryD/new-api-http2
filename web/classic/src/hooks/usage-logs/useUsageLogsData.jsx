@@ -74,6 +74,7 @@ export const useLogsData = () => {
   const [logCount, setLogCount] = useState(0);
   const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [logType, setLogType] = useState(0);
+  const [exportingFormat, setExportingFormat] = useState(null);
 
   // User and admin
   const isAdminUser = isAdmin();
@@ -164,7 +165,9 @@ export const useLogsData = () => {
   };
 
   // Column visibility state
-  const [visibleColumns, setVisibleColumns] = useState(getInitialVisibleColumns);
+  const [visibleColumns, setVisibleColumns] = useState(
+    getInitialVisibleColumns,
+  );
   const [showColumnSelector, setShowColumnSelector] = useState(false);
   const [billingDisplayMode, setBillingDisplayMode] = useState(
     getInitialBillingDisplayMode,
@@ -259,6 +262,193 @@ export const useLogsData = () => {
       request_id: formValues.request_id || '',
       logType: formValues.logType ? parseInt(formValues.logType) : 0,
     };
+  };
+
+  const getLogTypeText = (type) => {
+    const typeMap = {
+      1: t('充值'),
+      2: t('消费'),
+      3: t('管理'),
+    };
+    return typeMap[type] || t('全部');
+  };
+
+  const buildLogsUrl = (page, size, customLogType = null) => {
+    const {
+      username,
+      token_name,
+      model_name,
+      start_timestamp,
+      end_timestamp,
+      channel,
+      group,
+      request_id,
+      logType: formLogType,
+    } = getFormValues();
+
+    const currentLogType =
+      customLogType !== null
+        ? customLogType
+        : formLogType !== undefined
+          ? formLogType
+          : logType;
+
+    const params = new URLSearchParams({
+      p: String(page),
+      page_size: String(size),
+      type: String(currentLogType),
+      token_name,
+      model_name,
+      start_timestamp: String(Date.parse(start_timestamp) / 1000),
+      end_timestamp: String(Date.parse(end_timestamp) / 1000),
+      group,
+      request_id,
+    });
+
+    if (isAdminUser) {
+      params.set('username', username);
+      params.set('channel', channel);
+    }
+
+    return `${isAdminUser ? '/api/log/' : '/api/log/self/'}?${params.toString()}`;
+  };
+
+  const escapeExportValue = (value, separator) => {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    const text =
+      typeof value === 'object' ? JSON.stringify(value) : String(value);
+    const normalized = text.replace(/\r?\n/g, ' ');
+
+    if (
+      separator === ',' &&
+      (normalized.includes(',') ||
+        normalized.includes('"') ||
+        normalized.includes('\n'))
+    ) {
+      return `"${normalized.replace(/"/g, '""')}"`;
+    }
+
+    return normalized;
+  };
+
+  const buildBillingExportContent = (exportLogs, format) => {
+    const columns = [
+      { label: t('ID'), value: (log) => log.id },
+      {
+        label: t('时间'),
+        value: (log) =>
+          log.created_at ? timestamp2string(log.created_at) : log.timestamp,
+      },
+      { label: t('类型'), value: (log) => getLogTypeText(log.type) },
+      { label: t('用户名'), value: (log) => log.username },
+      { label: t('用户ID'), value: (log) => log.user_id },
+      { label: t('令牌名称'), value: (log) => log.token_name },
+      { label: t('令牌ID'), value: (log) => log.token_id },
+      { label: t('模型'), value: (log) => log.model_name },
+      { label: t('渠道ID'), value: (log) => log.channel },
+      { label: t('渠道'), value: (log) => log.channel_name },
+      { label: t('分组'), value: (log) => log.group },
+      { label: t('花费额度'), value: (log) => log.quota },
+      { label: t('提示令牌'), value: (log) => log.prompt_tokens },
+      { label: t('补全令牌'), value: (log) => log.completion_tokens },
+      {
+        label: t('总令牌'),
+        value: (log) => (log.prompt_tokens || 0) + (log.completion_tokens || 0),
+      },
+      { label: t('用时'), value: (log) => log.use_time },
+      { label: t('流式'), value: (log) => (log.is_stream ? 'true' : 'false') },
+      { label: t('请求ID'), value: (log) => log.request_id },
+      { label: t('上游请求ID'), value: (log) => log.upstream_request_id },
+      { label: t('IP'), value: (log) => log.ip },
+      { label: t('内容'), value: (log) => log.content },
+      { label: t('详情'), value: (log) => log.other },
+    ];
+    const separator = format === 'csv' ? ',' : '\t';
+    const lines = [
+      columns
+        .map((column) => escapeExportValue(column.label, separator))
+        .join(separator),
+      ...exportLogs.map((log) =>
+        columns
+          .map((column) => escapeExportValue(column.value(log), separator))
+          .join(separator),
+      ),
+    ];
+
+    return `${format === 'csv' ? '\uFEFF' : ''}${lines.join('\n')}`;
+  };
+
+  const downloadBillingExport = (exportLogs, format) => {
+    const now = new Date();
+    const timestamp = [
+      now.getFullYear(),
+      String(now.getMonth() + 1).padStart(2, '0'),
+      String(now.getDate()).padStart(2, '0'),
+      '-',
+      String(now.getHours()).padStart(2, '0'),
+      String(now.getMinutes()).padStart(2, '0'),
+      String(now.getSeconds()).padStart(2, '0'),
+    ].join('');
+    const content = buildBillingExportContent(exportLogs, format);
+    const blob = new Blob([content], {
+      type:
+        format === 'csv'
+          ? 'text/csv;charset=utf-8'
+          : 'text/plain;charset=utf-8',
+    });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.download = `billing-logs-${timestamp}.${format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const exportBillingLogs = async (format) => {
+    const exportPageSize = 100;
+    let page = 1;
+    let total = Number.POSITIVE_INFINITY;
+    const exportLogs = [];
+
+    setExportingFormat(format);
+
+    try {
+      while (exportLogs.length < total) {
+        const res = await API.get(buildLogsUrl(page, exportPageSize));
+        const { success, message, data } = res.data;
+
+        if (!success) {
+          showError(message);
+          return;
+        }
+
+        const items = data.items || [];
+        total = data.total || exportLogs.length + items.length;
+        exportLogs.push(...items);
+
+        if (items.length < exportPageSize) {
+          break;
+        }
+        page += 1;
+      }
+
+      if (exportLogs.length === 0) {
+        showError(t('没有可导出的日志'));
+        return;
+      }
+
+      downloadBillingExport(exportLogs, format);
+      showSuccess(t('账单日志已导出'));
+    } catch (error) {
+      showError(error?.message || t('导出账单日志失败'));
+    } finally {
+      setExportingFormat(null);
+    }
   };
 
   // Statistics functions
@@ -383,7 +573,10 @@ export const useLogsData = () => {
       let other = getLogOther(logs[i].other);
       let expandDataLocal = [];
 
-      if (isAdminUser && (logs[i].type === 0 || logs[i].type === 2 || logs[i].type === 6)) {
+      if (
+        isAdminUser &&
+        (logs[i].type === 0 || logs[i].type === 2 || logs[i].type === 6)
+      ) {
         expandDataLocal.push({
           key: t('渠道信息'),
           value: `${logs[i].channel} - ${logs[i].channel_name || '[未知]'}`,
@@ -430,7 +623,10 @@ export const useLogsData = () => {
           expandDataLocal.push({
             key: t('日志详情'),
             value: other?.claude
-              ? renderClaudeLogContent({ ...other, displayMode: billingDisplayMode })
+              ? renderClaudeLogContent({
+                  ...other,
+                  displayMode: billingDisplayMode,
+                })
               : renderLogContent({ ...other, displayMode: billingDisplayMode }),
           });
         }
@@ -520,7 +716,14 @@ export const useLogsData = () => {
           expandDataLocal.push({
             key: t('失败原因'),
             value: (
-              <div style={{ maxWidth: 600, whiteSpace: 'normal', wordBreak: 'break-word', lineHeight: 1.6 }}>
+              <div
+                style={{
+                  maxWidth: 600,
+                  whiteSpace: 'normal',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.6,
+                }}
+              >
                 {other.reason}
               </div>
             ),
@@ -537,7 +740,8 @@ export const useLogsData = () => {
         const ss = other.stream_status;
         const isOk = ss.status === 'ok';
         const statusLabel = isOk ? '✓ ' + t('正常') : '✗ ' + t('异常');
-        let streamValue = statusLabel + ' (' + (ss.end_reason || 'unknown') + ')';
+        let streamValue =
+          statusLabel + ' (' + (ss.end_reason || 'unknown') + ')';
         if (ss.error_count > 0) {
           streamValue += ` [${t('软错误')}: ${ss.error_count}]`;
         }
@@ -552,7 +756,14 @@ export const useLogsData = () => {
           expandDataLocal.push({
             key: t('流错误详情'),
             value: (
-              <div style={{ maxWidth: 600, whiteSpace: 'pre-line', wordBreak: 'break-word', lineHeight: 1.6 }}>
+              <div
+                style={{
+                  maxWidth: 600,
+                  whiteSpace: 'pre-line',
+                  wordBreak: 'break-word',
+                  lineHeight: 1.6,
+                }}
+              >
                 {ss.errors.join('\n')}
               </div>
             ),
@@ -729,34 +940,7 @@ export const useLogsData = () => {
   const loadLogs = async (startIdx, pageSize, customLogType = null) => {
     setLoading(true);
 
-    let url = '';
-    const {
-      username,
-      token_name,
-      model_name,
-      start_timestamp,
-      end_timestamp,
-      channel,
-      group,
-      request_id,
-      logType: formLogType,
-    } = getFormValues();
-
-    const currentLogType =
-      customLogType !== null
-        ? customLogType
-        : formLogType !== undefined
-          ? formLogType
-          : logType;
-
-    let localStartTimestamp = Date.parse(start_timestamp) / 1000;
-    let localEndTimestamp = Date.parse(end_timestamp) / 1000;
-    if (isAdminUser) {
-      url = `/api/log/?p=${startIdx}&page_size=${pageSize}&type=${currentLogType}&username=${username}&token_name=${token_name}&model_name=${model_name}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&channel=${channel}&group=${group}&request_id=${request_id}`;
-    } else {
-      url = `/api/log/self/?p=${startIdx}&page_size=${pageSize}&type=${currentLogType}&token_name=${token_name}&model_name=${model_name}&start_timestamp=${localStartTimestamp}&end_timestamp=${localEndTimestamp}&group=${group}&request_id=${request_id}`;
-    }
-    url = encodeURI(url);
+    const url = buildLogsUrl(startIdx, pageSize, customLogType);
     const res = await API.get(url);
     const { success, message, data } = res.data;
     if (success) {
@@ -839,6 +1023,7 @@ export const useLogsData = () => {
     showStat,
     loading,
     loadingStat,
+    exportingFormat,
     activePage,
     logCount,
     pageSize,
@@ -889,6 +1074,7 @@ export const useLogsData = () => {
     refresh,
     copyText,
     handleEyeClick,
+    exportBillingLogs,
     setLogsFormat,
     hasExpandableRows,
     setLogType,

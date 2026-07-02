@@ -20,10 +20,17 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { type Table } from '@tanstack/react-table'
-import { Eye, EyeOff } from 'lucide-react'
+import { Download, Eye, EyeOff, FileText, TableProperties } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { useIsAdmin } from '@/hooks/use-admin'
 import { Button } from '@/components/ui/button'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -40,8 +47,13 @@ import {
 } from '@/components/ui/tooltip'
 import { DataTableToolbar } from '@/components/data-table'
 import { LOG_TYPES } from '../constants'
+import {
+  downloadBillingLogs,
+  fetchBillingExportLogs,
+  type BillingExportFormat,
+} from '../lib/export'
 import { buildSearchParams } from '../lib/filter'
-import { getDefaultTimeRange } from '../lib/utils'
+import { buildApiParams, getDefaultTimeRange } from '../lib/utils'
 import type { CommonLogFilters } from '../types'
 import { CommonLogsStats } from './common-logs-stats'
 import { CompactDateTimeRangePicker } from './compact-date-time-range-picker'
@@ -70,6 +82,8 @@ export function CommonLogsFilterBar<TData>(
   const isAdmin = useIsAdmin()
   const { sensitiveVisible, setSensitiveVisible } = useUsageLogsContext()
   const fetchingLogs = useIsFetching({ queryKey: ['logs'] })
+  const [exportingFormat, setExportingFormat] =
+    useState<BillingExportFormat | null>(null)
 
   const [filters, setFilters] = useState<CommonLogFilters>(() => {
     const { start, end } = getDefaultTimeRange()
@@ -160,6 +174,35 @@ export function CommonLogsFilterBar<TData>(
     [handleApply]
   )
 
+  const handleExport = useCallback(
+    async (format: BillingExportFormat) => {
+      setExportingFormat(format)
+      try {
+        const params = buildApiParams({
+          page: 1,
+          pageSize: 100,
+          searchParams,
+          columnFilters: props.table.getState().columnFilters,
+          isAdmin,
+        })
+        const logs = await fetchBillingExportLogs(params, isAdmin)
+        if (logs.length === 0) {
+          toast.info(t('No logs to export'))
+          return
+        }
+        downloadBillingLogs(logs, format, t)
+        toast.success(t('Billing logs exported'))
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : t('Failed to export logs')
+        )
+      } finally {
+        setExportingFormat(null)
+      }
+    },
+    [isAdmin, props.table, searchParams, t]
+  )
+
   const hasExpandedFilters =
     !!filters.token ||
     !!filters.username ||
@@ -176,6 +219,33 @@ export function CommonLogsFilterBar<TData>(
   const statsBar = (
     <div className='flex flex-wrap items-center gap-2'>
       <CommonLogsStats />
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button
+              variant='outline'
+              size='sm'
+              disabled={exportingFormat !== null}
+              className='h-7 gap-1.5 px-2'
+            />
+          }
+        >
+          <Download className='h-3.5 w-3.5' />
+          <span className='hidden sm:inline'>
+            {exportingFormat ? t('Exporting') : t('Export Billing')}
+          </span>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align='end'>
+          <DropdownMenuItem onClick={() => void handleExport('csv')}>
+            <TableProperties />
+            {t('Export CSV')}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => void handleExport('txt')}>
+            <FileText />
+            {t('Export TXT')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Tooltip>
         <TooltipTrigger
           render={
@@ -297,9 +367,7 @@ export function CommonLogsFilterBar<TData>(
           <Input
             placeholder={t('Upstream Request ID')}
             value={filters.upstreamRequestId || ''}
-            onChange={(e) =>
-              handleChange('upstreamRequestId', e.target.value)
-            }
+            onChange={(e) => handleChange('upstreamRequestId', e.target.value)}
             onKeyDown={handleKeyDown}
             className={inputClass}
           />
