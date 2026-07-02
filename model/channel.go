@@ -191,6 +191,10 @@ func (channel *Channel) GetNextEnabledKey() (string, int, *types.NewAPIError) {
 }
 
 func (channel *Channel) GetNextEnabledKeyForModel(modelName string) (string, int, *types.NewAPIError) {
+	return channel.GetNextEnabledKeyForModelStartingAt(modelName, -1)
+}
+
+func (channel *Channel) GetNextEnabledKeyForModelStartingAt(modelName string, startIndex int) (string, int, *types.NewAPIError) {
 	// If not in multi-key mode, return the original key string directly.
 	if !channel.ChannelInfo.IsMultiKey {
 		return channel.Key, 0, nil
@@ -297,8 +301,22 @@ func (channel *Channel) GetNextEnabledKeyForModel(modelName string) (string, int
 		if channel.GetSetting().MultiKey429ModelScoped {
 			skipModelName = modelName
 		}
-		for _, idx := range enabledIdx {
+		start := 0
+		if startIndex >= 0 && startIndex < len(keys) {
+			start = startIndex
+		}
+		for i := 0; i < len(keys); i++ {
+			idx := (start + i) % len(keys)
+			if getStatus(idx) != common.ChannelStatusEnabled {
+				continue
+			}
 			if !isSequentialMultiKeyIndexSkipped(channel.Id, skipModelName, idx) {
+				return keys[idx], idx, nil
+			}
+		}
+		for i := 0; i < len(keys); i++ {
+			idx := (start + i) % len(keys)
+			if getStatus(idx) == common.ChannelStatusEnabled {
 				return keys[idx], idx, nil
 			}
 		}

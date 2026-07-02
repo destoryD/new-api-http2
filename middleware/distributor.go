@@ -375,7 +375,15 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 	common.SetContextKey(c, constant.ContextKeyChannelModelMapping, channel.GetModelMapping())
 	common.SetContextKey(c, constant.ContextKeyChannelStatusCodeMapping, channel.GetStatusCodeMapping())
 
-	key, index, newAPIError := channel.GetNextEnabledKeyForModel(modelName)
+	startIndex := -1
+	if channel.ChannelInfo.IsMultiKey && channel.ChannelInfo.MultiKeyMode == constant.MultiKeyModeSequential {
+		startIndex = common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyStartIndex)
+		if startIndex < 0 {
+			startIndex = -1
+		}
+		common.SetContextKey(c, constant.ContextKeyChannelMultiKeyStartIndex, -1)
+	}
+	key, index, newAPIError := channel.GetNextEnabledKeyForModelStartingAt(modelName, startIndex)
 	if newAPIError != nil {
 		return newAPIError
 	}
