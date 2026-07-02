@@ -349,13 +349,14 @@ func retrySequentialMultiKeyAfter429(c *gin.Context, channel *model.Channel, err
 		return nil, false
 	}
 	keyIndex := common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyIndex)
-	skipSeconds := channel.GetSetting().GetMultiKey429SkipSeconds()
+	channelSetting := channel.GetSetting()
+	skipSeconds := channelSetting.GetMultiKey429SkipSeconds()
 	skipModelName := ""
-	if channel.GetSetting().MultiKey429ModelScoped {
+	if channelSetting.MultiKey429ModelScoped {
 		skipModelName = c.GetString("original_model")
 	}
 	model.MarkSequentialMultiKeyIndexSkippedForModel(channel.Id, skipModelName, keyIndex, time.Duration(skipSeconds)*time.Second)
-	if retryCount >= channel.MultiKeyCount()-1 {
+	if retryCount >= channelSetting.GetMultiKey429RetryKeyLimit(channel.MultiKeyCount()) {
 		return nil, false
 	}
 	common.SetContextKey(c, constant.ContextKeyChannelMultiKeyStartIndex, keyIndex+1)

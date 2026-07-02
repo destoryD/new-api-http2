@@ -67,6 +67,7 @@ export const channelFormSchema = z.object({
   multi_key_rpm_limit: z.number().int().min(0).optional(),
   multi_key_429_skip_seconds: z.number().int().min(0).optional(),
   multi_key_429_model_scoped: z.boolean().optional(),
+  multi_key_429_retry_key_limit: z.number().int().min(0).optional(),
   model_rpm_limits: z
     .string()
     .optional()
@@ -152,6 +153,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   multi_key_rpm_limit: 0,
   multi_key_429_skip_seconds: 60,
   multi_key_429_model_scoped: false,
+  multi_key_429_retry_key_limit: 0,
   model_rpm_limits: '',
   use_global_proxy_pool: false,
   proxy: '',
@@ -204,6 +206,7 @@ export function transformChannelToFormDefaults(
     multi_key_rpm_limit: 0,
     multi_key_429_skip_seconds: 60,
     multi_key_429_model_scoped: false,
+    multi_key_429_retry_key_limit: 0,
     model_rpm_limits: '',
     use_global_proxy_pool: false,
     proxy: '',
@@ -240,6 +243,10 @@ export function transformChannelToFormDefaults(
         ),
         multi_key_429_model_scoped:
           parsed.multi_key_429_model_scoped || false,
+        multi_key_429_retry_key_limit: Math.max(
+          0,
+          Math.floor(Number(parsed.multi_key_429_retry_key_limit) || 0)
+        ),
         model_rpm_limits: formatModelRPMLimits(parsed.model_rpm_limits),
         use_global_proxy_pool: parsed.use_global_proxy_pool || false,
         proxy: parsed.proxy || '',
@@ -378,6 +385,10 @@ function buildSettingJSON(formData: ChannelFormValues): string {
     ),
     multi_key_429_model_scoped:
       formData.multi_key_429_model_scoped === true,
+    multi_key_429_retry_key_limit: Math.max(
+      0,
+      Math.floor(Number(formData.multi_key_429_retry_key_limit) || 0)
+    ),
     model_rpm_limits: parseModelRPMLimits(formData.model_rpm_limits),
     use_global_proxy_pool: formData.use_global_proxy_pool === true,
     proxy: formData.proxy || '',

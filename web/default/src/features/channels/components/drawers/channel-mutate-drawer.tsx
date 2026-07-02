@@ -251,6 +251,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.multi_key_rpm_limit ||
     values.multi_key_429_skip_seconds !== 60 ||
     values.multi_key_429_model_scoped ||
+    values.multi_key_429_retry_key_limit ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
@@ -3532,6 +3533,42 @@ export function ChannelMutateDrawer({
                                 onCheckedChange={field.onChange}
                               />
                             </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='multi_key_429_retry_key_limit'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>
+                              {t('Sequential 429 Retry Key Limit')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={0}
+                                step={1}
+                                inputMode='numeric'
+                                placeholder='0'
+                                value={field.value ?? 0}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(event) => {
+                                  const value = Math.max(
+                                    0,
+                                    Math.floor(Number(event.target.value) || 0)
+                                  )
+                                  field.onChange(value)
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'Maximum number of later keys to try after a sequential multi-key 429; 0 tries all remaining keys'
+                              )}
+                            </FormDescription>
                           </FormItem>
                         )}
                       />
