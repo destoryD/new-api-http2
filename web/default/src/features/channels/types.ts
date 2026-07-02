@@ -91,6 +91,7 @@ export interface ChannelSettings {
   rpm_limit?: number
   multi_key_rpm_limit?: number
   multi_key_429_skip_seconds?: number
+  multi_key_429_model_scoped?: boolean
   model_rpm_limits?: Record<string, number>
   proxy?: string
   proxy_pool?: string[]

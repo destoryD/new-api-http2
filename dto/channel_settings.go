@@ -22,6 +22,7 @@ type ChannelSettings struct {
 	ModelRPMLimits            map[string]int `json:"model_rpm_limits,omitempty"`
 	MultiKeyRPMLimit          int            `json:"multi_key_rpm_limit,omitempty"`
 	MultiKey429SkipSeconds    int            `json:"multi_key_429_skip_seconds,omitempty"`
+	MultiKey429ModelScoped    bool           `json:"multi_key_429_model_scoped,omitempty"`
 	OverrideErrorAs429        bool           `json:"override_error_as_429,omitempty"`
 }
 

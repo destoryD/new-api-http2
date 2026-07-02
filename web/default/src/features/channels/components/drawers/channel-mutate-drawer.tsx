@@ -250,6 +250,7 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.rpm_limit ||
     values.multi_key_rpm_limit ||
     values.multi_key_429_skip_seconds !== 60 ||
+    values.multi_key_429_model_scoped ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
@@ -3506,6 +3507,31 @@ export function ChannelMutateDrawer({
                                 'For sequential multi-key mode, temporarily skip a key for this many seconds after it returns 429; 0 uses 60 seconds'
                               )}
                             </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='multi_key_429_model_scoped'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>
+                                {t('Model-scoped Sequential 429 Skip')}
+                              </FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Only skip a key for the current model after a sequential multi-key 429, so other models can still use it'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
                           </FormItem>
                         )}
                       />

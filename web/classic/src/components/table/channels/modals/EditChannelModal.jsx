@@ -333,6 +333,7 @@ const EditChannelModal = (props) => {
     rpm_limit: 0,
     multi_key_rpm_limit: 0,
     multi_key_429_skip_seconds: 60,
+    multi_key_429_model_scoped: false,
     model_rpm_limits: '',
     use_global_proxy_pool: false,
     proxy: '',
@@ -671,6 +672,7 @@ const EditChannelModal = (props) => {
     rpm_limit: 0,
     multi_key_rpm_limit: 0,
     multi_key_429_skip_seconds: 60,
+    multi_key_429_model_scoped: false,
     model_rpm_limits: '',
     use_global_proxy_pool: false,
     proxy: '',
@@ -1074,6 +1076,8 @@ const EditChannelModal = (props) => {
             parsedSettings.system_prompt_override || false;
           data.override_error_as_429 =
             parsedSettings.override_error_as_429 || false;
+          data.multi_key_429_model_scoped =
+            parsedSettings.multi_key_429_model_scoped || false;
         } catch (error) {
           console.error('解析渠道设置失败:', error);
           data.force_format = false;
@@ -1087,6 +1091,7 @@ const EditChannelModal = (props) => {
           data.rpm_limit = 0;
           data.multi_key_rpm_limit = 0;
           data.multi_key_429_skip_seconds = 60;
+          data.multi_key_429_model_scoped = false;
           data.model_rpm_limits = '';
           data.use_global_proxy_pool = false;
           data.proxy = '';
@@ -1109,6 +1114,7 @@ const EditChannelModal = (props) => {
         data.rpm_limit = 0;
         data.multi_key_rpm_limit = 0;
         data.multi_key_429_skip_seconds = 60;
+        data.multi_key_429_model_scoped = false;
         data.model_rpm_limits = '';
         data.use_global_proxy_pool = false;
         data.proxy = '';
@@ -1236,6 +1242,7 @@ const EditChannelModal = (props) => {
         rpm_limit: data.rpm_limit,
         multi_key_rpm_limit: data.multi_key_rpm_limit,
         multi_key_429_skip_seconds: data.multi_key_429_skip_seconds,
+        multi_key_429_model_scoped: data.multi_key_429_model_scoped || false,
         model_rpm_limits: data.model_rpm_limits,
         use_global_proxy_pool: data.use_global_proxy_pool,
         proxy: data.proxy,
@@ -1298,6 +1305,7 @@ const EditChannelModal = (props) => {
         data.rpm_limit ||
         data.multi_key_rpm_limit ||
         data.multi_key_429_skip_seconds !== 60 ||
+        data.multi_key_429_model_scoped ||
         (data.model_rpm_limits && data.model_rpm_limits.trim()) ||
         data.pass_through_body_enabled ||
         data.force_format ||
@@ -1655,6 +1663,7 @@ const EditChannelModal = (props) => {
       rpm_limit: 0,
       multi_key_rpm_limit: 0,
       multi_key_429_skip_seconds: 60,
+      multi_key_429_model_scoped: false,
       model_rpm_limits: '',
       proxy: '',
       proxy_pool: '',
@@ -2054,6 +2063,8 @@ const EditChannelModal = (props) => {
         0,
         Math.floor(Number(localInputs.multi_key_429_skip_seconds) || 60),
       ),
+      multi_key_429_model_scoped:
+        localInputs.multi_key_429_model_scoped === true,
       model_rpm_limits: parseModelRPMLimits(localInputs.model_rpm_limits),
       use_global_proxy_pool: localInputs.use_global_proxy_pool === true,
       proxy: localInputs.proxy || '',
@@ -2153,6 +2164,7 @@ const EditChannelModal = (props) => {
     delete localInputs.rpm_limit;
     delete localInputs.multi_key_rpm_limit;
     delete localInputs.multi_key_429_skip_seconds;
+    delete localInputs.multi_key_429_model_scoped;
     delete localInputs.model_rpm_limits;
     delete localInputs.use_global_proxy_pool;
     delete localInputs.proxy;
@@ -2864,6 +2876,7 @@ const EditChannelModal = (props) => {
                   <Form.InputNumber field='rpm_limit' label={t('渠道 RPM 限制')} min={0} step={1} placeholder='0' onNumberChange={(value) => handleChannelSettingsChange('rpm_limit', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('限制该渠道每分钟请求数，0 表示不限制')} />
                   <Form.InputNumber field='multi_key_rpm_limit' label={t('单密钥 RPM 限制')} min={0} step={1} placeholder='0' onNumberChange={(value) => handleChannelSettingsChange('multi_key_rpm_limit', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('多密钥轮询模式下，当前密钥达到该每分钟请求数后切换到下一个密钥；0 表示保持普通轮询')} />
                   <Form.InputNumber field='multi_key_429_skip_seconds' label={t('按序 429 跳过时长')} min={0} step={1} placeholder='60' onNumberChange={(value) => handleChannelSettingsChange('multi_key_429_skip_seconds', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('多密钥按序模式下，密钥返回 429 后临时跳过的秒数；0 表示使用 60 秒')} />
+                  <Form.Switch field='multi_key_429_model_scoped' label={t('按模型隔离 429 跳过')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('multi_key_429_model_scoped', value)} extraText={t('开启后，多密钥按序模式下的 429 跳过只对当前模型生效，其他模型仍可继续使用该密钥')} />
                   <Form.TextArea field='model_rpm_limits' label={t('模型 RPM 限制')} placeholder='{"gpt-4o": 60}' onChange={(value) => handleChannelSettingsChange('model_rpm_limits', value)} autosize showClear extraText={t('按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制')} />
                   <Form.Switch field='pass_through_body_enabled' label={t('透传请求体')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('pass_through_body_enabled', value)} extraText={t('启用请求体透传功能')} />
 
