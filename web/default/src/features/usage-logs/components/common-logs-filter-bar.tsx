@@ -47,7 +47,11 @@ import {
 } from '@/components/ui/tooltip'
 import { DataTableToolbar } from '@/components/data-table'
 import { LOG_TYPES } from '../constants'
-import { downloadBillingLogs, type BillingExportFormat } from '../lib/export'
+import {
+  downloadBillingLogs,
+  type BillingExportFormat,
+  type BillingExportKind,
+} from '../lib/export'
 import { buildSearchParams } from '../lib/filter'
 import { buildApiParams, getDefaultTimeRange } from '../lib/utils'
 import type { CommonLogFilters } from '../types'
@@ -171,7 +175,7 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const handleExport = useCallback(
-    async (format: BillingExportFormat) => {
+    async (format: BillingExportFormat, kind: BillingExportKind = 'detail') => {
       setExportingFormat(format)
       try {
         const params = buildApiParams({
@@ -181,8 +185,14 @@ export function CommonLogsFilterBar<TData>(
           columnFilters: props.table.getState().columnFilters,
           isAdmin,
         })
-        await downloadBillingLogs(params, isAdmin, format)
-        toast.success(t('Billing logs exported'))
+        await downloadBillingLogs(params, isAdmin, format, kind)
+        toast.success(
+          t(
+            kind === 'reconciliation'
+              ? 'Billing reconciliation exported'
+              : 'Billing logs exported'
+          )
+        )
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : t('Failed to export logs')
@@ -234,6 +244,18 @@ export function CommonLogsFilterBar<TData>(
           <DropdownMenuItem onClick={() => void handleExport('txt')}>
             <FileText />
             {t('Export TXT')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => void handleExport('csv', 'reconciliation')}
+          >
+            <TableProperties />
+            {t('Export Reconciliation CSV')}
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => void handleExport('txt', 'reconciliation')}
+          >
+            <FileText />
+            {t('Export Reconciliation TXT')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -309,13 +309,20 @@ export const useLogsData = () => {
     return `${isAdminUser ? '/api/log/' : '/api/log/self/'}?${params.toString()}`;
   };
 
-  const exportBillingLogs = async (format) => {
+  const exportBillingLogs = async (format, kind = 'detail') => {
     setExportingFormat(format);
 
     try {
       const params = buildLogQueryParams(1, 100);
       params.set('format', format);
-      const endpoint = isAdminUser ? '/api/log/export' : '/api/log/self/export';
+      const endpoint =
+        kind === 'reconciliation'
+          ? isAdminUser
+            ? '/api/log/reconciliation_export'
+            : '/api/log/self/reconciliation_export'
+          : isAdminUser
+            ? '/api/log/export'
+            : '/api/log/self/export';
       const res = await API.get(`${endpoint}?${params.toString()}`, {
         responseType: 'blob',
         disableDuplicate: true,
@@ -323,9 +330,11 @@ export const useLogsData = () => {
       });
       const filename =
         getFilenameFromDisposition(res.headers['content-disposition']) ||
-        `billing-logs-${getExportTimestamp()}.${format}`;
+        `${kind === 'reconciliation' ? 'billing-reconciliation' : 'billing-logs'}-${getExportTimestamp()}.${format}`;
       downloadExportBlob(res.data, filename);
-      showSuccess(t('账单日志已导出'));
+      showSuccess(
+        t(kind === 'reconciliation' ? '对账单已导出' : '账单日志已导出'),
+      );
     } catch (error) {
       showError(error?.message || t('导出账单日志失败'));
     } finally {

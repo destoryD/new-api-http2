@@ -4520,6 +4520,9 @@
     "Failed to export logs": "?chec de l'exportation des journaux",
     "Prompt Tokens": "Jetons de prompt",
     "Completion Tokens": "Jetons de compl?tion",
-    "Token ID": "ID du jeton"
+    "Token ID": "ID du jeton",
+    "Export Reconciliation CSV": "Exporter le relevé CSV",
+    "Export Reconciliation TXT": "Exporter le relevé TXT",
+    "Billing reconciliation exported": "Relevé de facturation exporté"
   }
 }

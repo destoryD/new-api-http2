@@ -4520,6 +4520,9 @@
     "Failed to export logs": "Failed to export logs",
     "Prompt Tokens": "Prompt Tokens",
     "Completion Tokens": "Completion Tokens",
-    "Token ID": "Token ID"
+    "Token ID": "Token ID",
+    "Export Reconciliation CSV": "Export Reconciliation CSV",
+    "Export Reconciliation TXT": "Export Reconciliation TXT",
+    "Billing reconciliation exported": "Billing reconciliation exported"
   }
 }

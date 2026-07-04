@@ -4520,6 +4520,9 @@
     "Failed to export logs": "????????",
     "Prompt Tokens": "?? Token ?",
     "Completion Tokens": "?? Token ?",
-    "Token ID": "?? ID"
+    "Token ID": "?? ID",
+    "Export Reconciliation CSV": "导出对账单 CSV",
+    "Export Reconciliation TXT": "导出对账单 TXT",
+    "Billing reconciliation exported": "对账单已导出"
   }
 }

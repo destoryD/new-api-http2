@@ -4520,6 +4520,9 @@
     "Failed to export logs": "Kh?ng th? xu?t nh?t k?",
     "Prompt Tokens": "Token nh?c l?nh",
     "Completion Tokens": "Token ho?n th?nh",
-    "Token ID": "ID token"
+    "Token ID": "ID token",
+    "Export Reconciliation CSV": "Xuất đối soát CSV",
+    "Export Reconciliation TXT": "Xuất đối soát TXT",
+    "Billing reconciliation exported": "Đã xuất đối soát hóa đơn"
   }
 }

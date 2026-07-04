@@ -3866,6 +3866,9 @@
     "????": "Completion Tokens",
     "???": "Total Tokens",
     "??": "Details",
-    "????ID": "Upstream Request ID"
+    "????ID": "Upstream Request ID",
+    "导出对账单CSV": "Export Statement CSV",
+    "导出对账单TXT": "Export Statement TXT",
+    "对账单已导出": "Statement exported"
   }
 }

@@ -104,6 +104,24 @@ const LogsActions = ({
         >
           {t('导出TXT')}
         </Button>
+        <Button
+          size='small'
+          theme='outline'
+          loading={exportingFormat === 'csv'}
+          disabled={exportingFormat !== null}
+          onClick={() => exportBillingLogs('csv', 'reconciliation')}
+        >
+          {t('导出对账单CSV')}
+        </Button>
+        <Button
+          size='small'
+          theme='outline'
+          loading={exportingFormat === 'txt'}
+          disabled={exportingFormat !== null}
+          onClick={() => exportBillingLogs('txt', 'reconciliation')}
+        >
+          {t('导出对账单TXT')}
+        </Button>
         <CompactModeToggle
           compactMode={compactMode}
           setCompactMode={setCompactMode}

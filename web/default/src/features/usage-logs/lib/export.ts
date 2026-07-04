@@ -21,14 +21,23 @@ import type { GetLogsParams } from '../types'
 import { buildQueryParams } from './utils'
 
 export type BillingExportFormat = 'csv' | 'txt'
+export type BillingExportKind = 'detail' | 'reconciliation'
 
 export async function downloadBillingLogs(
   params: GetLogsParams,
   isAdmin: boolean,
-  format: BillingExportFormat
+  format: BillingExportFormat,
+  kind: BillingExportKind = 'detail'
 ) {
   const queryParams = buildQueryParams({ ...params, format })
-  const endpoint = isAdmin ? '/api/log/export' : '/api/log/self/export'
+  const endpoint =
+    kind === 'reconciliation'
+      ? isAdmin
+        ? '/api/log/reconciliation_export'
+        : '/api/log/self/reconciliation_export'
+      : isAdmin
+        ? '/api/log/export'
+        : '/api/log/self/export'
   const res = await api.get(`${endpoint}?${queryParams}`, {
     responseType: 'blob',
     disableDuplicate: true,
@@ -37,7 +46,7 @@ export async function downloadBillingLogs(
 
   const filename =
     getFilenameFromDisposition(res.headers['content-disposition']) ||
-    `billing-logs-${formatDateForFilename(new Date())}.${format}`
+    `${kind === 'reconciliation' ? 'billing-reconciliation' : 'billing-logs'}-${formatDateForFilename(new Date())}.${format}`
   downloadBlob(res.data as Blob, filename)
 }
 

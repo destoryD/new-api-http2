@@ -3721,6 +3721,9 @@
     "????": "Jetons de compl?tion",
     "???": "Jetons totaux",
     "??": "D?tails",
-    "????ID": "ID de requ?te en amont"
+    "????ID": "ID de requ?te en amont",
+    "导出对账单CSV": "Exporter le relevé CSV",
+    "导出对账单TXT": "Exporter le relevé TXT",
+    "对账单已导出": "Relevé exporté"
   }
 }
