@@ -228,22 +228,29 @@ func (m *globalProxyPoolManager) pickProxyLocked(resources []operation_setting.P
 		return ""
 	}
 	now := time.Now()
-	for i := 0; i < len(resources); i++ {
-		idx := (m.nextIndex + i) % len(resources)
-		proxyURL := strings.TrimSpace(resources[idx].URL)
-		if proxyURL == "" || proxyURL == exclude || !resources[idx].Enabled {
+	var oldestProxy string
+	var oldestAssigned time.Time
+	for _, resource := range resources {
+		proxyURL := strings.TrimSpace(resource.URL)
+		if proxyURL == "" || proxyURL == exclude || !resource.Enabled {
 			continue
 		}
 		if !m.isProxyHealthyLocked(proxyURL) {
 			continue
 		}
-		if lastAssigned, ok := m.lastAssigned[proxyURL]; ok && cooldown > 0 && now.Sub(lastAssigned) < cooldown {
+		lastAssigned, assignedBefore := m.lastAssigned[proxyURL]
+		if !assignedBefore {
+			return proxyURL
+		}
+		if cooldown > 0 && now.Sub(lastAssigned) < cooldown {
 			continue
 		}
-		m.nextIndex = (idx + 1) % len(resources)
-		return proxyURL
+		if oldestProxy == "" || lastAssigned.Before(oldestAssigned) {
+			oldestProxy = proxyURL
+			oldestAssigned = lastAssigned
+		}
 	}
-	return ""
+	return oldestProxy
 }
 
 func (m *globalProxyPoolManager) isProxyUsableLocked(resources []operation_setting.ProxyPoolResource, proxyURL string) bool {
