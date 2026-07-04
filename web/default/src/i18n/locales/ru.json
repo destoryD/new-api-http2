@@ -4540,6 +4540,7 @@
     "success": "Готово",
     "failed": "Ошибка",
     "Export task deleted": "Задача экспорта удалена",
-    "Failed to delete export": "Не удалось удалить экспорт"
+    "Failed to delete export": "Не удалось удалить экспорт",
+    "Final Cost": "???????? ?????????"
   }
 }

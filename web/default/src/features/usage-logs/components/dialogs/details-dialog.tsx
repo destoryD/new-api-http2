@@ -314,6 +314,11 @@ function BillingBreakdown(props: {
     value: formatLogQuota(log.quota),
   })
 
+  rows.push({
+    label: t('Final Cost'),
+    value: formatLogQuota(other.fee_quota ?? log.quota),
+  })
+
   if (rows.length === 0) return null
 
   return (

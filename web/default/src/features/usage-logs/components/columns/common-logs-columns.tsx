@@ -694,6 +694,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
 
         const quota = row.getValue('quota') as number
         const other = parseLogOther(log.other)
+        const finalQuota = other?.fee_quota ?? quota
         const isSubscription = other?.billing_source === 'subscription'
 
         if (isSubscription) {
@@ -713,7 +714,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>
-                    {t('Deducted by subscription')}: {formatLogQuota(quota)}
+                    {t('Deducted by subscription')}: {formatLogQuota(finalQuota)}
                   </span>
                 </TooltipContent>
               </Tooltip>
@@ -721,7 +722,7 @@ export function useCommonLogsColumns(isAdmin: boolean): ColumnDef<UsageLog>[] {
           )
         }
 
-        const quotaStr = formatLogQuota(quota)
+        const quotaStr = formatLogQuota(finalQuota)
 
         return (
           <div className='flex flex-col gap-0.5'>

@@ -182,6 +182,7 @@ const LogsActions = ({
           onCancel={() => setExportCenterOpen(false)}
           footer={null}
           width={720}
+          bodyStyle={{ paddingBottom: 20 }}
         >
           <div className='flex justify-end mb-3'>
             <Button
@@ -193,7 +194,7 @@ const LogsActions = ({
               {t(textRefresh)}
             </Button>
           </div>
-          <div className='space-y-3 max-h-[420px] overflow-auto'>
+          <div className='space-y-3 max-h-[420px] overflow-auto pr-1 pb-4'>
             {exportTasks.length === 0 ? (
               <div className='text-center text-gray-500 py-8'>
                 {t(textNoExportTasks)}

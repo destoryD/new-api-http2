@@ -817,6 +817,7 @@ export const getLogsColumns = ({
           return <></>;
         }
         const other = getLogOther(record.other);
+        const finalQuota = other?.fee_quota ?? text;
         const isSubscription = other?.billing_source === 'subscription';
         if (isSubscription) {
           // Subscription billed: show only tag (no $0), but keep tooltip for equivalent cost.
@@ -826,7 +827,7 @@ export const getLogsColumns = ({
             </Tooltip>
           );
         }
-        return <>{renderQuota(text, 6)}</>;
+        return <>{renderQuota(finalQuota, 6)}</>;
       },
     },
     {

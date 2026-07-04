@@ -774,23 +774,30 @@ func logExportHeaders(includeRelayInfo bool) []string {
 		"User ID",
 		"Token Name",
 		"Token ID",
+	}
+	if includeRelayInfo {
+		headers = append(headers, "Channel ID", "Channel")
+	}
+	headers = append(headers,
 		"Model Name",
 		"Group",
 		"Quota",
+		"Final Cost",
 		"Prompt Tokens",
 		"Completion Tokens",
 		"Total Tokens",
 		"Duration",
 		"Stream",
 		"Request ID",
+	)
+	if includeRelayInfo {
+		headers = append(headers, "Upstream Request ID")
+	}
+	headers = append(headers,
 		"IP",
 		"Content",
 		"Details",
-	}
-	if includeRelayInfo {
-		headers = append(headers[:8], append([]string{"Channel ID", "Channel"}, headers[8:]...)...)
-		headers = append(headers[:18], append([]string{"Upstream Request ID"}, headers[18:]...)...)
-	}
+	)
 	return headers
 }
 
@@ -803,24 +810,109 @@ func logExportRow(log *model.Log, includeRelayInfo bool) []string {
 		strconv.Itoa(log.UserId),
 		log.TokenName,
 		strconv.Itoa(log.TokenId),
+	}
+	if includeRelayInfo {
+		row = append(row, strconv.Itoa(log.ChannelId), log.ChannelName)
+	}
+	row = append(row,
 		log.ModelName,
 		log.Group,
 		strconv.Itoa(log.Quota),
+		formatQuotaAmount(int64(logFinalFeeQuota(log))),
 		strconv.Itoa(log.PromptTokens),
 		strconv.Itoa(log.CompletionTokens),
-		strconv.Itoa(log.PromptTokens + log.CompletionTokens),
+		strconv.Itoa(log.PromptTokens+log.CompletionTokens),
 		strconv.Itoa(log.UseTime),
 		strconv.FormatBool(log.IsStream),
 		log.RequestId,
+	)
+	if includeRelayInfo {
+		row = append(row, log.UpstreamRequestId)
+	}
+	row = append(row,
 		log.Ip,
 		log.Content,
-		log.Other,
-	}
-	if includeRelayInfo {
-		row = append(row[:8], append([]string{strconv.Itoa(log.ChannelId), log.ChannelName}, row[8:]...)...)
-		row = append(row[:18], append([]string{log.UpstreamRequestId}, row[18:]...)...)
-	}
+		logExportDetails(log, includeRelayInfo),
+	)
 	return row
+}
+
+func logFinalFeeQuota(log *model.Log) int {
+	other := parseLogOther(log.Other)
+	if feeQuota, ok := optionalNumberFromMap(other, "fee_quota"); ok {
+		return int(feeQuota)
+	}
+	return log.Quota
+}
+
+func logExportDetails(log *model.Log, includeRelayInfo bool) string {
+	if includeRelayInfo {
+		return log.Other
+	}
+	other, err := common.StrToMap(log.Other)
+	if err != nil || other == nil {
+		return ""
+	}
+	removeUpstreamFields(other)
+	if len(other) == 0 {
+		return ""
+	}
+	data, err := common.Marshal(other)
+	if err != nil {
+		return ""
+	}
+	return string(data)
+}
+
+func removeUpstreamFields(data map[string]interface{}) {
+	for key, value := range data {
+		if isUpstreamDetailField(key) || containsUpstreamValue(value) {
+			delete(data, key)
+			continue
+		}
+		switch typed := value.(type) {
+		case map[string]interface{}:
+			removeUpstreamFields(typed)
+		case []interface{}:
+			data[key] = removeUpstreamArrayValues(typed)
+		}
+	}
+}
+
+func removeUpstreamArrayValues(values []interface{}) []interface{} {
+	filtered := values[:0]
+	for _, value := range values {
+		if containsUpstreamValue(value) {
+			continue
+		}
+		if nested, ok := value.(map[string]interface{}); ok {
+			removeUpstreamFields(nested)
+		}
+		filtered = append(filtered, value)
+	}
+	return filtered
+}
+
+func isUpstreamDetailField(key string) bool {
+	normalized := strings.ToLower(strings.TrimSpace(key))
+	if containsUpstreamText(normalized) {
+		return true
+	}
+	switch normalized {
+	case "request_conversion", "request_path", "is_model_mapped", "mapped_model_name", "original_model_name":
+		return true
+	default:
+		return false
+	}
+}
+
+func containsUpstreamValue(value interface{}) bool {
+	text, ok := value.(string)
+	return ok && containsUpstreamText(text)
+}
+
+func containsUpstreamText(value string) bool {
+	return strings.Contains(strings.ToLower(value), "upstream")
 }
 
 func formatLogExportTime(timestamp int64) string {

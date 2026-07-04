@@ -4540,6 +4540,7 @@
     "success": "Completed",
     "failed": "Failed",
     "Export task deleted": "Export task deleted",
-    "Failed to delete export": "Failed to delete export"
+    "Failed to delete export": "Failed to delete export",
+    "Final Cost": "Final Cost"
   }
 }
