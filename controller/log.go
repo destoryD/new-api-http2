@@ -76,7 +76,7 @@ func SearchUserLogs(c *gin.Context) {
 
 func ExportAllLogs(c *gin.Context) {
 	query := parseLogExportQuery(c)
-	writeLogExport(c, query.Format, func(handle func([]*model.Log) error) error {
+	writeLogExport(c, query.Format, true, func(handle func([]*model.Log) error) error {
 		return model.ExportAllLogs(query.LogType, query.StartTimestamp, query.EndTimestamp, query.ModelName, query.Username, query.TokenName, query.Channel, query.Group, query.RequestId, query.UpstreamRequestId, 1000, handle)
 	})
 }
@@ -84,7 +84,7 @@ func ExportAllLogs(c *gin.Context) {
 func ExportUserLogs(c *gin.Context) {
 	userId := c.GetInt("id")
 	query := parseLogExportQuery(c)
-	writeLogExport(c, query.Format, func(handle func([]*model.Log) error) error {
+	writeLogExport(c, query.Format, false, func(handle func([]*model.Log) error) error {
 		return model.ExportUserLogs(userId, query.LogType, query.StartTimestamp, query.EndTimestamp, query.ModelName, query.TokenName, query.Group, query.RequestId, query.UpstreamRequestId, 1000, handle)
 	})
 }
@@ -127,7 +127,7 @@ func parseLogExportQuery(c *gin.Context) logExportQuery {
 	}
 }
 
-func writeLogExport(c *gin.Context, format string, export func(func([]*model.Log) error) error) {
+func writeLogExport(c *gin.Context, format string, includeRelayInfo bool, export func(func([]*model.Log) error) error) {
 	filename := fmt.Sprintf("billing-logs-%s.%s", time.Now().Format("20060102-150405"), format)
 	contentType := "text/csv; charset=utf-8"
 	if format == "txt" {
@@ -143,14 +143,14 @@ func writeLogExport(c *gin.Context, format string, export func(func([]*model.Log
 		_, _ = c.Writer.Write([]byte{0xEF, 0xBB, 0xBF})
 	}
 
-	if err := writer.Write(logExportHeaders()); err != nil {
+	if err := writer.Write(logExportHeaders(includeRelayInfo)); err != nil {
 		common.ApiError(c, err)
 		return
 	}
 
 	err := export(func(logs []*model.Log) error {
 		for _, log := range logs {
-			if err := writer.Write(logExportRow(log)); err != nil {
+			if err := writer.Write(logExportRow(log, includeRelayInfo)); err != nil {
 				return err
 			}
 		}
@@ -167,8 +167,8 @@ func writeLogExport(c *gin.Context, format string, export func(func([]*model.Log
 	}
 }
 
-func logExportHeaders() []string {
-	return []string{
+func logExportHeaders(includeRelayInfo bool) []string {
+	headers := []string{
 		"ID",
 		"Time",
 		"Type",
@@ -177,8 +177,6 @@ func logExportHeaders() []string {
 		"Token Name",
 		"Token ID",
 		"Model Name",
-		"Channel ID",
-		"Channel",
 		"Group",
 		"Quota",
 		"Prompt Tokens",
@@ -187,15 +185,19 @@ func logExportHeaders() []string {
 		"Duration",
 		"Stream",
 		"Request ID",
-		"Upstream Request ID",
 		"IP",
 		"Content",
 		"Details",
 	}
+	if includeRelayInfo {
+		headers = append(headers[:8], append([]string{"Channel ID", "Channel"}, headers[8:]...)...)
+		headers = append(headers[:18], append([]string{"Upstream Request ID"}, headers[18:]...)...)
+	}
+	return headers
 }
 
-func logExportRow(log *model.Log) []string {
-	return []string{
+func logExportRow(log *model.Log, includeRelayInfo bool) []string {
+	row := []string{
 		strconv.Itoa(log.Id),
 		formatLogExportTime(log.CreatedAt),
 		logExportType(log.Type),
@@ -204,8 +206,6 @@ func logExportRow(log *model.Log) []string {
 		log.TokenName,
 		strconv.Itoa(log.TokenId),
 		log.ModelName,
-		strconv.Itoa(log.ChannelId),
-		log.ChannelName,
 		log.Group,
 		strconv.Itoa(log.Quota),
 		strconv.Itoa(log.PromptTokens),
@@ -214,11 +214,15 @@ func logExportRow(log *model.Log) []string {
 		strconv.Itoa(log.UseTime),
 		strconv.FormatBool(log.IsStream),
 		log.RequestId,
-		log.UpstreamRequestId,
 		log.Ip,
 		log.Content,
 		log.Other,
 	}
+	if includeRelayInfo {
+		row = append(row[:8], append([]string{strconv.Itoa(log.ChannelId), log.ChannelName}, row[8:]...)...)
+		row = append(row[:18], append([]string{log.UpstreamRequestId}, row[18:]...)...)
+	}
+	return row
 }
 
 func formatLogExportTime(timestamp int64) string {
