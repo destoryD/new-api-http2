@@ -312,16 +312,16 @@ func runLogExportTask(taskId int, isAdmin bool, userId int, query logExportTaskQ
 	})
 	filePath, filename, rows, err := generateLogExportTaskFile(taskId, isAdmin, userId, query)
 	if err != nil {
+		common.SysError("failed to generate log export task: " + err.Error())
 		_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
 			"status":      model.LogExportTaskStatusFailed,
 			"progress":    100,
-			"error":       err.Error(),
+			"error":       "export task failed, please try again later",
 			"finished_at": time.Now().Unix(),
 		})
 		if filePath != "" {
 			_ = os.Remove(filePath)
 		}
-		common.SysError("failed to generate log export task: " + err.Error())
 		return
 	}
 	fileSize := int64(0)

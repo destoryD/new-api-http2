@@ -32,7 +32,7 @@ type LogExportTask struct {
 	FilePath    string              `json:"-" gorm:"type:text"`
 	FileSize    int64               `json:"file_size" gorm:"default:0"`
 	Error       string              `json:"error" gorm:"type:text"`
-	QueryParams string              `json:"query_params" gorm:"type:text"`
+	QueryParams string              `json:"-" gorm:"type:text"`
 }
 
 func (t *LogExportTask) BeforeCreate(tx *gorm.DB) error {
