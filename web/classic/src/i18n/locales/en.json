@@ -369,7 +369,7 @@
     "创建令牌默认选择auto分组，初始令牌也将设为auto（否则留空，为用户默认分组）": "Create token with auto group by default, initial token will also be set to auto (otherwise leave blank for user default group)",
     "创建渠道所需的基本信息": "Basic information needed to create a channel",
     "创建失败": "Creation failed",
-    "创建时间": "Creation Time",
+    "创建时间": "Created At",
     "创建新的订阅套餐": "Create a New Subscription Plan",
     "创建新的兑换码": "Create a new redemption code",
     "创建新的令牌": "Create New Token",
@@ -3871,6 +3871,17 @@
     "对账单已导出": "Statement exported",
     "导出明细": "Export Details",
     "导出对账单": "Export Statement",
-    "文件类型": "File Type"
+    "文件类型": "File Type",
+    "导出任务已创建": "Export task created",
+    "加载导出任务失败": "Failed to load export tasks",
+    "下载导出文件失败": "Failed to download export file",
+    "下载中心": "Download Center",
+    "暂无导出任务": "No export tasks",
+    "行数": "Rows",
+    "大小": "Size",
+    "pending": "Pending",
+    "running": "Running",
+    "success": "Completed",
+    "failed": "Failed"
   }
 }

@@ -1025,7 +1025,7 @@
     "Create your first group to reuse model, tag, or endpoint selections anywhere in the dashboard.": "ダッシュボードのどこでもモデル、タグ、またはエンドポイントの選択を再利用するために、最初のグループを作成します。",
     "Create, revoke, and audit API tokens.": "APIトークンを作成、取り消し、監査。",
     "Created": "作成済み",
-    "Created At": "作成日時",
+    "Created At": "????",
     "Credential generated": "認証情報を生成しました",
     "Credential refreshed": "認証情報を更新しました",
     "Credentials": "認証情報",
@@ -1783,7 +1783,7 @@
     "footer.columns.related.links.oneApi": "1つのAPI",
     "footer.columns.related.title": "関連プロジェクト",
     "footer.defaultCopyright": "すべての権利を留保します。",
-    "footer.new\u0061pi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
+    "footer.newapi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "2025 年 5 月 10 日以降に追加されたチャネルの場合、デプロイ時にモデル名から「.」を削除する必要はありません",
     "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "?????????????????????????????????????????????0 ???????????????",
     "For private deployments, format: https://fastgpt.run/api/openapi": "プライベートデプロイメントの場合、形式: https://fastgpt.run/api/openapi",
@@ -4526,6 +4526,18 @@
     "Billing reconciliation exported": "請求照合をエクスポートしました",
     "Export Details": "明細をエクスポート",
     "Export Reconciliation": "照合をエクスポート",
-    "File Type": "ファイル形式"
+    "File Type": "ファイル形式",
+    "Export task created": "エクスポートタスクを作成しました",
+    "Failed to load export tasks": "エクスポートタスクの読み込みに失敗しました",
+    "Failed to download export": "エクスポートのダウンロードに失敗しました",
+    "Download Center": "ダウンロードセンター",
+    "Export tasks are generated in the background": "エクスポートタスクはバックグラウンドで生成されます",
+    "No export tasks": "エクスポートタスクはありません",
+    "Rows": "行数",
+    "Size": "サイズ",
+    "pending": "待機中",
+    "running": "実行中",
+    "success": "完了",
+    "failed": "失敗"
   }
 }

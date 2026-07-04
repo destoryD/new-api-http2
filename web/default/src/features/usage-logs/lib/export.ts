@@ -22,31 +22,85 @@ import { buildQueryParams } from './utils'
 
 export type BillingExportFormat = 'csv' | 'txt'
 export type BillingExportKind = 'detail' | 'reconciliation'
+export type BillingExportTaskStatus =
+  'pending' | 'running' | 'success' | 'failed'
 
-export async function downloadBillingLogs(
+export interface BillingExportTask {
+  id: number
+  created_at: number
+  updated_at: number
+  finished_at: number
+  user_id: number
+  username: string
+  is_admin: boolean
+  kind: BillingExportKind
+  format: BillingExportFormat
+  status: BillingExportTaskStatus
+  progress: number
+  rows: number
+  filename: string
+  file_size: number
+  error: string
+}
+
+interface ApiResponse<T> {
+  success: boolean
+  message: string
+  data: T
+}
+
+export async function createBillingLogExportTask(
   params: GetLogsParams,
   isAdmin: boolean,
   format: BillingExportFormat,
   kind: BillingExportKind = 'detail'
 ) {
-  const queryParams = buildQueryParams({ ...params, format })
-  const endpoint =
-    kind === 'reconciliation'
-      ? isAdmin
-        ? '/api/log/reconciliation_export'
-        : '/api/log/self/reconciliation_export'
-      : isAdmin
-        ? '/api/log/export'
-        : '/api/log/self/export'
-  const res = await api.get(`${endpoint}?${queryParams}`, {
+  const queryParams = buildQueryParams({ ...params, format, kind })
+  const endpoint = isAdmin
+    ? '/api/log/export_tasks'
+    : '/api/log/self/export_tasks'
+  const res = await api.post<ApiResponse<BillingExportTask>>(
+    endpoint + '?' + queryParams,
+    null,
+    { skipBusinessError: true } as Record<string, unknown>
+  )
+  if (!res.data.success) throw new Error(res.data.message)
+  return res.data.data
+}
+
+export async function listBillingLogExportTasks(isAdmin: boolean) {
+  const endpoint = isAdmin
+    ? '/api/log/export_tasks'
+    : '/api/log/self/export_tasks'
+  const res = await api.get<ApiResponse<BillingExportTask[]>>(
+    endpoint + '?limit=20',
+    { disableDuplicate: true, skipBusinessError: true } as Record<
+      string,
+      unknown
+    >
+  )
+  if (!res.data.success) throw new Error(res.data.message)
+  return res.data.data
+}
+
+export async function downloadBillingLogExportTask(
+  task: BillingExportTask,
+  isAdmin: boolean
+) {
+  const endpoint = isAdmin
+    ? '/api/log/export_tasks/' + task.id + '/download'
+    : '/api/log/self/export_tasks/' + task.id + '/download'
+  const res = await api.get(endpoint, {
     responseType: 'blob',
     disableDuplicate: true,
     skipBusinessError: true,
   } as Record<string, unknown>)
-
+  const prefix =
+    task.kind === 'reconciliation' ? 'billing-reconciliation' : 'billing-logs'
   const filename =
     getFilenameFromDisposition(res.headers['content-disposition']) ||
-    `${kind === 'reconciliation' ? 'billing-reconciliation' : 'billing-logs'}-${formatDateForFilename(new Date())}.${format}`
+    task.filename ||
+    prefix + '-' + formatDateForFilename(new Date()) + '.' + task.format
   downloadBlob(res.data as Blob, filename)
 }
 
@@ -67,7 +121,7 @@ function getFilenameFromDisposition(disposition?: string): string | null {
   if (!disposition) return null
   const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i)
   if (utf8Match?.[1]) return decodeURIComponent(utf8Match[1])
-  const match = disposition.match(/filename="?([^"]+)"?/i)
+  const match = disposition.match(/filename="?([^";]+)"?/i)
   return match?.[1] || null
 }
 

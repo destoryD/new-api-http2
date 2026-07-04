@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal } from '@douyinfe/semi-ui';
 import {
@@ -45,6 +45,13 @@ import ParamOverrideEntry from '../../components/table/usage-logs/components/Par
 
 export const useLogsData = () => {
   const { t } = useTranslation();
+  const textExportTaskCreated = '\u5bfc\u51fa\u4efb\u52a1\u5df2\u521b\u5efa';
+  const textFailedLoadExportTasks =
+    '\u52a0\u8f7d\u5bfc\u51fa\u4efb\u52a1\u5931\u8d25';
+  const textFailedDownloadExport =
+    '\u4e0b\u8f7d\u5bfc\u51fa\u6587\u4ef6\u5931\u8d25';
+  const textFailedExportLogs =
+    '\u5bfc\u51fa\u8d26\u5355\u65e5\u5fd7\u5931\u8d25';
 
   // Define column keys for selection
   const COLUMN_KEYS = {
@@ -75,6 +82,8 @@ export const useLogsData = () => {
   const [pageSize, setPageSize] = useState(ITEMS_PER_PAGE);
   const [logType, setLogType] = useState(0);
   const [exportingFormat, setExportingFormat] = useState(null);
+  const [exportTasks, setExportTasks] = useState([]);
+  const [loadingExportTasks, setLoadingExportTasks] = useState(false);
 
   // User and admin
   const isAdminUser = isAdmin();
@@ -309,38 +318,80 @@ export const useLogsData = () => {
     return `${isAdminUser ? '/api/log/' : '/api/log/self/'}?${params.toString()}`;
   };
 
+  const loadExportTasks = useCallback(async () => {
+    setLoadingExportTasks(true);
+    try {
+      const endpoint = isAdminUser
+        ? '/api/log/export_tasks'
+        : '/api/log/self/export_tasks';
+      const res = await API.get(endpoint + '?limit=20', {
+        disableDuplicate: true,
+        skipErrorHandler: true,
+      });
+      if (!res.data.success) {
+        throw new Error(res.data.message);
+      }
+      setExportTasks(res.data.data || []);
+    } catch (error) {
+      showError(error?.message || t(textFailedLoadExportTasks));
+    } finally {
+      setLoadingExportTasks(false);
+    }
+  }, [isAdminUser, t]);
+
   const exportBillingLogs = async (format, kind = 'detail') => {
-    setExportingFormat(`${kind}:${format}`);
+    setExportingFormat(kind + ':' + format);
 
     try {
       const params = buildLogQueryParams(1, 100);
       params.set('format', format);
-      const endpoint =
-        kind === 'reconciliation'
-          ? isAdminUser
-            ? '/api/log/reconciliation_export'
-            : '/api/log/self/reconciliation_export'
-          : isAdminUser
-            ? '/api/log/export'
-            : '/api/log/self/export';
-      const res = await API.get(`${endpoint}?${params.toString()}`, {
-        responseType: 'blob',
-        disableDuplicate: true,
+      params.set('kind', kind);
+      const endpoint = isAdminUser
+        ? '/api/log/export_tasks'
+        : '/api/log/self/export_tasks';
+      const res = await API.post(endpoint + '?' + params.toString(), null, {
         skipErrorHandler: true,
       });
-      const filename =
-        getFilenameFromDisposition(res.headers['content-disposition']) ||
-        `${kind === 'reconciliation' ? 'billing-reconciliation' : 'billing-logs'}-${getExportTimestamp()}.${format}`;
-      downloadExportBlob(res.data, filename);
-      showSuccess(
-        t(kind === 'reconciliation' ? '对账单已导出' : '账单日志已导出'),
-      );
+      if (!res.data.success) {
+        throw new Error(res.data.message);
+      }
+      showSuccess(t(textExportTaskCreated));
+      await loadExportTasks();
     } catch (error) {
-      showError(error?.message || t('导出账单日志失败'));
+      showError(error?.message || t(textFailedExportLogs));
     } finally {
       setExportingFormat(null);
     }
   };
+
+  const downloadExportTask = useCallback(
+    async (task) => {
+      try {
+        const endpoint = isAdminUser
+          ? '/api/log/export_tasks/' + task.id + '/download'
+          : '/api/log/self/export_tasks/' + task.id + '/download';
+        const res = await API.get(endpoint, {
+          responseType: 'blob',
+          disableDuplicate: true,
+          skipErrorHandler: true,
+        });
+        const filename =
+          getFilenameFromDisposition(res.headers['content-disposition']) ||
+          task.filename ||
+          (task.kind === 'reconciliation'
+            ? 'billing-reconciliation'
+            : 'billing-logs') +
+            '-' +
+            getExportTimestamp() +
+            '.' +
+            task.format;
+        downloadExportBlob(res.data, filename);
+      } catch (error) {
+        showError(error?.message || t(textFailedDownloadExport));
+      }
+    },
+    [isAdminUser, t],
+  );
 
   const getFilenameFromDisposition = (disposition) => {
     if (!disposition) {
@@ -952,6 +1003,8 @@ export const useLogsData = () => {
     loading,
     loadingStat,
     exportingFormat,
+    exportTasks,
+    loadingExportTasks,
     activePage,
     logCount,
     pageSize,
@@ -1003,6 +1056,8 @@ export const useLogsData = () => {
     copyText,
     handleEyeClick,
     exportBillingLogs,
+    loadExportTasks,
+    downloadExportTask,
     setLogsFormat,
     hasExpandableRows,
     setLogType,

@@ -1025,7 +1025,7 @@
     "Create your first group to reuse model, tag, or endpoint selections anywhere in the dashboard.": "Создайте свою первую группу для повторного использования выбранных моделей, тегов или конечных точек в любом месте панели управления.",
     "Create, revoke, and audit API tokens.": "Создать, отозвать и аудитировать токены API.",
     "Created": "Создано",
-    "Created At": "Дата создания",
+    "Created At": "???????",
     "Credential generated": "Учётные данные созданы",
     "Credential refreshed": "Учётные данные обновлены",
     "Credentials": "Учетные данные",
@@ -1783,7 +1783,7 @@
     "footer.columns.related.links.oneApi": "Один API",
     "footer.columns.related.title": "Связанные проекты",
     "footer.defaultCopyright": "Все права защищены.",
-    "footer.new\u0061pi.projectAttributionSuffix": "Все права защищены. Разработано участниками проекта.",
+    "footer.newapi.projectAttributionSuffix": "Все права защищены. Разработано участниками проекта.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Для каналов, добавленных после 10 мая 2025 г., не нужно удалять \".\" из имён моделей при развёртывании",
     "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "? ?????? ?????? ?????????? ?????? ??????? ???? ???????????? ?? ?????????? ????? ?????? ???????? ? ??????; 0 ????????? ??????? ?????",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Для частных развертываний, формат: https://fastgpt.run/api/openapi",
@@ -4526,6 +4526,18 @@
     "Billing reconciliation exported": "Сверка счетов экспортирована",
     "Export Details": "Экспорт деталей",
     "Export Reconciliation": "Экспорт сверки",
-    "File Type": "Тип файла"
+    "File Type": "Тип файла",
+    "Export task created": "Задача экспорта создана",
+    "Failed to load export tasks": "Не удалось загрузить задачи экспорта",
+    "Failed to download export": "Не удалось скачать экспорт",
+    "Download Center": "Центр загрузок",
+    "Export tasks are generated in the background": "Задачи экспорта создаются в фоновом режиме",
+    "No export tasks": "Нет задач экспорта",
+    "Rows": "Строки",
+    "Size": "Размер",
+    "pending": "Ожидание",
+    "running": "Выполняется",
+    "success": "Готово",
+    "failed": "Ошибка"
   }
 }

@@ -361,7 +361,7 @@
     "创建令牌默认选择auto分组，初始令牌也将设为auto（否则留空，为用户默认分组）": "Lors de la création d'un jeton, le groupe auto est sélectionné par défaut, et le jeton initial sera également défini sur auto (sinon laisser vide, pour le groupe par défaut de l'utilisateur)",
     "创建渠道所需的基本信息": "Informations de base pour créer un canal",
     "创建失败": "Échec de la création",
-    "创建时间": "Heure de création",
+    "创建时间": "Cr?? le",
     "创建新的订阅套餐": "Créer un nouveau plan d'abonnement",
     "创建新的兑换码": "Créer un nouveau code d'échange",
     "创建新的令牌": "Créer un nouveau jeton",
@@ -3726,6 +3726,23 @@
     "对账单已导出": "Relevé exporté",
     "导出明细": "Exporter les détails",
     "导出对账单": "Exporter le relevé",
-    "文件类型": "Type de fichier"
+    "文件类型": "Type de fichier",
+    "导出任务已创建": "T?che d?export cr??e",
+    "加载导出任务失败": "?chec du chargement des t?ches d?export",
+    "下载导出文件失败": "?chec du t?l?chargement du fichier export?",
+    "下载中心": "Centre de t?l?chargement",
+    "暂无导出任务": "Aucune t?che d?export",
+    "行数": "Lignes",
+    "大小": "Taille",
+    "pending": "En attente",
+    "running": "En cours",
+    "success": "Terminé",
+    "failed": "Échec",
+    "Export task created": "Tâche d’export créée",
+    "Failed to load export tasks": "Échec du chargement des tâches d’export",
+    "Failed to download export": "Échec du téléchargement de l’export",
+    "Download Center": "Centre de téléchargement",
+    "Export tasks are generated in the background": "Les tâches d’export sont générées en arrière-plan",
+    "No export tasks": "Aucune tâche d’export"
   }
 }

@@ -17,11 +17,49 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React, { useState } from 'react';
-import { Button, Tag, Space, Skeleton, Select } from '@douyinfe/semi-ui';
+import React, { useEffect, useState } from 'react';
+import {
+  Button,
+  Tag,
+  Space,
+  Skeleton,
+  Select,
+  Modal,
+  Progress,
+} from '@douyinfe/semi-ui';
 import { renderQuota } from '../../../helpers';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
 import { useMinimumLoadingTime } from '../../../hooks/common/useMinimumLoadingTime';
+
+const textQuotaUsed = '\u6d88\u8017\u989d\u5ea6';
+const textExportDetails = '\u5bfc\u51fa\u660e\u7ec6';
+const textExportReconciliation = '\u5bfc\u51fa\u5bf9\u8d26\u5355';
+const textFileType = '\u6587\u4ef6\u7c7b\u578b';
+const textDownloadCenter = '\u4e0b\u8f7d\u4e2d\u5fc3';
+const textRefresh = '\u5237\u65b0';
+const textNoExportTasks = '\u6682\u65e0\u5bfc\u51fa\u4efb\u52a1';
+const textDownload = '\u4e0b\u8f7d';
+const textRows = '\u884c\u6570';
+const textSize = '\u5927\u5c0f';
+const textCreatedAt = '\u521b\u5efa\u65f6\u95f4';
+
+const formatExportTime = (timestamp) => {
+  if (!timestamp) return '-';
+  return new Date(timestamp * 1000).toLocaleString();
+};
+
+const formatExportSize = (size) => {
+  if (!size) return '-';
+  if (size < 1024) return size + ' B';
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB';
+  return (size / 1024 / 1024).toFixed(1) + ' MB';
+};
+
+const statusColor = (status) => {
+  if (status === 'success') return 'green';
+  if (status === 'failed') return 'red';
+  return 'blue';
+};
 
 const LogsActions = ({
   stat,
@@ -31,11 +69,23 @@ const LogsActions = ({
   setCompactMode,
   exportingFormat,
   exportBillingLogs,
+  exportTasks,
+  loadingExportTasks,
+  loadExportTasks,
+  downloadExportTask,
   t,
 }) => {
   const showSkeleton = useMinimumLoadingTime(loadingStat);
   const needSkeleton = !showStat || showSkeleton;
   const [exportFormat, setExportFormat] = useState('csv');
+  const [exportCenterOpen, setExportCenterOpen] = useState(false);
+
+  useEffect(() => {
+    if (!exportCenterOpen) return undefined;
+    loadExportTasks();
+    const timer = window.setInterval(loadExportTasks, 3000);
+    return () => window.clearInterval(timer);
+  }, [exportCenterOpen, loadExportTasks]);
 
   const placeholder = (
     <Space>
@@ -58,7 +108,7 @@ const LogsActions = ({
             }}
             className='!rounded-lg'
           >
-            {t('消耗额度')}: {renderQuota(stat.quota)}
+            {t(textQuotaUsed)}: {renderQuota(stat.quota)}
           </Tag>
           <Tag
             color='pink'
@@ -90,20 +140,20 @@ const LogsActions = ({
         <Button
           size='small'
           theme='outline'
-          loading={exportingFormat === `detail:${exportFormat}`}
+          loading={exportingFormat === 'detail:' + exportFormat}
           disabled={exportingFormat !== null}
           onClick={() => exportBillingLogs(exportFormat, 'detail')}
         >
-          {t('导出明细')}
+          {t(textExportDetails)}
         </Button>
         <Button
           size='small'
           theme='outline'
-          loading={exportingFormat === `reconciliation:${exportFormat}`}
+          loading={exportingFormat === 'reconciliation:' + exportFormat}
           disabled={exportingFormat !== null}
           onClick={() => exportBillingLogs(exportFormat, 'reconciliation')}
         >
-          {t('导出对账单')}
+          {t(textExportReconciliation)}
         </Button>
         <Select
           size='small'
@@ -115,8 +165,83 @@ const LogsActions = ({
             { value: 'csv', label: 'CSV' },
             { value: 'txt', label: 'TXT' },
           ]}
-          aria-label={t('文件类型')}
+          aria-label={t(textFileType)}
         />
+        <Button
+          size='small'
+          theme='borderless'
+          onClick={() => setExportCenterOpen(true)}
+        >
+          {t(textDownloadCenter)}
+        </Button>
+        <Modal
+          title={t(textDownloadCenter)}
+          visible={exportCenterOpen}
+          onCancel={() => setExportCenterOpen(false)}
+          footer={null}
+          width={720}
+        >
+          <div className='flex justify-end mb-3'>
+            <Button
+              size='small'
+              theme='outline'
+              loading={loadingExportTasks}
+              onClick={loadExportTasks}
+            >
+              {t(textRefresh)}
+            </Button>
+          </div>
+          <div className='space-y-3 max-h-[420px] overflow-auto'>
+            {exportTasks.length === 0 ? (
+              <div className='text-center text-gray-500 py-8'>
+                {t(textNoExportTasks)}
+              </div>
+            ) : (
+              exportTasks.map((task) => (
+                <div key={task.id} className='border rounded-lg p-3 space-y-2'>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Space wrap>
+                      <Tag color={statusColor(task.status)}>
+                        {t(task.status)}
+                      </Tag>
+                      <span className='font-medium'>
+                        {task.kind === 'reconciliation'
+                          ? t(textExportReconciliation)
+                          : t(textExportDetails)}
+                      </span>
+                      <span className='text-xs text-gray-500 uppercase'>
+                        {task.format}
+                      </span>
+                    </Space>
+                    <Button
+                      size='small'
+                      theme='outline'
+                      disabled={task.status !== 'success'}
+                      onClick={() => downloadExportTask(task)}
+                    >
+                      {t(textDownload)}
+                    </Button>
+                  </div>
+                  <Progress percent={task.progress || 0} size='small' />
+                  <div className='text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1'>
+                    <span>
+                      {t(textRows)}: {task.rows}
+                    </span>
+                    <span>
+                      {t(textSize)}: {formatExportSize(task.file_size)}
+                    </span>
+                    <span>
+                      {t(textCreatedAt)}: {formatExportTime(task.created_at)}
+                    </span>
+                    {task.error && (
+                      <span className='text-red-500'>{task.error}</span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </Modal>
         <CompactModeToggle
           compactMode={compactMode}
           setCompactMode={setCompactMode}

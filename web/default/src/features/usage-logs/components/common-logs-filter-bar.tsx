@@ -20,12 +20,21 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { type Table } from '@tanstack/react-table'
-import { Download, Eye, EyeOff } from 'lucide-react'
+import { Download, Eye, EyeOff, RefreshCw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useIsAdmin } from '@/hooks/use-admin'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Progress } from '@/components/ui/progress'
 import {
   Select,
   SelectContent,
@@ -42,9 +51,12 @@ import {
 import { DataTableToolbar } from '@/components/data-table'
 import { LOG_TYPES } from '../constants'
 import {
-  downloadBillingLogs,
+  createBillingLogExportTask,
+  downloadBillingLogExportTask,
+  listBillingLogExportTasks,
   type BillingExportFormat,
   type BillingExportKind,
+  type BillingExportTask,
 } from '../lib/export'
 import { buildSearchParams } from '../lib/filter'
 import { buildApiParams, getDefaultTimeRange } from '../lib/utils'
@@ -57,6 +69,24 @@ const route = getRouteApi('/_authenticated/usage-logs/$section')
 const logTypeValues = ['0', '1', '2', '3', '4', '5', '6'] as const
 
 type LogTypeValue = (typeof logTypeValues)[number]
+
+function formatExportTime(timestamp: number) {
+  if (!timestamp) return '-'
+  return new Date(timestamp * 1000).toLocaleString()
+}
+
+function formatExportSize(size: number) {
+  if (!size) return '-'
+  if (size < 1024) return size + ' B'
+  if (size < 1024 * 1024) return (size / 1024).toFixed(1) + ' KB'
+  return (size / 1024 / 1024).toFixed(1) + ' MB'
+}
+
+function exportTaskVariant(status: BillingExportTask['status']) {
+  if (status === 'success') return 'default'
+  if (status === 'failed') return 'destructive'
+  return 'secondary'
+}
 
 function isLogTypeValue(value: string): value is LogTypeValue {
   return (logTypeValues as readonly string[]).includes(value)
@@ -80,6 +110,9 @@ export function CommonLogsFilterBar<TData>(
   const [exportingKind, setExportingKind] = useState<BillingExportKind | null>(
     null
   )
+  const [exportCenterOpen, setExportCenterOpen] = useState(false)
+  const [exportTasks, setExportTasks] = useState<BillingExportTask[]>([])
+  const [loadingExportTasks, setLoadingExportTasks] = useState(false)
 
   const [filters, setFilters] = useState<CommonLogFilters>(() => {
     const { start, end } = getDefaultTimeRange()
@@ -170,6 +203,30 @@ export function CommonLogsFilterBar<TData>(
     [handleApply]
   )
 
+  const loadExportTasks = useCallback(async () => {
+    setLoadingExportTasks(true)
+    try {
+      setExportTasks(await listBillingLogExportTasks(isAdmin))
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('Failed to load export tasks')
+      )
+    } finally {
+      setLoadingExportTasks(false)
+    }
+  }, [isAdmin, t])
+
+  useEffect(() => {
+    if (!exportCenterOpen) return
+    void loadExportTasks()
+    const timer = window.setInterval(() => {
+      void loadExportTasks()
+    }, 3000)
+    return () => window.clearInterval(timer)
+  }, [exportCenterOpen, loadExportTasks])
+
   const handleExport = useCallback(
     async (kind: BillingExportKind = 'detail') => {
       setExportingKind(kind)
@@ -181,14 +238,10 @@ export function CommonLogsFilterBar<TData>(
           columnFilters: props.table.getState().columnFilters,
           isAdmin,
         })
-        await downloadBillingLogs(params, isAdmin, exportFormat, kind)
-        toast.success(
-          t(
-            kind === 'reconciliation'
-              ? 'Billing reconciliation exported'
-              : 'Billing logs exported'
-          )
-        )
+        await createBillingLogExportTask(params, isAdmin, exportFormat, kind)
+        toast.success(t('Export task created'))
+        setExportCenterOpen(true)
+        void loadExportTasks()
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : t('Failed to export logs')
@@ -197,7 +250,22 @@ export function CommonLogsFilterBar<TData>(
         setExportingKind(null)
       }
     },
-    [exportFormat, isAdmin, props.table, searchParams, t]
+    [exportFormat, isAdmin, loadExportTasks, props.table, searchParams, t]
+  )
+
+  const handleDownloadTask = useCallback(
+    async (task: BillingExportTask) => {
+      try {
+        await downloadBillingLogExportTask(task, isAdmin)
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : t('Failed to download export')
+        )
+      }
+    },
+    [isAdmin, t]
   )
 
   const hasExpandedFilters =
@@ -266,6 +334,92 @@ export function CommonLogsFilterBar<TData>(
           </SelectGroup>
         </SelectContent>
       </Select>
+      <Button
+        variant='ghost'
+        size='sm'
+        onClick={() => setExportCenterOpen(true)}
+        className='h-7 gap-1.5 px-2'
+      >
+        <Download className='h-3.5 w-3.5' />
+        <span className='whitespace-nowrap'>{t('Download Center')}</span>
+      </Button>
+      <Dialog open={exportCenterOpen} onOpenChange={setExportCenterOpen}>
+        <DialogContent className='sm:max-w-2xl'>
+          <DialogHeader>
+            <DialogTitle>{t('Download Center')}</DialogTitle>
+            <DialogDescription>
+              {t('Export tasks are generated in the background')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className='flex justify-end'>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() => void loadExportTasks()}
+              disabled={loadingExportTasks}
+              className='h-7 gap-1.5 px-2'
+            >
+              <RefreshCw className='h-3.5 w-3.5' />
+              {t('Refresh')}
+            </Button>
+          </div>
+          <div className='max-h-[420px] space-y-2 overflow-auto'>
+            {exportTasks.length === 0 ? (
+              <div className='text-muted-foreground py-8 text-center text-sm'>
+                {t('No export tasks')}
+              </div>
+            ) : (
+              exportTasks.map((task) => (
+                <div
+                  key={task.id}
+                  className='border-border flex flex-col gap-2 rounded-md border p-3'
+                >
+                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      <Badge variant={exportTaskVariant(task.status)}>
+                        {t(task.status)}
+                      </Badge>
+                      <span className='font-medium'>
+                        {task.kind === 'reconciliation'
+                          ? t('Export Reconciliation')
+                          : t('Export Details')}
+                      </span>
+                      <span className='text-muted-foreground text-xs uppercase'>
+                        {task.format}
+                      </span>
+                    </div>
+                    <Button
+                      variant='outline'
+                      size='sm'
+                      disabled={task.status !== 'success'}
+                      onClick={() => void handleDownloadTask(task)}
+                      className='h-7 gap-1.5 px-2'
+                    >
+                      <Download className='h-3.5 w-3.5' />
+                      {t('Download')}
+                    </Button>
+                  </div>
+                  <Progress value={task.progress || 0} />
+                  <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs'>
+                    <span>
+                      {t('Rows')}: {task.rows}
+                    </span>
+                    <span>
+                      {t('Size')}: {formatExportSize(task.file_size)}
+                    </span>
+                    <span>
+                      {t('Created At')}: {formatExportTime(task.created_at)}
+                    </span>
+                    {task.error && (
+                      <span className='text-destructive'>{task.error}</span>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
       <Tooltip>
         <TooltipTrigger
           render={

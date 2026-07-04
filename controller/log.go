@@ -4,6 +4,8 @@ import (
 	"encoding/csv"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,6 +16,16 @@ import (
 
 	"github.com/gin-gonic/gin"
 )
+
+var logExportTaskSemaphore = makeLogExportTaskSemaphore()
+
+func makeLogExportTaskSemaphore() chan struct{} {
+	limit := common.GetEnvOrDefault("LOG_EXPORT_MAX_CONCURRENT", 2)
+	if limit <= 0 {
+		limit = 1
+	}
+	return make(chan struct{}, limit)
+}
 
 func GetAllLogs(c *gin.Context) {
 	pageInfo := common.GetPageQuery(c)
@@ -106,6 +118,113 @@ func ExportUserLogReconciliation(c *gin.Context) {
 	})
 }
 
+func CreateAllLogExportTask(c *gin.Context) {
+	query := parseLogExportTaskQuery(c)
+	createLogExportTask(c, true, query)
+}
+
+func CreateUserLogExportTask(c *gin.Context) {
+	query := parseLogExportTaskQuery(c)
+	createLogExportTask(c, false, query)
+}
+
+func GetAllLogExportTasks(c *gin.Context) {
+	getLogExportTasks(c, true)
+}
+
+func GetUserLogExportTasks(c *gin.Context) {
+	getLogExportTasks(c, false)
+}
+
+func DownloadAllLogExportTask(c *gin.Context) {
+	downloadLogExportTask(c, true)
+}
+
+func DownloadUserLogExportTask(c *gin.Context) {
+	downloadLogExportTask(c, false)
+}
+
+func parseLogExportTaskQuery(c *gin.Context) logExportTaskQuery {
+	query := logExportTaskQuery{
+		logExportQuery: parseLogExportQuery(c),
+		Kind:           c.DefaultQuery("kind", "detail"),
+		RawQuery:       c.Request.URL.RawQuery,
+	}
+	if query.Kind != "reconciliation" {
+		query.Kind = "detail"
+	}
+	return query
+}
+
+func createLogExportTask(c *gin.Context, isAdmin bool, query logExportTaskQuery) {
+	go cleanupExpiredLogExportTasks()
+	userId := c.GetInt("id")
+	username := c.GetString("username")
+	if username == "" && userId > 0 {
+		if name, err := model.GetUsernameById(userId, false); err == nil {
+			username = name
+		}
+	}
+	task := &model.LogExportTask{
+		UserId:      userId,
+		Username:    username,
+		IsAdmin:     isAdmin,
+		Kind:        query.Kind,
+		Format:      query.Format,
+		Status:      model.LogExportTaskStatusPending,
+		Progress:    0,
+		QueryParams: query.RawQuery,
+	}
+	if err := model.CreateLogExportTask(task); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	go runLogExportTask(task.Id, isAdmin, userId, query)
+	common.ApiSuccess(c, task)
+}
+
+func getLogExportTasks(c *gin.Context, isAdmin bool) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
+	tasks, err := model.GetLogExportTasks(c.GetInt("id"), isAdmin, limit)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, tasks)
+}
+
+func downloadLogExportTask(c *gin.Context, isAdmin bool) {
+	taskId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	task, err := model.GetLogExportTaskByID(taskId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !isAdmin && (task.UserId != c.GetInt("id") || task.IsAdmin) {
+		common.ApiErrorMsg(c, "no permission to download this export task")
+		return
+	}
+	if task.Status != model.LogExportTaskStatusSuccess || task.FilePath == "" {
+		common.ApiErrorMsg(c, "export task is not ready")
+		return
+	}
+	if _, err := os.Stat(task.FilePath); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	c.FileAttachment(task.FilePath, task.Filename)
+}
+
+type logExportTaskQuery struct {
+	logExportQuery
+	Kind     string
+	RawQuery string
+}
+
 type logExportQuery struct {
 	Format            string
 	LogType           int
@@ -184,6 +303,172 @@ func writeLogExport(c *gin.Context, format string, includeRelayInfo bool, export
 	}
 }
 
+func runLogExportTask(taskId int, isAdmin bool, userId int, query logExportTaskQuery) {
+	logExportTaskSemaphore <- struct{}{}
+	defer func() { <-logExportTaskSemaphore }()
+	_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
+		"status":   model.LogExportTaskStatusRunning,
+		"progress": 5,
+	})
+	filePath, filename, rows, err := generateLogExportTaskFile(taskId, isAdmin, userId, query)
+	if err != nil {
+		_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
+			"status":      model.LogExportTaskStatusFailed,
+			"progress":    100,
+			"error":       err.Error(),
+			"finished_at": time.Now().Unix(),
+		})
+		if filePath != "" {
+			_ = os.Remove(filePath)
+		}
+		common.SysError("failed to generate log export task: " + err.Error())
+		return
+	}
+	fileSize := int64(0)
+	if info, statErr := os.Stat(filePath); statErr == nil {
+		fileSize = info.Size()
+	}
+	_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
+		"status":      model.LogExportTaskStatusSuccess,
+		"progress":    100,
+		"rows":        rows,
+		"filename":    filename,
+		"file_path":   filePath,
+		"file_size":   fileSize,
+		"finished_at": time.Now().Unix(),
+	})
+}
+
+func cleanupExpiredLogExportTasks() {
+	retentionHours := common.GetEnvOrDefault("LOG_EXPORT_RETENTION_HOURS", 72)
+	if retentionHours <= 0 {
+		return
+	}
+	cutoff := time.Now().Add(-time.Duration(retentionHours) * time.Hour).Unix()
+	tasks, err := model.GetExpiredLogExportTasks(cutoff, 100)
+	if err != nil {
+		common.SysError("failed to query expired log export tasks: " + err.Error())
+		return
+	}
+	for _, task := range tasks {
+		if task.FilePath != "" {
+			_ = os.Remove(task.FilePath)
+		}
+		if err := model.DeleteLogExportTaskByID(task.Id); err != nil {
+			common.SysError("failed to delete expired log export task: " + err.Error())
+		}
+	}
+}
+
+func generateLogExportTaskFile(taskId int, isAdmin bool, userId int, query logExportTaskQuery) (string, string, int, error) {
+	dir := filepath.Join("data", "log_exports")
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return "", "", 0, err
+	}
+	random, err := common.GenerateRandomCharsKey(12)
+	if err != nil {
+		return "", "", 0, err
+	}
+	prefix := "billing-logs"
+	if query.Kind == "reconciliation" {
+		prefix = "billing-reconciliation"
+	}
+	filename := fmt.Sprintf("%s-%s-%d.%s", prefix, time.Now().Format("20060102-150405"), taskId, query.Format)
+	filePath := filepath.Join(dir, fmt.Sprintf("%d-%s.%s", taskId, strings.ReplaceAll(random, "/", "_"), query.Format))
+	file, err := os.Create(filePath)
+	if err != nil {
+		return filePath, filename, 0, err
+	}
+	defer file.Close()
+
+	writer := csv.NewWriter(file)
+	if query.Format == "txt" {
+		writer.Comma = '	'
+	} else if _, err := file.Write([]byte{0xEF, 0xBB, 0xBF}); err != nil {
+		return filePath, filename, 0, err
+	}
+
+	rows := 0
+	progressRows := 0
+	updateRows := func(delta int) {
+		rows += delta
+		progressRows += delta
+		if progressRows >= 5000 {
+			progressRows = 0
+			_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
+				"rows":     rows,
+				"progress": 50,
+			})
+		}
+	}
+
+	if query.Kind == "reconciliation" {
+		err = generateLogReconciliationExport(writer, func(handle func([]*model.Log) error) error {
+			if isAdmin {
+				return model.ExportAllLogs(model.LogTypeConsume, query.StartTimestamp, query.EndTimestamp, query.ModelName, query.Username, query.TokenName, query.Channel, query.Group, query.RequestId, query.UpstreamRequestId, 1000, handle)
+			}
+			return model.ExportUserLogs(userId, model.LogTypeConsume, query.StartTimestamp, query.EndTimestamp, query.ModelName, query.TokenName, query.Group, query.RequestId, query.UpstreamRequestId, 1000, handle)
+		}, updateRows)
+	} else {
+		err = generateLogDetailExport(writer, isAdmin, func(handle func([]*model.Log) error) error {
+			if isAdmin {
+				return model.ExportAllLogs(query.LogType, query.StartTimestamp, query.EndTimestamp, query.ModelName, query.Username, query.TokenName, query.Channel, query.Group, query.RequestId, query.UpstreamRequestId, 1000, handle)
+			}
+			return model.ExportUserLogs(userId, query.LogType, query.StartTimestamp, query.EndTimestamp, query.ModelName, query.TokenName, query.Group, query.RequestId, query.UpstreamRequestId, 1000, handle)
+		}, updateRows)
+	}
+	writer.Flush()
+	if err == nil {
+		err = writer.Error()
+	}
+	if err != nil {
+		return filePath, filename, rows, err
+	}
+	return filePath, filename, rows, nil
+}
+
+func generateLogDetailExport(writer *csv.Writer, includeRelayInfo bool, export func(func([]*model.Log) error) error, updateRows func(int)) error {
+	if err := writer.Write(logExportHeaders(includeRelayInfo)); err != nil {
+		return err
+	}
+	return export(func(logs []*model.Log) error {
+		for _, log := range logs {
+			if err := writer.Write(logExportRow(log, includeRelayInfo)); err != nil {
+				return err
+			}
+		}
+		writer.Flush()
+		if err := writer.Error(); err != nil {
+			return err
+		}
+		updateRows(len(logs))
+		return nil
+	})
+}
+
+func generateLogReconciliationExport(writer *csv.Writer, export func(func([]*model.Log) error) error, updateRows func(int)) error {
+	summaries := make(map[string]*reconciliationSummary)
+	err := export(func(logs []*model.Log) error {
+		for _, log := range logs {
+			accumulateReconciliationSummary(summaries, log)
+		}
+		updateRows(len(logs))
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if err := writer.Write(logReconciliationHeaders()); err != nil {
+		return err
+	}
+	for _, summary := range sortedReconciliationSummaries(summaries) {
+		if err := writer.Write(logReconciliationRow(summary)); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 type reconciliationSummary struct {
 	Group               string
 	ModelName           string
@@ -199,47 +484,51 @@ type reconciliationSummary struct {
 	PriceComponents     map[string]struct{}
 }
 
+func accumulateReconciliationSummary(summaries map[string]*reconciliationSummary, log *model.Log) {
+	other := parseLogOther(log.Other)
+	group := strings.TrimSpace(log.Group)
+	if group == "" {
+		group = strings.TrimSpace(stringFromMap(other, "group"))
+	}
+	modelName := strings.TrimSpace(log.ModelName)
+	key := group + "\x00" + modelName
+	summary, ok := summaries[key]
+	if !ok {
+		summary = &reconciliationSummary{
+			Group:           group,
+			ModelName:       modelName,
+			PriceComponents: make(map[string]struct{}),
+		}
+		summaries[key] = summary
+	}
+	summary.RequestCount++
+	summary.PromptTokens += int64(log.PromptTokens)
+	summary.CompletionTokens += int64(log.CompletionTokens)
+	cacheCreateTokens := int64(numberFromMap(other, "cache_creation_tokens"))
+	cacheCreate5mTokens := int64(numberFromMap(other, "cache_creation_tokens_5m"))
+	cacheCreate1hTokens := int64(numberFromMap(other, "cache_creation_tokens_1h"))
+	if cacheCreateTokens == 0 && (cacheCreate5mTokens > 0 || cacheCreate1hTokens > 0) {
+		cacheCreateTokens = cacheCreate5mTokens + cacheCreate1hTokens
+	}
+	summary.CacheReadTokens += int64(numberFromMap(other, "cache_tokens"))
+	summary.CacheCreateTokens += cacheCreateTokens
+	summary.CacheCreate5mTokens += cacheCreate5mTokens
+	summary.CacheCreate1hTokens += cacheCreate1hTokens
+	summary.Quota += int64(log.Quota)
+	feeQuota, hasFeeQuota := optionalNumberFromMap(other, "fee_quota")
+	if hasFeeQuota {
+		summary.FeeQuota += int64(feeQuota)
+	} else {
+		summary.FeeQuota += int64(log.Quota)
+	}
+	summary.PriceComponents[buildPriceComponent(other)] = struct{}{}
+}
+
 func writeLogReconciliationExport(c *gin.Context, format string, export func(func([]*model.Log) error) error) {
 	summaries := make(map[string]*reconciliationSummary)
 	err := export(func(logs []*model.Log) error {
 		for _, log := range logs {
-			other := parseLogOther(log.Other)
-			group := strings.TrimSpace(log.Group)
-			if group == "" {
-				group = strings.TrimSpace(stringFromMap(other, "group"))
-			}
-			modelName := strings.TrimSpace(log.ModelName)
-			key := group + "\x00" + modelName
-			summary, ok := summaries[key]
-			if !ok {
-				summary = &reconciliationSummary{
-					Group:           group,
-					ModelName:       modelName,
-					PriceComponents: make(map[string]struct{}),
-				}
-				summaries[key] = summary
-			}
-			summary.RequestCount++
-			summary.PromptTokens += int64(log.PromptTokens)
-			summary.CompletionTokens += int64(log.CompletionTokens)
-			cacheCreateTokens := int64(numberFromMap(other, "cache_creation_tokens"))
-			cacheCreate5mTokens := int64(numberFromMap(other, "cache_creation_tokens_5m"))
-			cacheCreate1hTokens := int64(numberFromMap(other, "cache_creation_tokens_1h"))
-			if cacheCreateTokens == 0 && (cacheCreate5mTokens > 0 || cacheCreate1hTokens > 0) {
-				cacheCreateTokens = cacheCreate5mTokens + cacheCreate1hTokens
-			}
-			summary.CacheReadTokens += int64(numberFromMap(other, "cache_tokens"))
-			summary.CacheCreateTokens += cacheCreateTokens
-			summary.CacheCreate5mTokens += cacheCreate5mTokens
-			summary.CacheCreate1hTokens += cacheCreate1hTokens
-			summary.Quota += int64(log.Quota)
-			feeQuota, hasFeeQuota := optionalNumberFromMap(other, "fee_quota")
-			if hasFeeQuota {
-				summary.FeeQuota += int64(feeQuota)
-			} else {
-				summary.FeeQuota += int64(log.Quota)
-			}
-			summary.PriceComponents[buildPriceComponent(other)] = struct{}{}
+			accumulateReconciliationSummary(summaries, log)
 		}
 		return nil
 	})

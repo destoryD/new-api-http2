@@ -4526,6 +4526,18 @@
     "Billing reconciliation exported": "对账单已导出",
     "Export Details": "导出明细",
     "Export Reconciliation": "导出对账单",
-    "File Type": "文件类型"
+    "File Type": "文件类型",
+    "Export task created": "导出任务已创建",
+    "Failed to load export tasks": "加载导出任务失败",
+    "Failed to download export": "下载导出文件失败",
+    "Download Center": "下载中心",
+    "Export tasks are generated in the background": "导出任务将在后台生成",
+    "No export tasks": "暂无导出任务",
+    "Rows": "行数",
+    "Size": "大小",
+    "pending": "等待中",
+    "running": "生成中",
+    "success": "已完成",
+    "failed": "失败"
   }
 }

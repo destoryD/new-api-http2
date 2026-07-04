@@ -4526,6 +4526,18 @@
     "Billing reconciliation exported": "Billing reconciliation exported",
     "Export Details": "Export Details",
     "Export Reconciliation": "Export Reconciliation",
-    "File Type": "File Type"
+    "File Type": "File Type",
+    "Export task created": "Export task created",
+    "Failed to load export tasks": "Failed to load export tasks",
+    "Failed to download export": "Failed to download export",
+    "Download Center": "Download Center",
+    "Export tasks are generated in the background": "Export tasks are generated in the background",
+    "No export tasks": "No export tasks",
+    "Rows": "Rows",
+    "Size": "Size",
+    "pending": "Pending",
+    "running": "Running",
+    "success": "Completed",
+    "failed": "Failed"
   }
 }
