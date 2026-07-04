@@ -411,7 +411,7 @@ func buildUserLogsQuery(userId int, logType int, startTimestamp int64, endTimest
 	if modelName != "" {
 		modelNamePattern, err := sanitizeLikePattern(modelName)
 		if err != nil {
-			return nil, 0, err
+			return nil, err
 		}
 		tx = tx.Where("logs.model_name LIKE ? ESCAPE '!'", modelNamePattern)
 	}
