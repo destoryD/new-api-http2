@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { type Table } from '@tanstack/react-table'
-import { Download, Eye, EyeOff, RefreshCw } from 'lucide-react'
+import { Download, Eye, EyeOff, RefreshCw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useIsAdmin } from '@/hooks/use-admin'
@@ -52,6 +52,7 @@ import { DataTableToolbar } from '@/components/data-table'
 import { LOG_TYPES } from '../constants'
 import {
   createBillingLogExportTask,
+  deleteBillingLogExportTask,
   downloadBillingLogExportTask,
   listBillingLogExportTasks,
   type BillingExportFormat,
@@ -268,6 +269,21 @@ export function CommonLogsFilterBar<TData>(
     [isAdmin, t]
   )
 
+  const handleDeleteTask = useCallback(
+    async (task: BillingExportTask) => {
+      try {
+        await deleteBillingLogExportTask(task, isAdmin)
+        toast.success(t('Export task deleted'))
+        void loadExportTasks()
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : t('Failed to delete export')
+        )
+      }
+    },
+    [isAdmin, loadExportTasks, t]
+  )
+
   const hasExpandedFilters =
     !!filters.token ||
     !!filters.username ||
@@ -388,16 +404,30 @@ export function CommonLogsFilterBar<TData>(
                         {task.format}
                       </span>
                     </div>
-                    <Button
-                      variant='outline'
-                      size='sm'
-                      disabled={task.status !== 'success'}
-                      onClick={() => void handleDownloadTask(task)}
-                      className='h-7 gap-1.5 px-2'
-                    >
-                      <Download className='h-3.5 w-3.5' />
-                      {t('Download')}
-                    </Button>
+                    <div className='flex shrink-0 items-center gap-1.5'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={task.status !== 'success'}
+                        onClick={() => void handleDownloadTask(task)}
+                        className='h-7 gap-1.5 px-2'
+                      >
+                        <Download className='h-3.5 w-3.5' />
+                        {t('Download')}
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={
+                          task.status === 'pending' || task.status === 'running'
+                        }
+                        onClick={() => void handleDeleteTask(task)}
+                        className='text-destructive hover:text-destructive h-7 gap-1.5 px-2'
+                      >
+                        <Trash2 className='h-3.5 w-3.5' />
+                        {t('Delete')}
+                      </Button>
+                    </div>
                   </div>
                   <Progress value={task.progress || 0} />
                   <div className='text-muted-foreground flex flex-wrap gap-x-4 gap-y-1 text-xs'>

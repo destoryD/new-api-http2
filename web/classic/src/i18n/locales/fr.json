@@ -3715,11 +3715,11 @@
     "为此渠道使用的每个 key 动态分配受监测的全局代理": "Dynamically assign a monitored global proxy to each key used by this channel",
     "??CSV": "Exporter CSV",
     "??TXT": "Exporter TXT",
-    "????????": "?chec de l'exportation des journaux",
-    "???????": "Journaux de facturation export?s",
+    "????????": "?chec de la suppression de la t?che d?export",
+    "???????": "T?che d?export supprim?e",
     "??ID": "ID de requ?te",
     "???": "Jetons totaux",
-    "??": "D?tails",
+    "??": "Supprimer",
     "????ID": "ID de requ?te en amont",
     "导出对账单CSV": "Exporter le relevé CSV",
     "导出对账单TXT": "Exporter le relevé TXT",
@@ -3743,6 +3743,8 @@
     "Failed to download export": "Échec du téléchargement de l’export",
     "Download Center": "Centre de téléchargement",
     "Export tasks are generated in the background": "Les tâches d’export sont générées en arrière-plan",
-    "No export tasks": "Aucune tâche d’export"
+    "No export tasks": "Aucune tâche d’export",
+    "导出任务已删除": "Tâche d’export supprimée",
+    "删除导出任务失败": "Échec de la suppression de la tâche d’export"
   }
 }

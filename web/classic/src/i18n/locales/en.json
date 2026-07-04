@@ -3860,11 +3860,11 @@
     "为此渠道使用的每个 key 动态分配受监测的全局代理": "Dynamically assign a monitored global proxy to each key used by this channel",
     "??CSV": "Export CSV",
     "??TXT": "Export TXT",
-    "????????": "Failed to export billing logs",
-    "???????": "Billing logs exported",
+    "????????": "Failed to delete export task",
+    "???????": "Export task deleted",
     "??ID": "Request ID",
     "???": "Total Tokens",
-    "??": "Details",
+    "??": "Delete",
     "????ID": "Upstream Request ID",
     "导出对账单CSV": "Export Statement CSV",
     "导出对账单TXT": "Export Statement TXT",
@@ -3882,6 +3882,8 @@
     "pending": "Pending",
     "running": "Running",
     "success": "Completed",
-    "failed": "Failed"
+    "failed": "Failed",
+    "导出任务已删除": "Export task deleted",
+    "删除导出任务失败": "Failed to delete export task"
   }
 }

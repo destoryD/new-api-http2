@@ -4249,11 +4249,11 @@
     "为此渠道使用的每个 key 动态分配受监测的全局代理": "Dynamically assign a monitored global proxy to each key used by this channel",
     "??CSV": "Xu?t CSV",
     "??TXT": "Xu?t TXT",
-    "????????": "Kh?ng th? xu?t nh?t k? h?a ??n",
-    "???????": "?? xu?t nh?t k? h?a ??n",
+    "????????": "Kh?ng x?a ???c t?c v? xu?t",
+    "???????": "?? x?a t?c v? xu?t",
     "??ID": "ID y?u c?u",
     "???": "T?ng token",
-    "??": "Chi ti?t",
+    "??": "X?a",
     "????ID": "ID y?u c?u th??ng ngu?n",
     "导出对账单CSV": "Xuất đối soát CSV",
     "导出对账单TXT": "Xuất đối soát TXT",
@@ -4279,6 +4279,8 @@
     "Export tasks are generated in the background": "Tác vụ xuất được tạo ở chế độ nền",
     "No export tasks": "Chưa có tác vụ xuất",
     "Rows": "Hàng",
-    "Size": "Kích thước"
+    "Size": "Kích thước",
+    "导出任务已删除": "Đã xóa tác vụ xuất",
+    "删除导出任务失败": "Không xóa được tác vụ xuất"
   }
 }

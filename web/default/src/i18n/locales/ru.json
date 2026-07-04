@@ -4538,6 +4538,8 @@
     "pending": "Ожидание",
     "running": "Выполняется",
     "success": "Готово",
-    "failed": "Ошибка"
+    "failed": "Ошибка",
+    "Export task deleted": "Задача экспорта удалена",
+    "Failed to delete export": "Не удалось удалить экспорт"
   }
 }

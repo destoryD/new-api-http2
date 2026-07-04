@@ -50,6 +50,9 @@ export const useLogsData = () => {
     '\u52a0\u8f7d\u5bfc\u51fa\u4efb\u52a1\u5931\u8d25';
   const textFailedDownloadExport =
     '\u4e0b\u8f7d\u5bfc\u51fa\u6587\u4ef6\u5931\u8d25';
+  const textExportTaskDeleted = '\u5bfc\u51fa\u4efb\u52a1\u5df2\u5220\u9664';
+  const textFailedDeleteExport =
+    '\u5220\u9664\u5bfc\u51fa\u4efb\u52a1\u5931\u8d25';
   const textFailedExportLogs =
     '\u5bfc\u51fa\u8d26\u5355\u65e5\u5fd7\u5931\u8d25';
 
@@ -391,6 +394,28 @@ export const useLogsData = () => {
       }
     },
     [isAdminUser, t],
+  );
+
+  const deleteExportTask = useCallback(
+    async (task) => {
+      try {
+        const endpoint = isAdminUser
+          ? '/api/log/export_tasks/' + task.id
+          : '/api/log/self/export_tasks/' + task.id;
+        const res = await API.delete(endpoint, {
+          disableDuplicate: true,
+          skipErrorHandler: true,
+        });
+        if (!res.data.success) {
+          throw new Error(res.data.message);
+        }
+        showSuccess(t(textExportTaskDeleted));
+        await loadExportTasks();
+      } catch (error) {
+        showError(error?.message || t(textFailedDeleteExport));
+      }
+    },
+    [isAdminUser, loadExportTasks, t],
   );
 
   const getFilenameFromDisposition = (disposition) => {
@@ -1058,6 +1083,7 @@ export const useLogsData = () => {
     exportBillingLogs,
     loadExportTasks,
     downloadExportTask,
+    deleteExportTask,
     setLogsFormat,
     hasExpandableRows,
     setLogType,

@@ -4538,6 +4538,8 @@
     "pending": "待機中",
     "running": "実行中",
     "success": "完了",
-    "failed": "失敗"
+    "failed": "失敗",
+    "Export task deleted": "エクスポートタスクを削除しました",
+    "Failed to delete export": "エクスポートの削除に失敗しました"
   }
 }

@@ -104,6 +104,20 @@ export async function downloadBillingLogExportTask(
   downloadBlob(res.data as Blob, filename)
 }
 
+export async function deleteBillingLogExportTask(
+  task: BillingExportTask,
+  isAdmin: boolean
+) {
+  const endpoint = isAdmin
+    ? '/api/log/export_tasks/' + task.id
+    : '/api/log/self/export_tasks/' + task.id
+  const res = await api.delete<ApiResponse<null>>(endpoint, {
+    disableDuplicate: true,
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  if (!res.data.success) throw new Error(res.data.message)
+}
+
 function formatDateForFilename(date: Date): string {
   const pad = (value: number) => String(value).padStart(2, '0')
   return [

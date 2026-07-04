@@ -4538,6 +4538,8 @@
     "pending": "Đang chờ",
     "running": "Đang chạy",
     "success": "Hoàn tất",
-    "failed": "Thất bại"
+    "failed": "Thất bại",
+    "Export task deleted": "Đã xóa tác vụ xuất",
+    "Failed to delete export": "Không xóa được tác vụ xuất"
   }
 }

@@ -144,6 +144,14 @@ func DownloadUserLogExportTask(c *gin.Context) {
 	downloadLogExportTask(c, false)
 }
 
+func DeleteAllLogExportTask(c *gin.Context) {
+	deleteLogExportTask(c, true)
+}
+
+func DeleteUserLogExportTask(c *gin.Context) {
+	deleteLogExportTask(c, false)
+}
+
 func parseLogExportTaskQuery(c *gin.Context) logExportTaskQuery {
 	query := logExportTaskQuery{
 		logExportQuery: parseLogExportQuery(c),
@@ -217,6 +225,38 @@ func downloadLogExportTask(c *gin.Context, isAdmin bool) {
 		return
 	}
 	c.FileAttachment(task.FilePath, task.Filename)
+}
+
+func deleteLogExportTask(c *gin.Context, isAdmin bool) {
+	taskId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	task, err := model.GetLogExportTaskByID(taskId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !isAdmin && (task.UserId != c.GetInt("id") || task.IsAdmin) {
+		common.ApiErrorMsg(c, "no permission to delete this export task")
+		return
+	}
+	if task.Status == model.LogExportTaskStatusPending || task.Status == model.LogExportTaskStatusRunning {
+		common.ApiErrorMsg(c, "export task is still running")
+		return
+	}
+	if task.FilePath != "" {
+		if err := os.Remove(task.FilePath); err != nil && !os.IsNotExist(err) {
+			common.ApiError(c, err)
+			return
+		}
+	}
+	if err := model.DeleteLogExportTaskByID(task.Id); err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	common.ApiSuccess(c, nil)
 }
 
 type logExportTaskQuery struct {

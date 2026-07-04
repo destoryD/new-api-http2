@@ -39,6 +39,7 @@ const textDownloadCenter = '\u4e0b\u8f7d\u4e2d\u5fc3';
 const textRefresh = '\u5237\u65b0';
 const textNoExportTasks = '\u6682\u65e0\u5bfc\u51fa\u4efb\u52a1';
 const textDownload = '\u4e0b\u8f7d';
+const textDelete = '\u5220\u9664';
 const textRows = '\u884c\u6570';
 const textSize = '\u5927\u5c0f';
 const textCreatedAt = '\u521b\u5efa\u65f6\u95f4';
@@ -73,6 +74,7 @@ const LogsActions = ({
   loadingExportTasks,
   loadExportTasks,
   downloadExportTask,
+  deleteExportTask,
   t,
 }) => {
   const showSkeleton = useMinimumLoadingTime(loadingStat);
@@ -198,32 +200,50 @@ const LogsActions = ({
               </div>
             ) : (
               exportTasks.map((task) => (
-                <div key={task.id} className='border rounded-lg p-3 space-y-2'>
-                  <div className='flex items-center justify-between gap-2'>
-                    <Space wrap>
-                      <Tag color={statusColor(task.status)}>
-                        {t(task.status)}
-                      </Tag>
-                      <span className='font-medium'>
-                        {task.kind === 'reconciliation'
-                          ? t(textExportReconciliation)
-                          : t(textExportDetails)}
-                      </span>
-                      <span className='text-xs text-gray-500 uppercase'>
-                        {task.format}
-                      </span>
+                <div
+                  key={task.id}
+                  className='border border-gray-200 rounded-md px-3 py-3 space-y-2 bg-white'
+                >
+                  <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2'>
+                    <div className='min-w-0 space-y-1'>
+                      <Space wrap>
+                        <Tag color={statusColor(task.status)}>
+                          {t(task.status)}
+                        </Tag>
+                        <span className='font-medium'>
+                          {task.kind === 'reconciliation'
+                            ? t(textExportReconciliation)
+                            : t(textExportDetails)}
+                        </span>
+                        <span className='text-xs text-gray-500 uppercase'>
+                          {task.format}
+                        </span>
+                      </Space>
+                    </div>
+                    <Space spacing={6} className='shrink-0'>
+                      <Button
+                        size='small'
+                        theme='outline'
+                        disabled={task.status !== 'success'}
+                        onClick={() => downloadExportTask(task)}
+                      >
+                        {t(textDownload)}
+                      </Button>
+                      <Button
+                        size='small'
+                        theme='outline'
+                        type='danger'
+                        disabled={
+                          task.status === 'pending' || task.status === 'running'
+                        }
+                        onClick={() => deleteExportTask(task)}
+                      >
+                        {t(textDelete)}
+                      </Button>
                     </Space>
-                    <Button
-                      size='small'
-                      theme='outline'
-                      disabled={task.status !== 'success'}
-                      onClick={() => downloadExportTask(task)}
-                    >
-                      {t(textDownload)}
-                    </Button>
                   </div>
                   <Progress percent={task.progress || 0} size='small' />
-                  <div className='text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1'>
+                  <div className='text-xs text-gray-500 flex flex-wrap gap-x-4 gap-y-1 leading-5'>
                     <span>
                       {t(textRows)}: {task.rows}
                     </span>
@@ -234,7 +254,7 @@ const LogsActions = ({
                       {t(textCreatedAt)}: {formatExportTime(task.created_at)}
                     </span>
                     {task.error && (
-                      <span className='text-red-500'>{task.error}</span>
+                      <span className='text-red-500 break-all'>{task.error}</span>
                     )}
                   </div>
                 </div>

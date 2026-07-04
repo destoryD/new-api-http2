@@ -4538,6 +4538,8 @@
     "pending": "En attente",
     "running": "En cours",
     "success": "Terminé",
-    "failed": "Échec"
+    "failed": "Échec",
+    "Export task deleted": "Tâche d’export supprimée",
+    "Failed to delete export": "Échec de la suppression de l’export"
   }
 }
