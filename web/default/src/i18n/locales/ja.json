@@ -1783,7 +1783,7 @@
     "footer.columns.related.links.oneApi": "1つのAPI",
     "footer.columns.related.title": "関連プロジェクト",
     "footer.defaultCopyright": "すべての権利を留保します。",
-    "footer.newapi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
+    "footer.new\u0061pi.projectAttributionSuffix": "すべての権利を留保します。プロジェクトコントリビューターにより設計・開発されています。",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "2025 年 5 月 10 日以降に追加されたチャネルの場合、デプロイ時にモデル名から「.」を削除する必要はありません",
     "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "?????????????????????????????????????????????0 ???????????????",
     "For private deployments, format: https://fastgpt.run/api/openapi": "プライベートデプロイメントの場合、形式: https://fastgpt.run/api/openapi",
@@ -4523,6 +4523,9 @@
     "Token ID": "????ID",
     "Export Reconciliation CSV": "照合 CSV をエクスポート",
     "Export Reconciliation TXT": "照合 TXT をエクスポート",
-    "Billing reconciliation exported": "請求照合をエクスポートしました"
+    "Billing reconciliation exported": "請求照合をエクスポートしました",
+    "Export Details": "明細をエクスポート",
+    "Export Reconciliation": "照合をエクスポート",
+    "File Type": "ファイル形式"
   }
 }

@@ -20,17 +20,11 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { type Table } from '@tanstack/react-table'
-import { Download, Eye, EyeOff, FileText, TableProperties } from 'lucide-react'
+import { Download, Eye, EyeOff } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useIsAdmin } from '@/hooks/use-admin'
 import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import {
   Select,
@@ -82,8 +76,10 @@ export function CommonLogsFilterBar<TData>(
   const isAdmin = useIsAdmin()
   const { sensitiveVisible, setSensitiveVisible } = useUsageLogsContext()
   const fetchingLogs = useIsFetching({ queryKey: ['logs'] })
-  const [exportingFormat, setExportingFormat] =
-    useState<BillingExportFormat | null>(null)
+  const [exportFormat, setExportFormat] = useState<BillingExportFormat>('csv')
+  const [exportingKind, setExportingKind] = useState<BillingExportKind | null>(
+    null
+  )
 
   const [filters, setFilters] = useState<CommonLogFilters>(() => {
     const { start, end } = getDefaultTimeRange()
@@ -175,8 +171,8 @@ export function CommonLogsFilterBar<TData>(
   )
 
   const handleExport = useCallback(
-    async (format: BillingExportFormat, kind: BillingExportKind = 'detail') => {
-      setExportingFormat(format)
+    async (kind: BillingExportKind = 'detail') => {
+      setExportingKind(kind)
       try {
         const params = buildApiParams({
           page: 1,
@@ -185,7 +181,7 @@ export function CommonLogsFilterBar<TData>(
           columnFilters: props.table.getState().columnFilters,
           isAdmin,
         })
-        await downloadBillingLogs(params, isAdmin, format, kind)
+        await downloadBillingLogs(params, isAdmin, exportFormat, kind)
         toast.success(
           t(
             kind === 'reconciliation'
@@ -198,10 +194,10 @@ export function CommonLogsFilterBar<TData>(
           error instanceof Error ? error.message : t('Failed to export logs')
         )
       } finally {
-        setExportingFormat(null)
+        setExportingKind(null)
       }
     },
-    [isAdmin, props.table, searchParams, t]
+    [exportFormat, isAdmin, props.table, searchParams, t]
   )
 
   const hasExpandedFilters =
@@ -220,45 +216,56 @@ export function CommonLogsFilterBar<TData>(
   const statsBar = (
     <div className='flex flex-wrap items-center gap-2'>
       <CommonLogsStats />
-      <DropdownMenu>
-        <DropdownMenuTrigger
-          render={
-            <Button
-              variant='outline'
-              size='sm'
-              disabled={exportingFormat !== null}
-              className='h-7 gap-1.5 px-2'
-            />
-          }
+      <Button
+        variant='outline'
+        size='sm'
+        disabled={exportingKind !== null}
+        onClick={() => void handleExport('detail')}
+        className='h-7 gap-1.5 px-2'
+      >
+        <Download className='h-3.5 w-3.5' />
+        <span className='whitespace-nowrap'>
+          {exportingKind === 'detail' ? t('Exporting') : t('Export Details')}
+        </span>
+      </Button>
+      <Button
+        variant='outline'
+        size='sm'
+        disabled={exportingKind !== null}
+        onClick={() => void handleExport('reconciliation')}
+        className='h-7 gap-1.5 px-2'
+      >
+        <Download className='h-3.5 w-3.5' />
+        <span className='whitespace-nowrap'>
+          {exportingKind === 'reconciliation'
+            ? t('Exporting')
+            : t('Export Reconciliation')}
+        </span>
+      </Button>
+      <Select
+        items={[
+          { value: 'csv', label: 'CSV' },
+          { value: 'txt', label: 'TXT' },
+        ]}
+        value={exportFormat}
+        onValueChange={(value) => {
+          if (value === 'csv' || value === 'txt') setExportFormat(value)
+        }}
+        disabled={exportingKind !== null}
+      >
+        <SelectTrigger
+          aria-label={t('File Type')}
+          className='h-7 w-[78px] px-2 text-xs'
         >
-          <Download className='h-3.5 w-3.5' />
-          <span className='hidden sm:inline'>
-            {exportingFormat ? t('Exporting') : t('Export Billing')}
-          </span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align='end'>
-          <DropdownMenuItem onClick={() => void handleExport('csv')}>
-            <TableProperties />
-            {t('Export CSV')}
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => void handleExport('txt')}>
-            <FileText />
-            {t('Export TXT')}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => void handleExport('csv', 'reconciliation')}
-          >
-            <TableProperties />
-            {t('Export Reconciliation CSV')}
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => void handleExport('txt', 'reconciliation')}
-          >
-            <FileText />
-            {t('Export Reconciliation TXT')}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <SelectValue placeholder='CSV' />
+        </SelectTrigger>
+        <SelectContent alignItemWithTrigger={false}>
+          <SelectGroup>
+            <SelectItem value='csv'>CSV</SelectItem>
+            <SelectItem value='txt'>TXT</SelectItem>
+          </SelectGroup>
+        </SelectContent>
+      </Select>
       <Tooltip>
         <TooltipTrigger
           render={

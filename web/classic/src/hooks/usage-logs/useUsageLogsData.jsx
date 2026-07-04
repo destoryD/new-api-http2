@@ -310,7 +310,7 @@ export const useLogsData = () => {
   };
 
   const exportBillingLogs = async (format, kind = 'detail') => {
-    setExportingFormat(format);
+    setExportingFormat(`${kind}:${format}`);
 
     try {
       const params = buildLogQueryParams(1, 100);

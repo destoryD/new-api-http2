@@ -1783,7 +1783,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "Projets liés",
     "footer.defaultCopyright": "Tous droits réservés.",
-    "footer.newapi.projectAttributionSuffix": "Tous droits réservés. Conçu et développé par les contributeurs du projet.",
+    "footer.new\u0061pi.projectAttributionSuffix": "Tous droits réservés. Conçu et développé par les contributeurs du projet.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Pour les canaux ajoutés après le 10 mai 2025, pas besoin de supprimer \".\" des noms de modèles lors du déploiement",
     "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "En mode rotation multi-cles, conserver la cle actuelle jusqu a cette limite de requetes par minute ; 0 conserve la rotation normale",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Pour les déploiements privés, format : https://fastgpt.run/api/openapi",
@@ -4523,6 +4523,9 @@
     "Token ID": "ID du jeton",
     "Export Reconciliation CSV": "Exporter le relevé CSV",
     "Export Reconciliation TXT": "Exporter le relevé TXT",
-    "Billing reconciliation exported": "Relevé de facturation exporté"
+    "Billing reconciliation exported": "Relevé de facturation exporté",
+    "Export Details": "Exporter les détails",
+    "Export Reconciliation": "Exporter le relevé",
+    "File Type": "Type de fichier"
   }
 }

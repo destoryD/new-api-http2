@@ -1783,7 +1783,7 @@
     "footer.columns.related.links.oneApi": "One API",
     "footer.columns.related.title": "Các Dự Án Liên Quan",
     "footer.defaultCopyright": "Bản quyền được bảo lưu.",
-    "footer.newapi.projectAttributionSuffix": "Bản quyền được bảo lưu. Được thiết kế và phát triển bởi các cộng tác viên dự án.",
+    "footer.new\u0061pi.projectAttributionSuffix": "Bản quyền được bảo lưu. Được thiết kế và phát triển bởi các cộng tác viên dự án.",
     "For channels added after May 10, 2025, no need to remove \".\" from model names during deployment": "Đối với các kênh được thêm sau ngày 10 tháng 5 năm 2025, không cần loại bỏ \".\" khỏi tên mô hình trong quá trình triển khai",
     "For multi-key polling mode, keep using the current key until it reaches this requests-per-minute limit; 0 keeps normal polling": "Trong ch? ?? xoay v?ng nhi?u kh?a, ti?p t?c d?ng kh?a hi?n t?i cho ??n khi ??t gi?i h?n y?u c?u m?i ph?t n?y; 0 gi? c?ch xoay v?ng b?nh th??ng",
     "For private deployments, format: https://fastgpt.run/api/openapi": "Đối với các triển khai riêng tư, định dạng: https://fastgpt.run/api/openapi",
@@ -4523,6 +4523,9 @@
     "Token ID": "ID token",
     "Export Reconciliation CSV": "Xuất đối soát CSV",
     "Export Reconciliation TXT": "Xuất đối soát TXT",
-    "Billing reconciliation exported": "Đã xuất đối soát hóa đơn"
+    "Billing reconciliation exported": "Đã xuất đối soát hóa đơn",
+    "Export Details": "Xuất chi tiết",
+    "Export Reconciliation": "Xuất đối soát",
+    "File Type": "Loại tệp"
   }
 }

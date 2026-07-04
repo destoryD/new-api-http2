@@ -3718,12 +3718,14 @@
     "????????": "?chec de l'exportation des journaux",
     "???????": "Journaux de facturation export?s",
     "??ID": "ID de requ?te",
-    "????": "Jetons de compl?tion",
     "???": "Jetons totaux",
     "??": "D?tails",
     "????ID": "ID de requ?te en amont",
     "导出对账单CSV": "Exporter le relevé CSV",
     "导出对账单TXT": "Exporter le relevé TXT",
-    "对账单已导出": "Relevé exporté"
+    "对账单已导出": "Relevé exporté",
+    "导出明细": "Exporter les détails",
+    "导出对账单": "Exporter le relevé",
+    "文件类型": "Type de fichier"
   }
 }

@@ -17,8 +17,8 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 
-import React from 'react';
-import { Button, Tag, Space, Skeleton } from '@douyinfe/semi-ui';
+import React, { useState } from 'react';
+import { Button, Tag, Space, Skeleton, Select } from '@douyinfe/semi-ui';
 import { renderQuota } from '../../../helpers';
 import CompactModeToggle from '../../common/ui/CompactModeToggle';
 import { useMinimumLoadingTime } from '../../../hooks/common/useMinimumLoadingTime';
@@ -35,6 +35,7 @@ const LogsActions = ({
 }) => {
   const showSkeleton = useMinimumLoadingTime(loadingStat);
   const needSkeleton = !showStat || showSkeleton;
+  const [exportFormat, setExportFormat] = useState('csv');
 
   const placeholder = (
     <Space>
@@ -89,39 +90,33 @@ const LogsActions = ({
         <Button
           size='small'
           theme='outline'
-          loading={exportingFormat === 'csv'}
+          loading={exportingFormat === `detail:${exportFormat}`}
           disabled={exportingFormat !== null}
-          onClick={() => exportBillingLogs('csv')}
+          onClick={() => exportBillingLogs(exportFormat, 'detail')}
         >
-          {t('导出CSV')}
+          {t('导出明细')}
         </Button>
         <Button
           size='small'
           theme='outline'
-          loading={exportingFormat === 'txt'}
+          loading={exportingFormat === `reconciliation:${exportFormat}`}
           disabled={exportingFormat !== null}
-          onClick={() => exportBillingLogs('txt')}
+          onClick={() => exportBillingLogs(exportFormat, 'reconciliation')}
         >
-          {t('导出TXT')}
+          {t('导出对账单')}
         </Button>
-        <Button
+        <Select
           size='small'
-          theme='outline'
-          loading={exportingFormat === 'csv'}
+          value={exportFormat}
+          onChange={setExportFormat}
           disabled={exportingFormat !== null}
-          onClick={() => exportBillingLogs('csv', 'reconciliation')}
-        >
-          {t('导出对账单CSV')}
-        </Button>
-        <Button
-          size='small'
-          theme='outline'
-          loading={exportingFormat === 'txt'}
-          disabled={exportingFormat !== null}
-          onClick={() => exportBillingLogs('txt', 'reconciliation')}
-        >
-          {t('导出对账单TXT')}
-        </Button>
+          style={{ width: 86 }}
+          optionList={[
+            { value: 'csv', label: 'CSV' },
+            { value: 'txt', label: 'TXT' },
+          ]}
+          aria-label={t('文件类型')}
+        />
         <CompactModeToggle
           compactMode={compactMode}
           setCompactMode={setCompactMode}
