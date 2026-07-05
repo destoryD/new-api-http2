@@ -39,6 +39,36 @@ export type UpdateOptionResponse = {
   message: string
 }
 
+export type ProxyPoolResourceStatus = {
+  name: string
+  url: string
+  enabled: boolean
+  available: boolean
+  checked: boolean
+  last_checked_at: number
+  last_error: string
+  last_assigned_at: number
+  cooldown_until: number
+  cooldown_remaining_seconds: number
+  assignment_count: number
+}
+
+export type ProxyPoolStatus = {
+  enabled: boolean
+  health_check_url: string
+  health_check_interval_seconds: number
+  assignment_cooldown_seconds: number
+  total: number
+  usable: number
+  resources: ProxyPoolResourceStatus[]
+}
+
+export type ProxyPoolStatusResponse = {
+  success: boolean
+  message: string
+  data: ProxyPoolStatus
+}
+
 export type ConfirmPaymentComplianceResponse = {
   success: boolean
   message: string

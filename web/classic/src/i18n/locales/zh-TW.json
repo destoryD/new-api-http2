@@ -3733,6 +3733,25 @@
     "canceled": "已取消",
     "重置代理池冷却": "重置代理池冷卻",
     "代理池冷却已重置": "代理池冷卻已重置",
-    "重置代理池冷却失败": "重置代理池冷卻失敗"
+    "重置代理池冷却失败": "重置代理池冷卻失敗",
+    "Assignments": "分配數",
+    "Available": "可用",
+    "Cooling down": "冷却中",
+    "Cooldown": "冷却",
+    "Current proxy runtime state": "目前代理執行狀態",
+    "Disabled": "已停用",
+    "Failed to load proxy pool status": "載入代理池狀態失敗",
+    "Last assigned": "最后分配",
+    "Last check": "最後檢測",
+    "Last error": "最後錯誤",
+    "No proxy resources": "暫無代理資源",
+    "Proxy": "代理",
+    "Proxy pool status": "代理池狀態",
+    "Refresh status": "刷新状态",
+    "Unavailable": "不可用",
+    "Unchecked": "未檢測",
+    "{{seconds}}s remaining": "剩餘 {{seconds}} 秒",
+    "{{usable}} of {{total}} proxies are ready": "{{total}} 個代理中 {{usable}} 個可用",
+    "Refreshing...": "刷新中..."
   }
 }

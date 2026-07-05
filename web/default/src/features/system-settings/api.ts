@@ -20,6 +20,7 @@ import { api } from '@/lib/api'
 import type {
   ConfirmPaymentComplianceResponse,
   DeleteLogsResponse,
+  ProxyPoolStatusResponse,
   FetchUpstreamRatiosRequest,
   SystemOptionsResponse,
   UpdateOptionRequest,
@@ -56,6 +57,13 @@ export async function deleteLogsBefore(targetTimestamp: number) {
 export async function resetModelRatios() {
   const res = await api.post<UpdateOptionResponse>(
     '/api/option/rest_model_ratio'
+  )
+  return res.data
+}
+
+export async function getProxyPoolStatus() {
+  const res = await api.get<ProxyPoolStatusResponse>(
+    '/api/option/proxy_pool/status'
   )
   return res.data
 }

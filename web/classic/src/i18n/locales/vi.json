@@ -4287,6 +4287,24 @@
     "canceled": "Đã hủy",
     "重置代理池冷却": "Đặt lại thời gian chờ pool proxy",
     "代理池冷却已重置": "Đã đặt lại thời gian chờ pool proxy",
-    "重置代理池冷却失败": "Không thể đặt lại thời gian chờ pool proxy"
+    "重置代理池冷却失败": "Không thể đặt lại thời gian chờ pool proxy",
+    "Assignments": "Assignments",
+    "Available": "Available",
+    "Cooling down": "Cooling down",
+    "Cooldown": "Cooldown",
+    "Current proxy runtime state": "Current proxy runtime state",
+    "Disabled": "Disabled",
+    "Failed to load proxy pool status": "Failed to load proxy pool status",
+    "Last assigned": "Last assigned",
+    "Last check": "Last check",
+    "Last error": "Last error",
+    "No proxy resources": "No proxy resources",
+    "Proxy": "Proxy",
+    "Proxy pool status": "Proxy pool status",
+    "Refresh status": "Refresh status",
+    "Unavailable": "Unavailable",
+    "Unchecked": "Unchecked",
+    "{{seconds}}s remaining": "{{seconds}}s remaining",
+    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready"
   }
 }

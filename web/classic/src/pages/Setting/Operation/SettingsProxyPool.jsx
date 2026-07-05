@@ -18,7 +18,7 @@ For commercial licensing, please contact support@quantumnous.com
 */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Button, Col, Form, Row, Spin, Typography } from '@douyinfe/semi-ui';
+import { Button, Col, Form, Row, Spin, Table, Tag, Typography } from '@douyinfe/semi-ui';
 import {
   API,
   compareObjects,
@@ -92,6 +92,8 @@ export default function SettingsProxyPool(props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [resettingRuntime, setResettingRuntime] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [proxyPoolStatus, setProxyPoolStatus] = useState(null);
   const [rawProxyResources, setRawProxyResources] = useState('');
   const [inputs, setInputs] = useState({
     'proxy_pool_setting.enabled': false,
@@ -110,6 +112,23 @@ export default function SettingsProxyPool(props) {
     };
   }
 
+  function fetchProxyPoolStatus() {
+    setStatusLoading(true);
+    API.get('/api/option/proxy_pool/status')
+      .then((res) => {
+        if (!res.data.success) {
+          return showError(res.data.message || t('Failed to load proxy pool status'));
+        }
+        setProxyPoolStatus(res.data.data);
+      })
+      .catch(() => {
+        showError(t('Failed to load proxy pool status'));
+      })
+      .finally(() => {
+        setStatusLoading(false);
+      });
+  }
+
   function resetProxyPoolRuntime() {
     setResettingRuntime(true);
     API.post('/api/option/proxy_pool/reset_runtime')
@@ -124,6 +143,7 @@ export default function SettingsProxyPool(props) {
       })
       .finally(() => {
         setResettingRuntime(false);
+        fetchProxyPoolStatus();
       });
   }
 
@@ -179,6 +199,10 @@ export default function SettingsProxyPool(props) {
   }
 
   useEffect(() => {
+    fetchProxyPoolStatus();
+  }, []);
+
+  useEffect(() => {
     const currentInputs = {};
     for (let key in props.options) {
       if (Object.keys(inputs).includes(key)) {
@@ -193,6 +217,43 @@ export default function SettingsProxyPool(props) {
     setInputsRow(structuredClone(currentInputs));
     refForm.current.setValues(currentInputs);
   }, [props.options]);
+
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '-';
+    return new Date(timestamp * 1000).toLocaleString();
+  };
+
+  const renderStatusTag = (resource) => {
+    if (!resource.enabled) return <Tag color='grey'>{t('Disabled')}</Tag>;
+    if (!resource.available) return <Tag color='red'>{t('Unavailable')}</Tag>;
+    if (resource.cooldown_remaining_seconds > 0) {
+      return <Tag color='orange'>{t('Cooling down')}</Tag>;
+    }
+    if (!resource.checked) return <Tag color='blue'>{t('Unchecked')}</Tag>;
+    return <Tag color='green'>{t('Available')}</Tag>;
+  };
+
+  const proxyPoolStatusColumns = [
+    {
+      title: t('Proxy'),
+      dataIndex: 'url',
+      render: (url, record) => (
+        <Typography.Text ellipsis={{ showTooltip: true }} style={{ maxWidth: 260 }}>
+          {record.name ? record.name + ' ' : ''}{url}
+        </Typography.Text>
+      ),
+    },
+    { title: t('Status'), dataIndex: 'available', render: (_, record) => renderStatusTag(record) },
+    { title: t('Assignments'), dataIndex: 'assignment_count' },
+    {
+      title: t('Cooldown'),
+      dataIndex: 'cooldown_remaining_seconds',
+      render: (seconds) => (seconds > 0 ? t('{{seconds}}s remaining', { seconds }) : '-'),
+    },
+    { title: t('Last check'), dataIndex: 'last_checked_at', render: formatTimestamp },
+    { title: t('Last assigned'), dataIndex: 'last_assigned_at', render: formatTimestamp },
+    { title: t('Last error'), dataIndex: 'last_error', render: (value) => value || '-' },
+  ];
 
   return (
     <>
@@ -286,6 +347,30 @@ export default function SettingsProxyPool(props) {
                 />
               </Col>
             </Row>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 8 }}>
+                <div>
+                  <Typography.Text strong>{t('Proxy pool status')}</Typography.Text>
+                  <br />
+                  <Typography.Text type='tertiary'>
+                    {proxyPoolStatus
+                      ? t('{{usable}} of {{total}} proxies are ready', { usable: proxyPoolStatus.usable, total: proxyPoolStatus.total })
+                      : t('Current proxy runtime state')}
+                  </Typography.Text>
+                </div>
+                <Button size='small' theme='outline' loading={statusLoading} onClick={fetchProxyPoolStatus}>
+                  {t('Refresh status')}
+                </Button>
+              </div>
+              <Table
+                size='small'
+                pagination={false}
+                loading={statusLoading}
+                columns={proxyPoolStatusColumns}
+                dataSource={(proxyPoolStatus?.resources || []).map((item) => ({ ...item, key: item.url }))}
+                empty={t('No proxy resources')}
+              />
+            </div>
             <Row>
               <Button size='default' onClick={onSubmit} disabled={resettingRuntime}>
                 {t('保存全局代理池设置')}

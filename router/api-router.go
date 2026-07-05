@@ -185,6 +185,7 @@ func SetApiRouter(router *gin.Engine) {
 			optionRoute.GET("/channel_affinity_cache", controller.GetChannelAffinityCacheStats)
 			optionRoute.DELETE("/channel_affinity_cache", controller.ClearChannelAffinityCache)
 			optionRoute.POST("/rest_model_ratio", controller.ResetModelRatio)
+			optionRoute.GET("/proxy_pool/status", controller.GetGlobalProxyPoolStatus)
 			optionRoute.POST("/proxy_pool/reset_runtime", controller.ResetGlobalProxyPoolRuntime)
 			optionRoute.POST("/migrate_console_setting", controller.MigrateConsoleSetting) // 用于迁移检测的旧键，下个版本会删除
 		}

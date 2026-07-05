@@ -28,6 +28,30 @@ type proxyHealthState struct {
 	LastError   string
 }
 
+type ProxyPoolRuntimeStatus struct {
+	Enabled                    bool                     `json:"enabled"`
+	HealthCheckURL             string                   `json:"health_check_url"`
+	HealthCheckIntervalSeconds int                      `json:"health_check_interval_seconds"`
+	AssignmentCooldownSeconds  int                      `json:"assignment_cooldown_seconds"`
+	Total                      int                      `json:"total"`
+	Usable                     int                      `json:"usable"`
+	Resources                  []ProxyPoolResourceState `json:"resources"`
+}
+
+type ProxyPoolResourceState struct {
+	Name                     string `json:"name"`
+	URL                      string `json:"url"`
+	Enabled                  bool   `json:"enabled"`
+	Available                bool   `json:"available"`
+	Checked                  bool   `json:"checked"`
+	LastCheckedAt            int64  `json:"last_checked_at"`
+	LastError                string `json:"last_error"`
+	LastAssignedAt           int64  `json:"last_assigned_at"`
+	CooldownUntil            int64  `json:"cooldown_until"`
+	CooldownRemainingSeconds int64  `json:"cooldown_remaining_seconds"`
+	AssignmentCount          int    `json:"assignment_count"`
+}
+
 type globalProxyPoolManager struct {
 	sync.Mutex
 	assignments  map[string]proxyAssignment
@@ -56,6 +80,70 @@ func ResetGlobalProxyPoolRuntime() {
 	globalProxyPool.health = make(map[string]proxyHealthState)
 	globalProxyPool.lastAssigned = make(map[string]time.Time)
 	globalProxyPool.nextIndex = 0
+}
+
+func GetGlobalProxyPoolRuntimeStatus() ProxyPoolRuntimeStatus {
+	setting := operation_setting.GetProxyPoolSetting()
+	operation_setting.NormalizeProxyPoolSetting(setting)
+	now := time.Now()
+	cooldown := time.Duration(setting.AssignmentCooldownSeconds) * time.Second
+
+	globalProxyPool.Lock()
+	defer globalProxyPool.Unlock()
+	globalProxyPool.pruneRuntimeStateLocked(setting.Proxies)
+
+	assignmentCounts := make(map[string]int)
+	for _, assignment := range globalProxyPool.assignments {
+		assignmentCounts[assignment.ProxyURL]++
+	}
+
+	status := ProxyPoolRuntimeStatus{
+		Enabled:                    setting.Enabled,
+		HealthCheckURL:             setting.HealthCheckURL,
+		HealthCheckIntervalSeconds: setting.HealthCheckIntervalSeconds,
+		AssignmentCooldownSeconds:  setting.AssignmentCooldownSeconds,
+		Resources:                  make([]ProxyPoolResourceState, 0, len(setting.Proxies)),
+	}
+
+	for _, resource := range setting.Proxies {
+		proxyURL := strings.TrimSpace(resource.URL)
+		if proxyURL == "" {
+			continue
+		}
+		health := globalProxyPool.health[proxyURL]
+		state := ProxyPoolResourceState{
+			Name:            resource.Name,
+			URL:             proxyURL,
+			Enabled:         resource.Enabled,
+			Available:       resource.Enabled && (!health.Checked || health.Available),
+			Checked:         health.Checked,
+			LastError:       health.LastError,
+			AssignmentCount: assignmentCounts[proxyURL],
+		}
+		if !health.LastChecked.IsZero() {
+			state.LastCheckedAt = health.LastChecked.Unix()
+		}
+		if lastAssigned, ok := globalProxyPool.lastAssigned[proxyURL]; ok && !lastAssigned.IsZero() {
+			state.LastAssignedAt = lastAssigned.Unix()
+			if cooldown > 0 {
+				cooldownUntil := lastAssigned.Add(cooldown)
+				if cooldownUntil.After(now) {
+					state.CooldownUntil = cooldownUntil.Unix()
+					state.CooldownRemainingSeconds = int64(time.Until(cooldownUntil).Seconds())
+					if state.CooldownRemainingSeconds < 1 {
+						state.CooldownRemainingSeconds = 1
+					}
+				}
+			}
+		}
+		status.Total++
+		if state.Enabled && state.Available && state.CooldownRemainingSeconds == 0 {
+			status.Usable++
+		}
+		status.Resources = append(status.Resources, state)
+	}
+
+	return status
 }
 
 func GetGlobalProxyPoolRetryLimit() int {

@@ -17,11 +17,12 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as z from 'zod'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { StatusBadge } from '@/components/status-badge'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -35,10 +36,19 @@ import {
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { SettingsSection } from '../components/settings-section'
-import { resetProxyPoolRuntime } from '../api'
+import { getProxyPoolStatus, resetProxyPoolRuntime } from '../api'
 import { useResetForm } from '../hooks/use-reset-form'
 import { useUpdateOption } from '../hooks/use-update-option'
+import type { ProxyPoolStatus } from '../types'
 
 type ProxyResource = {
   url: string
@@ -108,12 +118,29 @@ function textareaToResources(value: string): ProxyResource[] {
     .map((url) => ({ url, enabled: true }))
 }
 
+function formatTimestamp(timestamp: number): string {
+  if (!timestamp) return '-'
+  return new Date(timestamp * 1000).toLocaleString()
+}
+
+function resourceStatusLabel(resource: ProxyPoolStatus['resources'][number]) {
+  if (!resource.enabled) return { label: 'Disabled', variant: 'neutral' as const }
+  if (!resource.available) return { label: 'Unavailable', variant: 'danger' as const }
+  if (resource.cooldown_remaining_seconds > 0) {
+    return { label: 'Cooling down', variant: 'warning' as const }
+  }
+  if (!resource.checked) return { label: 'Unchecked', variant: 'info' as const }
+  return { label: 'Available', variant: 'success' as const }
+}
+
 export function ProxyPoolSettingsSection({
   defaultValues,
 }: ProxyPoolSettingsSectionProps) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
   const [resettingRuntime, setResettingRuntime] = useState(false)
+  const [statusLoading, setStatusLoading] = useState(false)
+  const [proxyPoolStatus, setProxyPoolStatus] = useState<ProxyPoolStatus | null>(null)
 
   const formDefaults = useMemo(
     () => ({
@@ -132,12 +159,34 @@ export function ProxyPoolSettingsSection({
 
   useResetForm(form, formDefaults)
 
+  const refreshProxyPoolStatus = async () => {
+    setStatusLoading(true)
+    try {
+      const res = await getProxyPoolStatus()
+      if (!res.success) throw new Error(res.message)
+      setProxyPoolStatus(res.data)
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('Failed to load proxy pool status')
+      )
+    } finally {
+      setStatusLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    void refreshProxyPoolStatus()
+  }, [])
+
   const handleResetRuntime = async () => {
     setResettingRuntime(true)
     try {
       const res = await resetProxyPoolRuntime()
       if (!res.success) throw new Error(res.message)
       toast.success(t('Proxy pool cooldown reset'))
+      await refreshProxyPoolStatus()
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -182,6 +231,7 @@ export function ProxyPoolSettingsSection({
     for (const update of updates) {
       await updateOption.mutateAsync(update)
     }
+    await refreshProxyPoolStatus()
   }
 
   return (
@@ -301,6 +351,83 @@ export function ProxyPoolSettingsSection({
               </FormItem>
             )}
           />
+
+          <div className='space-y-3' data-settings-form-span='full'>
+            <div className='flex flex-wrap items-center justify-between gap-2'>
+              <div>
+                <h4 className='text-sm font-medium'>{t('Proxy pool status')}</h4>
+                <p className='text-muted-foreground text-sm'>
+                  {proxyPoolStatus
+                    ? t('{{usable}} of {{total}} proxies are ready', {
+                        usable: proxyPoolStatus.usable,
+                        total: proxyPoolStatus.total,
+                      })
+                    : t('Current proxy runtime state')}
+                </p>
+              </div>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                disabled={statusLoading}
+                onClick={() => void refreshProxyPoolStatus()}
+              >
+                {statusLoading ? t('Refreshing...') : t('Refresh status')}
+              </Button>
+            </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('Proxy')}</TableHead>
+                  <TableHead>{t('Status')}</TableHead>
+                  <TableHead>{t('Assignments')}</TableHead>
+                  <TableHead>{t('Cooldown')}</TableHead>
+                  <TableHead>{t('Last check')}</TableHead>
+                  <TableHead>{t('Last assigned')}</TableHead>
+                  <TableHead>{t('Last error')}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {!proxyPoolStatus?.resources.length ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className='h-20 text-center'>
+                      {statusLoading ? t('Loading...') : t('No proxy resources')}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  proxyPoolStatus.resources.map((resource) => {
+                    const status = resourceStatusLabel(resource)
+                    return (
+                      <TableRow key={resource.url}>
+                        <TableCell className='max-w-[260px] truncate font-mono text-xs'>
+                          {resource.name ? `${resource.name} ` : ''}
+                          {resource.url}
+                        </TableCell>
+                        <TableCell>
+                          <StatusBadge variant={status.variant} copyable={false}>
+                            {t(status.label)}
+                          </StatusBadge>
+                        </TableCell>
+                        <TableCell>{resource.assignment_count}</TableCell>
+                        <TableCell>
+                          {resource.cooldown_remaining_seconds > 0
+                            ? t('{{seconds}}s remaining', {
+                                seconds: resource.cooldown_remaining_seconds,
+                              })
+                            : '-'}
+                        </TableCell>
+                        <TableCell>{formatTimestamp(resource.last_checked_at)}</TableCell>
+                        <TableCell>{formatTimestamp(resource.last_assigned_at)}</TableCell>
+                        <TableCell className='max-w-[220px] truncate'>
+                          {resource.last_error || '-'}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </div>
 
           <div className='flex flex-wrap gap-2'>
             <Button type='submit' disabled={updateOption.isPending || resettingRuntime}>

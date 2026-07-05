@@ -15,3 +15,11 @@ func ResetGlobalProxyPoolRuntime(c *gin.Context) {
 		"message": "",
 	})
 }
+
+func GetGlobalProxyPoolStatus(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "",
+		"data":    service.GetGlobalProxyPoolRuntimeStatus(),
+	})
+}
