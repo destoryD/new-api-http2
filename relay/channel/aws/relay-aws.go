@@ -52,6 +52,9 @@ func newAwsClient(c *gin.Context, info *relaycommon.RelayInfo) (*bedrockruntime.
 		httpClient *http.Client
 		err        error
 	)
+	if err := service.ApplyGlobalProxyPoolToChannelSetting(&info.ChannelSetting, info.ChannelId, info.ChannelMultiKeyIndex, info.ApiKey); err != nil {
+		return nil, fmt.Errorf("assign global proxy pool failed: %w", err)
+	}
 	httpClient, err = service.GetChannelHttpClient(info.ChannelSetting)
 	if err != nil {
 		return nil, fmt.Errorf("get channel http client failed: %w", err)

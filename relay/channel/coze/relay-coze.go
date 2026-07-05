@@ -281,6 +281,9 @@ func getChatDetail(a *Adaptor, c *gin.Context, info *relaycommon.RelayInfo) (*ht
 func doRequest(req *http.Request, info *relaycommon.RelayInfo) (*http.Response, error) {
 	var client *http.Client
 	var err error // 声明 err 变量
+	if err := service.ApplyGlobalProxyPoolToChannelSetting(&info.ChannelSetting, info.ChannelId, info.ChannelMultiKeyIndex, info.ApiKey); err != nil {
+		return nil, fmt.Errorf("assign global proxy pool failed: %w", err)
+	}
 	client, err = service.GetChannelHttpClient(info.ChannelSetting)
 	if err != nil {
 		return nil, fmt.Errorf("get channel http client failed: %w", err)

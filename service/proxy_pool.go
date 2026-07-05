@@ -80,7 +80,6 @@ func ApplyGlobalProxyPoolToChannelSetting(setting *dto.ChannelSettings, channelI
 	if setting == nil || !setting.UseGlobalProxyPool {
 		return nil
 	}
-	setting.Proxy = ""
 	proxyURL, err := globalProxyPool.assign(channelID, keyIndex, apiKey)
 	if err != nil {
 		return err

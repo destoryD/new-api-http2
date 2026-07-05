@@ -527,6 +527,7 @@ func DoRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http
 func doRequest(c *gin.Context, req *http.Request, info *common.RelayInfo) (*http.Response, error) {
 	if err := service.ApplyGlobalProxyPoolToChannelSetting(&info.ChannelSetting, info.ChannelId, info.ChannelMultiKeyIndex, info.ApiKey); err != nil {
 		common2.SysLog(fmt.Sprintf("failed to assign global proxy pool: channel_id=%d, error=%v", info.ChannelId, err))
+		return nil, fmt.Errorf("assign global proxy pool failed: %w", err)
 	}
 	enableHttp2 := info.ChannelSetting.EnableHttp2
 	client, err := service.GetChannelHttpClient(info.ChannelSetting)

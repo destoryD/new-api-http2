@@ -113,6 +113,9 @@ func exchangeJwtForAccessToken(signedJWT string, info *relaycommon.RelayInfo) (s
 
 	var client *http.Client
 	var err error
+	if err := service.ApplyGlobalProxyPoolToChannelSetting(&info.ChannelSetting, info.ChannelId, info.ChannelMultiKeyIndex, info.ApiKey); err != nil {
+		return "", fmt.Errorf("assign global proxy pool failed: %w", err)
+	}
 	client, err = service.GetChannelHttpClient(info.ChannelSetting)
 	if err != nil {
 		return "", fmt.Errorf("get channel http client failed: %w", err)
