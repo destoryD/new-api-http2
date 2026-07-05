@@ -58,6 +58,24 @@ func ResetGlobalProxyPoolRuntime() {
 	globalProxyPool.nextIndex = 0
 }
 
+func GetGlobalProxyPoolRetryLimit() int {
+	setting := operation_setting.GetProxyPoolSetting()
+	if setting == nil || !setting.Enabled {
+		return 0
+	}
+	operation_setting.NormalizeProxyPoolSetting(setting)
+	usableCount := 0
+	for _, resource := range setting.Proxies {
+		if resource.Enabled && strings.TrimSpace(resource.URL) != "" {
+			usableCount++
+		}
+	}
+	if usableCount <= 1 {
+		return 0
+	}
+	return usableCount - 1
+}
+
 func ApplyGlobalProxyPoolToChannelSetting(setting *dto.ChannelSettings, channelID int, keyIndex int, apiKey string) error {
 	if setting == nil || !setting.UseGlobalProxyPool {
 		return nil

@@ -185,6 +185,7 @@ func SetApiRouter(router *gin.Engine) {
 			optionRoute.GET("/channel_affinity_cache", controller.GetChannelAffinityCacheStats)
 			optionRoute.DELETE("/channel_affinity_cache", controller.ClearChannelAffinityCache)
 			optionRoute.POST("/rest_model_ratio", controller.ResetModelRatio)
+			optionRoute.POST("/proxy_pool/reset_runtime", controller.ResetGlobalProxyPoolRuntime)
 			optionRoute.POST("/migrate_console_setting", controller.MigrateConsoleSetting) // 用于迁移检测的旧键，下个版本会删除
 		}
 
@@ -301,6 +302,7 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.POST("/export_tasks", middleware.AdminAuth(), controller.CreateAllLogExportTask)
 		logRoute.GET("/export_tasks", middleware.AdminAuth(), controller.GetAllLogExportTasks)
 		logRoute.GET("/export_tasks/:id/download", middleware.AdminAuth(), controller.DownloadAllLogExportTask)
+		logRoute.POST("/export_tasks/:id/cancel", middleware.AdminAuth(), controller.CancelAllLogExportTask)
 		logRoute.DELETE("/export_tasks/:id", middleware.AdminAuth(), controller.DeleteAllLogExportTask)
 		logRoute.GET("/stat", middleware.AdminAuth(), controller.GetLogsStat)
 		logRoute.GET("/self/stat", middleware.UserAuth(), controller.GetLogsSelfStat)
@@ -309,6 +311,7 @@ func SetApiRouter(router *gin.Engine) {
 		logRoute.POST("/self/export_tasks", middleware.UserAuth(), controller.CreateUserLogExportTask)
 		logRoute.GET("/self/export_tasks", middleware.UserAuth(), controller.GetUserLogExportTasks)
 		logRoute.GET("/self/export_tasks/:id/download", middleware.UserAuth(), controller.DownloadUserLogExportTask)
+		logRoute.POST("/self/export_tasks/:id/cancel", middleware.UserAuth(), controller.CancelUserLogExportTask)
 		logRoute.DELETE("/self/export_tasks/:id", middleware.UserAuth(), controller.DeleteUserLogExportTask)
 		logRoute.GET("/channel_affinity_usage_cache", middleware.AdminAuth(), controller.GetChannelAffinityUsageCacheStats)
 		logRoute.GET("/search", middleware.AdminAuth(), controller.SearchAllLogs)

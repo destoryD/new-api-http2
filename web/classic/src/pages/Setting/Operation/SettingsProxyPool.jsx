@@ -91,6 +91,7 @@ const buildProxyResources = (value, previousValue) => {
 export default function SettingsProxyPool(props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [resettingRuntime, setResettingRuntime] = useState(false);
   const [rawProxyResources, setRawProxyResources] = useState('');
   const [inputs, setInputs] = useState({
     'proxy_pool_setting.enabled': false,
@@ -107,6 +108,23 @@ export default function SettingsProxyPool(props) {
     return (value) => {
       setInputs((inputs) => ({ ...inputs, [fieldName]: value }));
     };
+  }
+
+  function resetProxyPoolRuntime() {
+    setResettingRuntime(true);
+    API.post('/api/option/proxy_pool/reset_runtime')
+      .then((res) => {
+        if (!res.data.success) {
+          return showError(res.data.message || t('重置代理池冷却失败'));
+        }
+        showSuccess(t('代理池冷却已重置'));
+      })
+      .catch(() => {
+        showError(t('重置代理池冷却失败'));
+      })
+      .finally(() => {
+        setResettingRuntime(false);
+      });
   }
 
   function onSubmit() {
@@ -178,7 +196,7 @@ export default function SettingsProxyPool(props) {
 
   return (
     <>
-      <Spin spinning={loading}>
+      <Spin spinning={loading || resettingRuntime}>
         <Form
           values={inputs}
           getFormApi={(formAPI) => (refForm.current = formAPI)}
@@ -269,8 +287,17 @@ export default function SettingsProxyPool(props) {
               </Col>
             </Row>
             <Row>
-              <Button size='default' onClick={onSubmit}>
+              <Button size='default' onClick={onSubmit} disabled={resettingRuntime}>
                 {t('保存全局代理池设置')}
+              </Button>
+              <Button
+                size='default'
+                theme='outline'
+                style={{ marginLeft: 8 }}
+                loading={resettingRuntime}
+                onClick={resetProxyPoolRuntime}
+              >
+                {t('重置代理池冷却')}
               </Button>
             </Row>
           </Form.Section>

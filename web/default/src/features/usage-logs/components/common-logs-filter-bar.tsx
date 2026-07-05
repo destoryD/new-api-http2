@@ -20,7 +20,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQueryClient, useIsFetching } from '@tanstack/react-query'
 import { useNavigate, getRouteApi } from '@tanstack/react-router'
 import { type Table } from '@tanstack/react-table'
-import { Download, Eye, EyeOff, RefreshCw, Trash2 } from 'lucide-react'
+import { CircleX, Download, Eye, EyeOff, RefreshCw, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { useIsAdmin } from '@/hooks/use-admin'
@@ -51,6 +51,7 @@ import {
 import { DataTableToolbar } from '@/components/data-table'
 import { LOG_TYPES } from '../constants'
 import {
+  cancelBillingLogExportTask,
   createBillingLogExportTask,
   deleteBillingLogExportTask,
   downloadBillingLogExportTask,
@@ -86,6 +87,7 @@ function formatExportSize(size: number) {
 function exportTaskVariant(status: BillingExportTask['status']) {
   if (status === 'success') return 'default'
   if (status === 'failed') return 'destructive'
+  if (status === 'canceled') return 'outline'
   return 'secondary'
 }
 
@@ -269,6 +271,20 @@ export function CommonLogsFilterBar<TData>(
     [isAdmin, t]
   )
 
+  const handleCancelTask = useCallback(
+    async (task: BillingExportTask) => {
+      try {
+        await cancelBillingLogExportTask(task, isAdmin)
+        toast.success(t('Export task canceled'))
+        void loadExportTasks()
+      } catch (error) {
+        toast.error(
+          error instanceof Error ? error.message : t('Failed to cancel export')
+        )
+      }
+    },
+    [isAdmin, loadExportTasks, t]
+  )
   const handleDeleteTask = useCallback(
     async (task: BillingExportTask) => {
       try {
@@ -414,6 +430,18 @@ export function CommonLogsFilterBar<TData>(
                       >
                         <Download className='h-3.5 w-3.5' />
                         {t('Download')}
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        disabled={
+                          task.status !== 'pending' && task.status !== 'running'
+                        }
+                        onClick={() => void handleCancelTask(task)}
+                        className='h-7 gap-1.5 px-2'
+                      >
+                        <CircleX className='h-3.5 w-3.5' />
+                        {t('Cancel')}
                       </Button>
                       <Button
                         variant='outline'

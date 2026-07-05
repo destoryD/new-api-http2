@@ -3884,6 +3884,12 @@
     "success": "Completed",
     "failed": "Failed",
     "导出任务已删除": "Export task deleted",
-    "删除导出任务失败": "Failed to delete export task"
+    "删除导出任务失败": "Failed to delete export task",
+    "导出任务已取消": "Export task canceled",
+    "取消导出任务失败": "Failed to cancel export task",
+    "canceled": "Canceled",
+    "重置代理池冷却": "Reset proxy pool cooldown",
+    "代理池冷却已重置": "Proxy pool cooldown reset",
+    "重置代理池冷却失败": "Failed to reset proxy pool cooldown"
   }
 }

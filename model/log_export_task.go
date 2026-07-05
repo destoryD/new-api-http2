@@ -9,10 +9,11 @@ import (
 type LogExportTaskStatus string
 
 const (
-	LogExportTaskStatusPending LogExportTaskStatus = "pending"
-	LogExportTaskStatusRunning LogExportTaskStatus = "running"
-	LogExportTaskStatusSuccess LogExportTaskStatus = "success"
-	LogExportTaskStatusFailed  LogExportTaskStatus = "failed"
+	LogExportTaskStatusPending  LogExportTaskStatus = "pending"
+	LogExportTaskStatusRunning  LogExportTaskStatus = "running"
+	LogExportTaskStatusSuccess  LogExportTaskStatus = "success"
+	LogExportTaskStatusFailed   LogExportTaskStatus = "failed"
+	LogExportTaskStatusCanceled LogExportTaskStatus = "canceled"
 )
 
 type LogExportTask struct {
@@ -72,8 +73,30 @@ func GetLogExportTasks(userId int, isAdmin bool, limit int) ([]*LogExportTask, e
 	return tasks, err
 }
 
+func MarkLogExportTaskRunningByID(taskId int) (bool, error) {
+	result := DB.Model(&LogExportTask{}).
+		Where("id = ? AND status = ?", taskId, LogExportTaskStatusPending).
+		Updates(map[string]interface{}{
+			"status":   LogExportTaskStatusRunning,
+			"progress": 5,
+		})
+	return result.RowsAffected > 0, result.Error
+}
+
 func UpdateLogExportTask(taskId int, values map[string]interface{}) error {
 	return DB.Model(&LogExportTask{}).Where("id = ?", taskId).Updates(values).Error
+}
+
+func CancelLogExportTaskByID(taskId int) (bool, error) {
+	result := DB.Model(&LogExportTask{}).
+		Where("id = ? AND status IN ?", taskId, []string{string(LogExportTaskStatusPending), string(LogExportTaskStatusRunning)}).
+		Updates(map[string]interface{}{
+			"status":      LogExportTaskStatusCanceled,
+			"progress":    100,
+			"error":       "export task canceled",
+			"finished_at": time.Now().Unix(),
+		})
+	return result.RowsAffected > 0, result.Error
 }
 
 func GetExpiredLogExportTasks(cutoff int64, limit int) ([]*LogExportTask, error) {

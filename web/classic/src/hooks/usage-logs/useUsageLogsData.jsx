@@ -51,6 +51,8 @@ export const useLogsData = () => {
   const textFailedDownloadExport =
     '\u4e0b\u8f7d\u5bfc\u51fa\u6587\u4ef6\u5931\u8d25';
   const textExportTaskDeleted = '\u5bfc\u51fa\u4efb\u52a1\u5df2\u5220\u9664';
+  const textExportTaskCanceled = '\u5bfc\u51fa\u4efb\u52a1\u5df2\u53d6\u6d88';
+  const textFailedCancelExport = '\u53d6\u6d88\u5bfc\u51fa\u4efb\u52a1\u5931\u8d25';
   const textFailedDeleteExport =
     '\u5220\u9664\u5bfc\u51fa\u4efb\u52a1\u5931\u8d25';
   const textFailedExportLogs =
@@ -394,6 +396,28 @@ export const useLogsData = () => {
       }
     },
     [isAdminUser, t],
+  );
+
+  const cancelExportTask = useCallback(
+    async (task) => {
+      try {
+        const endpoint = isAdminUser
+          ? '/api/log/export_tasks/' + task.id + '/cancel'
+          : '/api/log/self/export_tasks/' + task.id + '/cancel';
+        const res = await API.post(endpoint, null, {
+          disableDuplicate: true,
+          skipErrorHandler: true,
+        });
+        if (!res.data.success) {
+          throw new Error(res.data.message);
+        }
+        showSuccess(t(textExportTaskCanceled));
+        await loadExportTasks();
+      } catch (error) {
+        showError(error?.message || t(textFailedCancelExport));
+      }
+    },
+    [isAdminUser, loadExportTasks, t],
   );
 
   const deleteExportTask = useCallback(
@@ -1083,6 +1107,7 @@ export const useLogsData = () => {
     exportBillingLogs,
     loadExportTasks,
     downloadExportTask,
+    cancelExportTask,
     deleteExportTask,
     setLogsFormat,
     hasExpandableRows,

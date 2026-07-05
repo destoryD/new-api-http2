@@ -4281,6 +4281,12 @@
     "Rows": "Hàng",
     "Size": "Kích thước",
     "导出任务已删除": "Đã xóa tác vụ xuất",
-    "删除导出任务失败": "Không xóa được tác vụ xuất"
+    "删除导出任务失败": "Không xóa được tác vụ xuất",
+    "导出任务已取消": "Đã hủy tác vụ xuất",
+    "取消导出任务失败": "Không thể hủy tác vụ xuất",
+    "canceled": "Đã hủy",
+    "重置代理池冷却": "Đặt lại thời gian chờ pool proxy",
+    "代理池冷却已重置": "Đã đặt lại thời gian chờ pool proxy",
+    "重置代理池冷却失败": "Không thể đặt lại thời gian chờ pool proxy"
   }
 }

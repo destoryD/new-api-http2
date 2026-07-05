@@ -3745,6 +3745,12 @@
     "Export tasks are generated in the background": "Les tâches d’export sont générées en arrière-plan",
     "No export tasks": "Aucune tâche d’export",
     "导出任务已删除": "Tâche d’export supprimée",
-    "删除导出任务失败": "Échec de la suppression de la tâche d’export"
+    "删除导出任务失败": "Échec de la suppression de la tâche d’export",
+    "导出任务已取消": "Tâche d’export annulée",
+    "取消导出任务失败": "Échec de l’annulation de la tâche d’export",
+    "canceled": "Annulé",
+    "重置代理池冷却": "Réinitialiser le refroidissement du pool proxy",
+    "代理池冷却已重置": "Refroidissement du pool proxy réinitialisé",
+    "重置代理池冷却失败": "Échec de la réinitialisation du refroidissement du pool proxy"
   }
 }

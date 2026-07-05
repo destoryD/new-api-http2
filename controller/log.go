@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/csv"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,6 +19,7 @@ import (
 )
 
 var logExportTaskSemaphore = makeLogExportTaskSemaphore()
+var errLogExportTaskCanceled = errors.New("log export task canceled")
 
 func makeLogExportTaskSemaphore() chan struct{} {
 	limit := common.GetEnvOrDefault("LOG_EXPORT_MAX_CONCURRENT", 2)
@@ -152,6 +154,14 @@ func DeleteUserLogExportTask(c *gin.Context) {
 	deleteLogExportTask(c, false)
 }
 
+func CancelAllLogExportTask(c *gin.Context) {
+	cancelLogExportTask(c, true)
+}
+
+func CancelUserLogExportTask(c *gin.Context) {
+	cancelLogExportTask(c, false)
+}
+
 func parseLogExportTaskQuery(c *gin.Context) logExportTaskQuery {
 	query := logExportTaskQuery{
 		logExportQuery: parseLogExportQuery(c),
@@ -259,6 +269,33 @@ func deleteLogExportTask(c *gin.Context, isAdmin bool) {
 	common.ApiSuccess(c, nil)
 }
 
+func cancelLogExportTask(c *gin.Context, isAdmin bool) {
+	taskId, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	task, err := model.GetLogExportTaskByID(taskId)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !isAdmin && (task.UserId != c.GetInt("id") || task.IsAdmin) {
+		common.ApiErrorMsg(c, "no permission to cancel this export task")
+		return
+	}
+	canceled, err := model.CancelLogExportTaskByID(task.Id)
+	if err != nil {
+		common.ApiError(c, err)
+		return
+	}
+	if !canceled {
+		common.ApiErrorMsg(c, "export task cannot be canceled")
+		return
+	}
+	common.ApiSuccess(c, nil)
+}
+
 type logExportTaskQuery struct {
 	logExportQuery
 	Kind     string
@@ -283,6 +320,9 @@ func parseLogExportQuery(c *gin.Context) logExportQuery {
 	logType, _ := strconv.Atoi(c.Query("type"))
 	startTimestamp, _ := strconv.ParseInt(c.Query("start_timestamp"), 10, 64)
 	endTimestamp, _ := strconv.ParseInt(c.Query("end_timestamp"), 10, 64)
+	if now := time.Now().Unix(); endTimestamp > now {
+		endTimestamp = now
+	}
 	channel, _ := strconv.Atoi(c.Query("channel"))
 	format := c.DefaultQuery("format", "csv")
 	if format != "txt" {
@@ -346,12 +386,22 @@ func writeLogExport(c *gin.Context, format string, includeRelayInfo bool, export
 func runLogExportTask(taskId int, isAdmin bool, userId int, query logExportTaskQuery) {
 	logExportTaskSemaphore <- struct{}{}
 	defer func() { <-logExportTaskSemaphore }()
-	_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
-		"status":   model.LogExportTaskStatusRunning,
-		"progress": 5,
-	})
+	running, err := model.MarkLogExportTaskRunningByID(taskId)
+	if err != nil {
+		common.SysError("failed to start log export task: " + err.Error())
+		return
+	}
+	if !running {
+		return
+	}
 	filePath, filename, rows, err := generateLogExportTaskFile(taskId, isAdmin, userId, query)
 	if err != nil {
+		if filePath != "" {
+			_ = os.Remove(filePath)
+		}
+		if errors.Is(err, errLogExportTaskCanceled) || isLogExportTaskCanceled(taskId) {
+			return
+		}
 		common.SysError("failed to generate log export task: " + err.Error())
 		_ = model.UpdateLogExportTask(taskId, map[string]interface{}{
 			"status":      model.LogExportTaskStatusFailed,
@@ -359,6 +409,9 @@ func runLogExportTask(taskId int, isAdmin bool, userId int, query logExportTaskQ
 			"error":       "export task failed, please try again later",
 			"finished_at": time.Now().Unix(),
 		})
+		return
+	}
+	if isLogExportTaskCanceled(taskId) {
 		if filePath != "" {
 			_ = os.Remove(filePath)
 		}
@@ -377,6 +430,18 @@ func runLogExportTask(taskId int, isAdmin bool, userId int, query logExportTaskQ
 		"file_size":   fileSize,
 		"finished_at": time.Now().Unix(),
 	})
+}
+
+func isLogExportTaskCanceled(taskId int) bool {
+	task, err := model.GetLogExportTaskByID(taskId)
+	return err == nil && task.Status == model.LogExportTaskStatusCanceled
+}
+
+func checkLogExportTaskCanceled(taskId int) error {
+	if isLogExportTaskCanceled(taskId) {
+		return errLogExportTaskCanceled
+	}
+	return nil
 }
 
 func cleanupExpiredLogExportTasks() {
@@ -430,7 +495,7 @@ func generateLogExportTaskFile(taskId int, isAdmin bool, userId int, query logEx
 
 	rows := 0
 	progressRows := 0
-	updateRows := func(delta int) {
+	updateRows := func(delta int) error {
 		rows += delta
 		progressRows += delta
 		if progressRows >= 5000 {
@@ -440,6 +505,11 @@ func generateLogExportTaskFile(taskId int, isAdmin bool, userId int, query logEx
 				"progress": 50,
 			})
 		}
+		return checkLogExportTaskCanceled(taskId)
+	}
+
+	if err := checkLogExportTaskCanceled(taskId); err != nil {
+		return filePath, filename, rows, err
 	}
 
 	if query.Kind == "reconciliation" {
@@ -467,7 +537,7 @@ func generateLogExportTaskFile(taskId int, isAdmin bool, userId int, query logEx
 	return filePath, filename, rows, nil
 }
 
-func generateLogDetailExport(writer *csv.Writer, includeRelayInfo bool, export func(func([]*model.Log) error) error, updateRows func(int)) error {
+func generateLogDetailExport(writer *csv.Writer, includeRelayInfo bool, export func(func([]*model.Log) error) error, updateRows func(int) error) error {
 	if err := writer.Write(logExportHeaders(includeRelayInfo)); err != nil {
 		return err
 	}
@@ -481,21 +551,22 @@ func generateLogDetailExport(writer *csv.Writer, includeRelayInfo bool, export f
 		if err := writer.Error(); err != nil {
 			return err
 		}
-		updateRows(len(logs))
-		return nil
+		return updateRows(len(logs))
 	})
 }
 
-func generateLogReconciliationExport(writer *csv.Writer, export func(func([]*model.Log) error) error, updateRows func(int)) error {
+func generateLogReconciliationExport(writer *csv.Writer, export func(func([]*model.Log) error) error, updateRows func(int) error) error {
 	summaries := make(map[string]*reconciliationSummary)
 	err := export(func(logs []*model.Log) error {
 		for _, log := range logs {
 			accumulateReconciliationSummary(summaries, log)
 		}
-		updateRows(len(logs))
-		return nil
+		return updateRows(len(logs))
 	})
 	if err != nil {
+		return err
+	}
+	if err := updateRows(0); err != nil {
 		return err
 	}
 	if err := writer.Write(logReconciliationHeaders()); err != nil {

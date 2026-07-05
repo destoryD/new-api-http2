@@ -17,10 +17,11 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as z from 'zod'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -35,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Textarea } from '@/components/ui/textarea'
 import { SettingsSection } from '../components/settings-section'
+import { resetProxyPoolRuntime } from '../api'
 import { useResetForm } from '../hooks/use-reset-form'
 import { useUpdateOption } from '../hooks/use-update-option'
 
@@ -111,6 +113,7 @@ export function ProxyPoolSettingsSection({
 }: ProxyPoolSettingsSectionProps) {
   const { t } = useTranslation()
   const updateOption = useUpdateOption()
+  const [resettingRuntime, setResettingRuntime] = useState(false)
 
   const formDefaults = useMemo(
     () => ({
@@ -128,6 +131,23 @@ export function ProxyPoolSettingsSection({
   })
 
   useResetForm(form, formDefaults)
+
+  const handleResetRuntime = async () => {
+    setResettingRuntime(true)
+    try {
+      const res = await resetProxyPoolRuntime()
+      if (!res.success) throw new Error(res.message)
+      toast.success(t('Proxy pool cooldown reset'))
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t('Failed to reset proxy pool cooldown')
+      )
+    } finally {
+      setResettingRuntime(false)
+    }
+  }
 
   const onSubmit = async (values: ProxyPoolFormValues) => {
     const updates = [
@@ -282,9 +302,21 @@ export function ProxyPoolSettingsSection({
             )}
           />
 
-          <Button type='submit' disabled={updateOption.isPending}>
-            {t('Save proxy pool settings')}
-          </Button>
+          <div className='flex flex-wrap gap-2'>
+            <Button type='submit' disabled={updateOption.isPending || resettingRuntime}>
+              {t('Save proxy pool settings')}
+            </Button>
+            <Button
+              type='button'
+              variant='outline'
+              disabled={updateOption.isPending || resettingRuntime}
+              onClick={() => void handleResetRuntime()}
+            >
+              {resettingRuntime
+                ? t('Resetting...')
+                : t('Reset proxy pool cooldown')}
+            </Button>
+          </div>
         </form>
       </Form>
     </SettingsSection>

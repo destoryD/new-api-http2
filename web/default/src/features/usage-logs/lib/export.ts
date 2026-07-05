@@ -23,7 +23,7 @@ import { buildQueryParams } from './utils'
 export type BillingExportFormat = 'csv' | 'txt'
 export type BillingExportKind = 'detail' | 'reconciliation'
 export type BillingExportTaskStatus =
-  'pending' | 'running' | 'success' | 'failed'
+  'pending' | 'running' | 'success' | 'failed' | 'canceled'
 
 export interface BillingExportTask {
   id: number
@@ -104,6 +104,19 @@ export async function downloadBillingLogExportTask(
   downloadBlob(res.data as Blob, filename)
 }
 
+export async function cancelBillingLogExportTask(
+  task: BillingExportTask,
+  isAdmin: boolean
+) {
+  const endpoint = isAdmin
+    ? '/api/log/export_tasks/' + task.id + '/cancel'
+    : '/api/log/self/export_tasks/' + task.id + '/cancel'
+  const res = await api.post<ApiResponse<null>>(endpoint, null, {
+    disableDuplicate: true,
+    skipBusinessError: true,
+  } as Record<string, unknown>)
+  if (!res.data.success) throw new Error(res.data.message)
+}
 export async function deleteBillingLogExportTask(
   task: BillingExportTask,
   isAdmin: boolean

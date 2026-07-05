@@ -39,6 +39,7 @@ const textDownloadCenter = '\u4e0b\u8f7d\u4e2d\u5fc3';
 const textRefresh = '\u5237\u65b0';
 const textNoExportTasks = '\u6682\u65e0\u5bfc\u51fa\u4efb\u52a1';
 const textDownload = '\u4e0b\u8f7d';
+const textCancel = '\u53d6\u6d88';
 const textDelete = '\u5220\u9664';
 const textRows = '\u884c\u6570';
 const textSize = '\u5927\u5c0f';
@@ -59,6 +60,7 @@ const formatExportSize = (size) => {
 const statusColor = (status) => {
   if (status === 'success') return 'green';
   if (status === 'failed') return 'red';
+  if (status === 'canceled') return 'grey';
   return 'blue';
 };
 
@@ -74,6 +76,7 @@ const LogsActions = ({
   loadingExportTasks,
   loadExportTasks,
   downloadExportTask,
+  cancelExportTask,
   deleteExportTask,
   t,
 }) => {
@@ -229,6 +232,16 @@ const LogsActions = ({
                         onClick={() => downloadExportTask(task)}
                       >
                         {t(textDownload)}
+                      </Button>
+                      <Button
+                        size='small'
+                        theme='outline'
+                        disabled={
+                          task.status !== 'pending' && task.status !== 'running'
+                        }
+                        onClick={() => cancelExportTask(task)}
+                      >
+                        {t(textCancel)}
                       </Button>
                       <Button
                         size='small'
