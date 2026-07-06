@@ -3791,6 +3791,8 @@
     "Unavailable": "Unavailable",
     "Unchecked": "Unchecked",
     "{{seconds}}s remaining": "{{seconds}}s remaining",
-    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready"
+    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready",
+    "IP switch cooldown seconds": "Задержка смены IP, сек.",
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "После смены proxy IP ключ должен ждать это количество секунд перед следующей сменой."
   }
 }

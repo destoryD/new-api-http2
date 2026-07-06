@@ -101,6 +101,8 @@ const OPERATIONS_SECTIONS = [
             settings['proxy_pool_setting.health_check_timeout_seconds'],
           'proxy_pool_setting.assignment_cooldown_seconds':
             settings['proxy_pool_setting.assignment_cooldown_seconds'],
+          'proxy_pool_setting.switch_cooldown_seconds':
+            settings['proxy_pool_setting.switch_cooldown_seconds'],
         }}
       />
     ),

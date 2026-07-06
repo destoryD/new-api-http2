@@ -3888,6 +3888,8 @@
     "Unchecked": "未检测",
     "{{seconds}}s remaining": "剩余 {{seconds}} 秒",
     "{{usable}} of {{total}} proxies are ready": "{{total}} 个代理中 {{usable}} 个可用",
-    "Refreshing...": "刷新中..."
+    "Refreshing...": "刷新中...",
+    "IP switch cooldown seconds": "换 IP 冷却秒数",
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "每个 key 更换代理 IP 后，需等待这个冷却时间才能再次更换。"
   }
 }

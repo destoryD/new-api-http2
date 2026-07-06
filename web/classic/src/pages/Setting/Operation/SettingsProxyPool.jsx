@@ -102,6 +102,7 @@ export default function SettingsProxyPool(props) {
     'proxy_pool_setting.health_check_interval_seconds': 300,
     'proxy_pool_setting.health_check_timeout_seconds': 10,
     'proxy_pool_setting.assignment_cooldown_seconds': 60,
+    'proxy_pool_setting.switch_cooldown_seconds': 60,
   });
   const refForm = useRef();
   const [inputsRow, setInputsRow] = useState(inputs);
@@ -330,6 +331,21 @@ export default function SettingsProxyPool(props) {
                   )}
                   onChange={handleFieldChange(
                     'proxy_pool_setting.assignment_cooldown_seconds',
+                  )}
+                />
+              </Col>
+              <Col xs={24} sm={12} md={8} lg={8} xl={8}>
+                <Form.InputNumber
+                  field={'proxy_pool_setting.switch_cooldown_seconds'}
+                  label={t('IP switch cooldown seconds')}
+                  min={0}
+                  step={1}
+                  suffix={t('Seconds')}
+                  extraText={t(
+                    'After a key switches proxy IP, it must wait this many seconds before switching again.',
+                  )}
+                  onChange={handleFieldChange(
+                    'proxy_pool_setting.switch_cooldown_seconds',
                   )}
                 />
               </Col>

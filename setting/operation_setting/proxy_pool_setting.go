@@ -20,6 +20,7 @@ type ProxyPoolSetting struct {
 	HealthCheckIntervalSeconds int                 `json:"health_check_interval_seconds"`
 	HealthCheckTimeoutSeconds  int                 `json:"health_check_timeout_seconds"`
 	AssignmentCooldownSeconds  int                 `json:"assignment_cooldown_seconds"`
+	SwitchCooldownSeconds      int                 `json:"switch_cooldown_seconds"`
 }
 
 var proxyPoolSetting = ProxyPoolSetting{
@@ -29,6 +30,7 @@ var proxyPoolSetting = ProxyPoolSetting{
 	HealthCheckIntervalSeconds: 300,
 	HealthCheckTimeoutSeconds:  10,
 	AssignmentCooldownSeconds:  60,
+	SwitchCooldownSeconds:      60,
 }
 
 func init() {
@@ -55,6 +57,9 @@ func NormalizeProxyPoolSetting(setting *ProxyPoolSetting) {
 	}
 	if setting.AssignmentCooldownSeconds < 0 {
 		setting.AssignmentCooldownSeconds = 0
+	}
+	if setting.SwitchCooldownSeconds < 0 {
+		setting.SwitchCooldownSeconds = 0
 	}
 	seen := make(map[string]struct{}, len(setting.Proxies))
 	normalized := make([]ProxyPoolResource, 0, len(setting.Proxies))

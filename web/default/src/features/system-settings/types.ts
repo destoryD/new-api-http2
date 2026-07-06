@@ -58,6 +58,7 @@ export type ProxyPoolStatus = {
   health_check_url: string
   health_check_interval_seconds: number
   assignment_cooldown_seconds: number
+  switch_cooldown_seconds: number
   total: number
   usable: number
   resources: ProxyPoolResourceStatus[]
@@ -346,6 +347,7 @@ export type OperationsSettings = {
   'proxy_pool_setting.health_check_interval_seconds': number
   'proxy_pool_setting.health_check_timeout_seconds': number
   'proxy_pool_setting.assignment_cooldown_seconds': number
+  'proxy_pool_setting.switch_cooldown_seconds': number
 }
 
 export type SecuritySettings = {

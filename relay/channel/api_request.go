@@ -641,7 +641,7 @@ func retryWithGlobalProxyPoolOnStatusCode(c *gin.Context, req *http.Request, inf
 		logger.LogError(c, "global proxy pool status retry skipped: "+err.Error())
 		return resp, nil
 	}
-	retrySetting, switched, err := service.SwitchGlobalProxyPoolProxyAfterCooldown(
+	retrySetting, switched, err := service.SwitchGlobalProxyPoolProxyAfterSwitchCooldown(
 		info.ChannelSetting,
 		info.ChannelId,
 		info.ChannelMultiKeyIndex,

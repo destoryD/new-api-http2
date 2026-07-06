@@ -3752,6 +3752,8 @@
     "Unchecked": "未檢測",
     "{{seconds}}s remaining": "剩餘 {{seconds}} 秒",
     "{{usable}} of {{total}} proxies are ready": "{{total}} 個代理中 {{usable}} 個可用",
-    "Refreshing...": "刷新中..."
+    "Refreshing...": "刷新中...",
+    "IP switch cooldown seconds": "換 IP 冷卻秒數",
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "每個 key 更換代理 IP 後，需等待這個冷卻時間才能再次更換。"
   }
 }

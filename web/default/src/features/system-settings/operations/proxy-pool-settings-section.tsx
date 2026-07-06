@@ -71,6 +71,10 @@ const proxyPoolSchema = z.object({
     .number()
     .int()
     .min(0),
+  'proxy_pool_setting.switch_cooldown_seconds': z.coerce
+    .number()
+    .int()
+    .min(0),
 })
 
 type ProxyPoolFormValues = z.infer<typeof proxyPoolSchema>
@@ -226,6 +230,10 @@ export function ProxyPoolSettingsSection({
         key: 'proxy_pool_setting.assignment_cooldown_seconds',
         value: values['proxy_pool_setting.assignment_cooldown_seconds'],
       },
+      {
+        key: 'proxy_pool_setting.switch_cooldown_seconds',
+        value: values['proxy_pool_setting.switch_cooldown_seconds'],
+      },
     ]
 
     for (const update of updates) {
@@ -345,6 +353,25 @@ export function ProxyPoolSettingsSection({
                 <FormDescription>
                   {t(
                     'After a proxy is assigned, it must cool down before being assigned to another key.'
+                  )}
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name='proxy_pool_setting.switch_cooldown_seconds'
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>{t('IP switch cooldown seconds')}</FormLabel>
+                <FormControl>
+                  <Input type='number' min={0} step={1} {...field} />
+                </FormControl>
+                <FormDescription>
+                  {t(
+                    'After a key switches proxy IP, it must wait this many seconds before switching again.'
                   )}
                 </FormDescription>
                 <FormMessage />

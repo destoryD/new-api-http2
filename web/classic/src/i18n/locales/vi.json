@@ -4305,6 +4305,8 @@
     "Unavailable": "Unavailable",
     "Unchecked": "Unchecked",
     "{{seconds}}s remaining": "{{seconds}}s remaining",
-    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready"
+    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready",
+    "IP switch cooldown seconds": "Thời gian chờ đổi IP (giây)",
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "Sau khi một key đổi IP proxy, key đó phải chờ số giây này trước khi đổi lại."
   }
 }

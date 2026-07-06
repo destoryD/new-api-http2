@@ -3740,6 +3740,8 @@
     "Unavailable": "Unavailable",
     "Unchecked": "Unchecked",
     "{{seconds}}s remaining": "{{seconds}}s remaining",
-    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready"
+    "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready",
+    "IP switch cooldown seconds": "IP切り替えクールダウン秒数",
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "キーがプロキシIPを切り替えた後、再度切り替える前にこの秒数待機します。"
   }
 }

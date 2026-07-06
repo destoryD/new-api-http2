@@ -33,6 +33,7 @@ type ProxyPoolRuntimeStatus struct {
 	HealthCheckURL             string                   `json:"health_check_url"`
 	HealthCheckIntervalSeconds int                      `json:"health_check_interval_seconds"`
 	AssignmentCooldownSeconds  int                      `json:"assignment_cooldown_seconds"`
+	SwitchCooldownSeconds      int                      `json:"switch_cooldown_seconds"`
 	Total                      int                      `json:"total"`
 	Usable                     int                      `json:"usable"`
 	Resources                  []ProxyPoolResourceState `json:"resources"`
@@ -102,6 +103,7 @@ func GetGlobalProxyPoolRuntimeStatus() ProxyPoolRuntimeStatus {
 		HealthCheckURL:             setting.HealthCheckURL,
 		HealthCheckIntervalSeconds: setting.HealthCheckIntervalSeconds,
 		AssignmentCooldownSeconds:  setting.AssignmentCooldownSeconds,
+		SwitchCooldownSeconds:      setting.SwitchCooldownSeconds,
 		Resources:                  make([]ProxyPoolResourceState, 0, len(setting.Proxies)),
 	}
 
@@ -170,15 +172,15 @@ func SwitchGlobalProxyPoolProxy(setting dto.ChannelSettings, channelID int, keyI
 	return switchGlobalProxyPoolProxy(setting, channelID, keyIndex, apiKey, false)
 }
 
-func SwitchGlobalProxyPoolProxyAfterCooldown(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string) (dto.ChannelSettings, bool, error) {
+func SwitchGlobalProxyPoolProxyAfterSwitchCooldown(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string) (dto.ChannelSettings, bool, error) {
 	return switchGlobalProxyPoolProxy(setting, channelID, keyIndex, apiKey, true)
 }
 
-func switchGlobalProxyPoolProxy(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string, requireAssignmentCooldown bool) (dto.ChannelSettings, bool, error) {
+func switchGlobalProxyPoolProxy(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string, requireSwitchCooldown bool) (dto.ChannelSettings, bool, error) {
 	if !setting.UseGlobalProxyPool || strings.TrimSpace(setting.Proxy) == "" {
 		return setting, false, nil
 	}
-	proxyURL, err := globalProxyPool.reassign(channelID, keyIndex, apiKey, setting.Proxy, requireAssignmentCooldown)
+	proxyURL, err := globalProxyPool.reassign(channelID, keyIndex, apiKey, setting.Proxy, requireSwitchCooldown)
 	if err != nil {
 		return setting, false, err
 	}
@@ -290,25 +292,29 @@ func (m *globalProxyPoolManager) assign(channelID int, keyIndex int, apiKey stri
 	return proxyURL, nil
 }
 
-func (m *globalProxyPoolManager) reassign(channelID int, keyIndex int, apiKey string, failedProxy string, requireAssignmentCooldown bool) (string, error) {
+func (m *globalProxyPoolManager) reassign(channelID int, keyIndex int, apiKey string, failedProxy string, requireSwitchCooldown bool) (string, error) {
 	setting := operation_setting.GetProxyPoolSetting()
 	if !setting.Enabled {
 		return "", errors.New("global proxy pool is disabled")
 	}
 	operation_setting.NormalizeProxyPoolSetting(setting)
 	assignmentKey := buildProxyAssignmentKey(channelID, keyIndex, apiKey)
-	cooldown := time.Duration(setting.AssignmentCooldownSeconds) * time.Second
+	resourceCooldown := time.Duration(setting.AssignmentCooldownSeconds) * time.Second
+	switchCooldown := time.Duration(setting.SwitchCooldownSeconds) * time.Second
 	m.Lock()
 	defer m.Unlock()
 	m.pruneRuntimeStateLocked(setting.Proxies)
-	if requireAssignmentCooldown && cooldown > 0 {
-		if assignment, ok := m.assignments[assignmentKey]; ok && time.Since(assignment.AssignedAt) < cooldown {
+	if assignment, ok := m.assignments[assignmentKey]; ok && assignment.ProxyURL != failedProxy && m.isProxyUsableLocked(setting.Proxies, assignment.ProxyURL) {
+		return assignment.ProxyURL, nil
+	}
+	if requireSwitchCooldown && switchCooldown > 0 {
+		if assignment, ok := m.assignments[assignmentKey]; ok && time.Since(assignment.AssignedAt) < switchCooldown {
 			return assignment.ProxyURL, nil
 		}
 	}
-	proxyURL := m.pickProxyLocked(setting.Proxies, cooldown, failedProxy)
+	proxyURL := m.pickProxyLocked(setting.Proxies, resourceCooldown, failedProxy)
 	if proxyURL == "" {
-		if !requireAssignmentCooldown {
+		if !requireSwitchCooldown {
 			delete(m.assignments, assignmentKey)
 		}
 		return "", errors.New("global proxy pool has no replacement proxy resources")
