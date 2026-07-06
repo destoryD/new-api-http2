@@ -630,56 +630,50 @@ func retryWithGlobalProxyPoolOnStatusCode(c *gin.Context, req *http.Request, inf
 	if resp == nil || info == nil || len(info.ChannelSetting.ProxyPoolRetryStatusCodes) == 0 {
 		return resp, nil
 	}
+	if resp.StatusCode == http.StatusTooManyRequests {
+		return resp, nil
+	}
 	if !info.ChannelSetting.ShouldRetryWithProxyPoolStatusCode(resp.StatusCode) {
 		return resp, nil
 	}
-	maxRetries := service.GetGlobalProxyPoolRetryLimit()
-	if maxRetries <= 0 {
+	retryReq, err := cloneRequestForProxyPoolRetry(req)
+	if err != nil {
+		logger.LogError(c, "global proxy pool status retry skipped: "+err.Error())
 		return resp, nil
 	}
-
-	lastResp := resp
-	for attempt := 1; attempt <= maxRetries; attempt++ {
-		if !info.ChannelSetting.ShouldRetryWithProxyPoolStatusCode(lastResp.StatusCode) {
-			return lastResp, nil
-		}
-		retryReq, err := cloneRequestForProxyPoolRetry(req)
-		if err != nil {
-			logger.LogError(c, "global proxy pool status retry skipped: "+err.Error())
-			return lastResp, nil
-		}
-		retrySetting, switched, err := service.ReportGlobalProxyPoolFailure(
-			info.ChannelSetting,
-			info.ChannelId,
-			info.ChannelMultiKeyIndex,
-			info.ApiKey,
-			fmt.Sprintf("status code %d", lastResp.StatusCode),
-		)
-		if err != nil || !switched {
-			return lastResp, nil
-		}
-		if lastResp.Body != nil {
-			_ = lastResp.Body.Close()
-		}
-		retryClient, err := service.GetChannelHttpClient(retrySetting)
-		if err != nil {
-			return nil, fmt.Errorf("get global proxy pool retry client failed: %w", err)
-		}
-		logger.LogInfo(c, fmt.Sprintf("global proxy pool status retry: status code %d, switching proxy for channel %d", lastResp.StatusCode, info.ChannelId))
-		lastResp, err = retryClient.Do(retryReq)
-		if err != nil {
-			logger.LogError(c, "global proxy pool status retry request failed: "+err.Error())
-			return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: global proxy pool retry failed"))
-		}
-		if lastResp == nil {
-			return nil, errors.New("resp is nil")
-		}
-		info.ChannelSetting = retrySetting
+	retrySetting, switched, err := service.SwitchGlobalProxyPoolProxy(
+		info.ChannelSetting,
+		info.ChannelId,
+		info.ChannelMultiKeyIndex,
+		info.ApiKey,
+	)
+	if err != nil || !switched {
+		return resp, nil
 	}
-	return lastResp, nil
+	if resp.Body != nil {
+		_ = resp.Body.Close()
+	}
+	retryClient, err := service.GetChannelHttpClient(retrySetting)
+	if err != nil {
+		return nil, fmt.Errorf("get global proxy pool retry client failed: %w", err)
+	}
+	logger.LogInfo(c, fmt.Sprintf("global proxy pool status retry: status code %d, switching proxy once for channel %d", resp.StatusCode, info.ChannelId))
+	retryResp, err := retryClient.Do(retryReq)
+	if err != nil {
+		logger.LogError(c, "global proxy pool status retry request failed: "+err.Error())
+		return nil, types.NewError(err, types.ErrorCodeDoRequestFailed, types.ErrOptionWithHideErrMsg("upstream error: global proxy pool retry failed"))
+	}
+	if retryResp == nil {
+		return nil, errors.New("resp is nil")
+	}
+	info.ChannelSetting = retrySetting
+	return retryResp, nil
 }
 
 func retryWithNextProxyPoolOnStatusCode(c *gin.Context, req *http.Request, info *common.RelayInfo, resp *http.Response) (*http.Response, error) {
+	if resp != nil && resp.StatusCode == http.StatusTooManyRequests {
+		return resp, nil
+	}
 	if info != nil && info.ChannelSetting.UseGlobalProxyPool {
 		return retryWithGlobalProxyPoolOnStatusCode(c, req, info, resp)
 	}

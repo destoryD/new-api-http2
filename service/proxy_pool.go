@@ -146,24 +146,6 @@ func GetGlobalProxyPoolRuntimeStatus() ProxyPoolRuntimeStatus {
 	return status
 }
 
-func GetGlobalProxyPoolRetryLimit() int {
-	setting := operation_setting.GetProxyPoolSetting()
-	if setting == nil || !setting.Enabled {
-		return 0
-	}
-	operation_setting.NormalizeProxyPoolSetting(setting)
-	usableCount := 0
-	for _, resource := range setting.Proxies {
-		if resource.Enabled && strings.TrimSpace(resource.URL) != "" {
-			usableCount++
-		}
-	}
-	if usableCount <= 1 {
-		return 0
-	}
-	return usableCount - 1
-}
-
 func ApplyGlobalProxyPoolToChannelSetting(setting *dto.ChannelSettings, channelID int, keyIndex int, apiKey string) error {
 	if setting == nil || !setting.UseGlobalProxyPool {
 		return nil
@@ -181,6 +163,13 @@ func ReportGlobalProxyPoolFailure(setting dto.ChannelSettings, channelID int, ke
 		return setting, false, nil
 	}
 	globalProxyPool.markUnavailable(setting.Proxy, reason)
+	return SwitchGlobalProxyPoolProxy(setting, channelID, keyIndex, apiKey)
+}
+
+func SwitchGlobalProxyPoolProxy(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string) (dto.ChannelSettings, bool, error) {
+	if !setting.UseGlobalProxyPool || strings.TrimSpace(setting.Proxy) == "" {
+		return setting, false, nil
+	}
 	proxyURL, err := globalProxyPool.reassign(channelID, keyIndex, apiKey, setting.Proxy)
 	if err != nil {
 		return setting, false, err
