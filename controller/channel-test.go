@@ -43,6 +43,10 @@ type testResult struct {
 	newAPIError *types.NewAPIError
 }
 
+type testChannelOptions struct {
+	forceMultiKeyIndex int
+}
+
 func normalizeChannelTestEndpoint(channel *model.Channel, modelName, endpointType string) string {
 	normalized := strings.TrimSpace(endpointType)
 	if normalized != "" {
@@ -58,6 +62,10 @@ func normalizeChannelTestEndpoint(channel *model.Channel, modelName, endpointTyp
 }
 
 func testChannel(channel *model.Channel, testModel string, endpointType string, isStream bool) testResult {
+	return testChannelWithOptions(channel, testModel, endpointType, isStream, testChannelOptions{forceMultiKeyIndex: -1})
+}
+
+func testChannelWithOptions(channel *model.Channel, testModel string, endpointType string, isStream bool, options testChannelOptions) testResult {
 	tik := time.Now()
 	var unsupportedTestChannelTypes = []int{
 		constant.ChannelTypeMidjourney,
@@ -159,6 +167,9 @@ func testChannel(channel *model.Channel, testModel string, endpointType string, 
 	c.Set("base_url", channel.GetBaseURL())
 	group, _ := model.GetUserGroup(1, false)
 	c.Set("group", group)
+	if options.forceMultiKeyIndex >= 0 {
+		common.SetContextKey(c, constant.ContextKeyChannelMultiKeyForcedIndex, options.forceMultiKeyIndex)
+	}
 
 	newAPIError := middleware.SetupContextForSelectedChannel(c, channel, testModel)
 	if newAPIError != nil {
@@ -957,12 +968,92 @@ func TestAllChannels(c *gin.Context) {
 
 var autoTestChannelsOnce sync.Once
 
+var multiKeyAutoEnableLastRun = struct {
+	sync.Mutex
+	items map[int]int64
+}{items: make(map[int]int64)}
+
+func shouldAutoEnableMultiKeyIndex(channel *model.Channel, index int) bool {
+	if channel == nil || !channel.ChannelInfo.IsMultiKey || channel.ChannelInfo.MultiKeyStatusList == nil {
+		return false
+	}
+	status, ok := channel.ChannelInfo.MultiKeyStatusList[index]
+	if !ok || status == common.ChannelStatusEnabled {
+		return false
+	}
+	if channel.ChannelInfo.MultiKeyDisabledReason != nil && strings.TrimSpace(channel.ChannelInfo.MultiKeyDisabledReason[index]) != "" {
+		return true
+	}
+	if channel.ChannelInfo.MultiKeyDisabledTime != nil && channel.ChannelInfo.MultiKeyDisabledTime[index] > 0 {
+		return true
+	}
+	return false
+}
+
+func shouldRunMultiKeyAutoEnable(channelID int, intervalSeconds int64, now int64) bool {
+	multiKeyAutoEnableLastRun.Lock()
+	defer multiKeyAutoEnableLastRun.Unlock()
+	lastRun := multiKeyAutoEnableLastRun.items[channelID]
+	if lastRun > 0 && now-lastRun < intervalSeconds {
+		return false
+	}
+	multiKeyAutoEnableLastRun.items[channelID] = now
+	return true
+}
+
+func runMultiKeyAutoEnableOnce() {
+	channels, err := model.GetAllChannels(0, 0, true, false)
+	if err != nil {
+		common.SysError("failed to get channels for multi-key auto enable: " + err.Error())
+		return
+	}
+	now := time.Now().Unix()
+	for _, channel := range channels {
+		if channel == nil || !channel.ChannelInfo.IsMultiKey || channel.Status == common.ChannelStatusManuallyDisabled {
+			continue
+		}
+		setting := channel.GetSetting()
+		if !setting.MultiKeyAutoEnableEnabled {
+			continue
+		}
+		intervalSeconds := int64(setting.GetMultiKeyAutoEnableMinutes()) * 60
+		if intervalSeconds <= 0 || !shouldRunMultiKeyAutoEnable(channel.Id, intervalSeconds, now) {
+			continue
+		}
+		keys := channel.GetKeys()
+		for index := range keys {
+			if !shouldAutoEnableMultiKeyIndex(channel, index) {
+				continue
+			}
+			result := testChannelWithOptions(channel, setting.MultiKeyAutoEnableModel, "", shouldUseStreamForAutomaticChannelTest(channel), testChannelOptions{forceMultiKeyIndex: index})
+			if result.localErr == nil && result.newAPIError == nil {
+				enabled, err := model.EnableAutoDisabledChannelMultiKeyIndex(channel.Id, index)
+				if err != nil {
+					common.SysError(fmt.Sprintf("failed to enable multi-key index: channel_id=%d key_index=%d error=%v", channel.Id, index, err))
+				} else if enabled {
+					common.SysLog(fmt.Sprintf("multi-key auto enable succeeded: channel_id=%d key_index=%d", channel.Id, index))
+					model.InitChannelCache()
+				}
+			}
+			time.Sleep(common.RequestInterval)
+		}
+	}
+}
+
+func automaticallyEnableMultiKeys() {
+	for {
+		runMultiKeyAutoEnableOnce()
+		time.Sleep(1 * time.Minute)
+	}
+}
+
 func AutomaticallyTestChannels() {
 	// 只在Master节点定时测试渠道
 	if !common.IsMasterNode {
 		return
 	}
 	autoTestChannelsOnce.Do(func() {
+		gopool.Go(automaticallyEnableMultiKeys)
 		for {
 			if !operation_setting.GetMonitorSetting().AutoTestChannelEnabled {
 				time.Sleep(1 * time.Minute)

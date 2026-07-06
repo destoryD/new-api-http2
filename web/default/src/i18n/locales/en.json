@@ -4570,5 +4570,11 @@
     "Are you sure you want to clear the used quota for \"{{name}}\"?": "Are you sure you want to clear the used quota for \"{{name}}\"?",
     "Channel used quota cleared": "Channel used quota cleared",
     "Failed to clear channel used quota": "Failed to clear channel used quota"
-  }
+  },
+  "Auto-enable Disabled Multi-Keys": "Auto-enable disabled multi-keys",
+  "Periodically test automatically disabled keys and enable them again when the test succeeds": "Periodically test automatically disabled keys and enable them again when the test succeeds",
+  "Auto-enable Check Interval Minutes": "Auto-enable check interval minutes",
+  "How often to test automatically disabled keys for this channel": "How often to test automatically disabled keys for this channel",
+  "Auto-enable Test Model": "Auto-enable test model",
+  "Model used to test disabled keys; empty uses the channel test model or first configured model": "Model used to test disabled keys; empty uses the channel test model or first configured model"
 }

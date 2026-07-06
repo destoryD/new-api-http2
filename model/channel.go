@@ -392,6 +392,72 @@ func (channel *Channel) SaveChannelInfo() error {
 	return DB.Model(channel).Update("channel_info", channel.ChannelInfo).Error
 }
 
+func EnableChannelMultiKeyIndex(channelID int, keyIndex int) (bool, error) {
+	return enableChannelMultiKeyIndex(channelID, keyIndex, false)
+}
+
+func EnableAutoDisabledChannelMultiKeyIndex(channelID int, keyIndex int) (bool, error) {
+	return enableChannelMultiKeyIndex(channelID, keyIndex, true)
+}
+
+func enableChannelMultiKeyIndex(channelID int, keyIndex int, requireAutoDisabled bool) (bool, error) {
+	channel, err := GetChannelById(channelID, true)
+	if err != nil {
+		return false, err
+	}
+	if !channel.ChannelInfo.IsMultiKey {
+		return false, errors.New("channel is not a multi-key channel")
+	}
+	keys := channel.GetKeys()
+	if keyIndex < 0 || keyIndex >= len(keys) {
+		return false, errors.New("multi-key index out of range")
+	}
+	pollingLock := GetChannelPollingLock(channelID)
+	pollingLock.Lock()
+	defer pollingLock.Unlock()
+	if requireAutoDisabled {
+		hasReason := channel.ChannelInfo.MultiKeyDisabledReason != nil && strings.TrimSpace(channel.ChannelInfo.MultiKeyDisabledReason[keyIndex]) != ""
+		hasDisabledTime := channel.ChannelInfo.MultiKeyDisabledTime != nil && channel.ChannelInfo.MultiKeyDisabledTime[keyIndex] > 0
+		if !hasReason && !hasDisabledTime {
+			return false, nil
+		}
+	}
+	wasDisabled := false
+	if channel.ChannelInfo.MultiKeyStatusList != nil {
+		if status, ok := channel.ChannelInfo.MultiKeyStatusList[keyIndex]; ok && status != common.ChannelStatusEnabled {
+			wasDisabled = true
+		}
+		delete(channel.ChannelInfo.MultiKeyStatusList, keyIndex)
+	}
+	if channel.ChannelInfo.MultiKeyDisabledTime != nil {
+		delete(channel.ChannelInfo.MultiKeyDisabledTime, keyIndex)
+	}
+	if channel.ChannelInfo.MultiKeyDisabledReason != nil {
+		delete(channel.ChannelInfo.MultiKeyDisabledReason, keyIndex)
+	}
+	statusChanged := false
+	if channel.Status == common.ChannelStatusAutoDisabled {
+		channel.Status = common.ChannelStatusEnabled
+		info := channel.GetOtherInfo()
+		delete(info, "status_reason")
+		delete(info, "status_time")
+		channel.SetOtherInfo(info)
+		statusChanged = true
+	}
+	if !wasDisabled && !statusChanged {
+		return false, nil
+	}
+	if err := channel.SaveWithoutKey(); err != nil {
+		return false, err
+	}
+	if statusChanged {
+		if err := UpdateAbilityStatus(channelID, true); err != nil {
+			common.SysLog(fmt.Sprintf("failed to update ability status: channel_id=%d, error=%v", channelID, err))
+		}
+	}
+	return true, nil
+}
+
 func (channel *Channel) AdvanceMultiKeyPollingIndexAfter(index int) {
 	if channel == nil || !channel.ChannelInfo.IsMultiKey || channel.ChannelInfo.MultiKeyMode != constant.MultiKeyModePolling {
 		return

@@ -2716,5 +2716,11 @@
     "Are you sure you want to clear the used quota for \"{{name}}\"?": "确定要清空渠道“{{name}}”的已用额度吗？",
     "Channel used quota cleared": "渠道已用额度已清空",
     "Failed to clear channel used quota": "清空渠道已用额度失败"
-  }
+  },
+  "Auto-enable Disabled Multi-Keys": "自动启用已禁用密钥",
+  "Periodically test automatically disabled keys and enable them again when the test succeeds": "定时检测自动禁用的密钥，并在测试成功后重新启用",
+  "Auto-enable Check Interval Minutes": "自动启用检测间隔分钟",
+  "How often to test automatically disabled keys for this channel": "此渠道自动禁用密钥的检测频率",
+  "Auto-enable Test Model": "自动启用测试模型",
+  "Model used to test disabled keys; empty uses the channel test model or first configured model": "用于检测禁用密钥的模型；留空则使用渠道测试模型或首个配置模型"
 }

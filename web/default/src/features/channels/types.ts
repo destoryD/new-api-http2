@@ -93,6 +93,9 @@ export interface ChannelSettings {
   multi_key_429_skip_seconds?: number
   multi_key_429_model_scoped?: boolean
   multi_key_429_retry_key_limit?: number
+  multi_key_auto_enable_enabled?: boolean
+  multi_key_auto_enable_minutes?: number
+  multi_key_auto_enable_model?: string
   model_rpm_limits?: Record<string, number>
   proxy?: string
   proxy_pool?: string[]

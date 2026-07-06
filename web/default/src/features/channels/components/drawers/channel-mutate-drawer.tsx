@@ -252,6 +252,9 @@ function hasAdvancedSettingsValues(values: ChannelFormValues): boolean {
     values.multi_key_429_skip_seconds !== 60 ||
     values.multi_key_429_model_scoped ||
     values.multi_key_429_retry_key_limit ||
+    values.multi_key_auto_enable_enabled ||
+    values.multi_key_auto_enable_minutes !== 10 ||
+    values.multi_key_auto_enable_model?.trim() ||
     values.model_rpm_limits?.trim() ||
     values.pass_through_body_enabled ||
     values.system_prompt_override ||
@@ -3567,6 +3570,91 @@ export function ChannelMutateDrawer({
                             <FormDescription>
                               {t(
                                 'Maximum number of later keys to try after a sequential multi-key 429; 0 tries all remaining keys'
+                              )}
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='multi_key_auto_enable_enabled'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between px-4 py-3'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>
+                                {t('Auto-enable Disabled Multi-Keys')}
+                              </FormLabel>
+                              <FormDescription>
+                                {t(
+                                  'Periodically test automatically disabled keys and enable them again when the test succeeds'
+                                )}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='multi_key_auto_enable_minutes'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>
+                              {t('Auto-enable Check Interval Minutes')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type='number'
+                                min={1}
+                                step={1}
+                                inputMode='numeric'
+                                placeholder='10'
+                                value={field.value ?? 10}
+                                onBlur={field.onBlur}
+                                ref={field.ref}
+                                onChange={(event) => {
+                                  const value = Math.max(
+                                    1,
+                                    Math.floor(Number(event.target.value) || 10)
+                                  )
+                                  field.onChange(value)
+                                }}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'How often to test automatically disabled keys for this channel'
+                              )}
+                            </FormDescription>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name='multi_key_auto_enable_model'
+                        render={({ field }) => (
+                          <FormItem className='px-4 py-3'>
+                            <FormLabel>
+                              {t('Auto-enable Test Model')}
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder='gpt-4o-mini'
+                                {...field}
+                                value={field.value || ''}
+                              />
+                            </FormControl>
+                            <FormDescription>
+                              {t(
+                                'Model used to test disabled keys; empty uses the channel test model or first configured model'
                               )}
                             </FormDescription>
                           </FormItem>

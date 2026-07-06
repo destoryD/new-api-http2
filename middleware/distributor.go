@@ -383,9 +383,22 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 		}
 		common.SetContextKey(c, constant.ContextKeyChannelMultiKeyStartIndex, -1)
 	}
-	key, index, newAPIError := channel.GetNextEnabledKeyForModelStartingAt(modelName, startIndex)
-	if newAPIError != nil {
-		return newAPIError
+	var key string
+	var index int
+	var newAPIError *types.NewAPIError
+	forcedIndex := common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyForcedIndex)
+	if channel.ChannelInfo.IsMultiKey && forcedIndex >= 0 {
+		keys := channel.GetKeys()
+		if forcedIndex >= len(keys) {
+			return types.NewError(fmt.Errorf("multi-key index %d is out of range", forcedIndex), types.ErrorCodeChannelNoAvailableKey, types.ErrOptionWithSkipRetry())
+		}
+		key = keys[forcedIndex]
+		index = forcedIndex
+	} else {
+		key, index, newAPIError = channel.GetNextEnabledKeyForModelStartingAt(modelName, startIndex)
+		if newAPIError != nil {
+			return newAPIError
+		}
 	}
 	if channel.ChannelInfo.IsMultiKey {
 		common.SetContextKey(c, constant.ContextKeyChannelIsMultiKey, true)

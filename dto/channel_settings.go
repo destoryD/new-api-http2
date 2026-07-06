@@ -24,6 +24,9 @@ type ChannelSettings struct {
 	MultiKey429SkipSeconds    int            `json:"multi_key_429_skip_seconds,omitempty"`
 	MultiKey429ModelScoped    bool           `json:"multi_key_429_model_scoped,omitempty"`
 	MultiKey429RetryKeyLimit  int            `json:"multi_key_429_retry_key_limit,omitempty"`
+	MultiKeyAutoEnableEnabled bool           `json:"multi_key_auto_enable_enabled,omitempty"`
+	MultiKeyAutoEnableMinutes int            `json:"multi_key_auto_enable_minutes,omitempty"`
+	MultiKeyAutoEnableModel   string         `json:"multi_key_auto_enable_model,omitempty"`
 	OverrideErrorAs429        bool           `json:"override_error_as_429,omitempty"`
 }
 
@@ -32,6 +35,13 @@ func (s ChannelSettings) GetMultiKey429SkipSeconds() int {
 		return 60
 	}
 	return s.MultiKey429SkipSeconds
+}
+
+func (s ChannelSettings) GetMultiKeyAutoEnableMinutes() int {
+	if s.MultiKeyAutoEnableMinutes <= 0 {
+		return 10
+	}
+	return s.MultiKeyAutoEnableMinutes
 }
 
 func (s ChannelSettings) GetMultiKey429RetryKeyLimit(keyCount int) int {

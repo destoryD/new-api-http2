@@ -1458,20 +1458,17 @@ func ManageMultiKeys(c *gin.Context) {
 			return
 		}
 
-		// 从状态列表中删除该密钥的记录，使其回到默认启用状态
-		if channel.ChannelInfo.MultiKeyStatusList != nil {
-			delete(channel.ChannelInfo.MultiKeyStatusList, keyIndex)
-		}
-		if channel.ChannelInfo.MultiKeyDisabledTime != nil {
-			delete(channel.ChannelInfo.MultiKeyDisabledTime, keyIndex)
-		}
-		if channel.ChannelInfo.MultiKeyDisabledReason != nil {
-			delete(channel.ChannelInfo.MultiKeyDisabledReason, keyIndex)
-		}
-
-		err = channel.Update()
+		// Enable through the shared helper so auto-disabled channels are restored too.
+		enabled, err := model.EnableChannelMultiKeyIndex(channel.Id, keyIndex)
 		if err != nil {
 			common.ApiError(c, err)
+			return
+		}
+		if !enabled {
+			c.JSON(http.StatusOK, gin.H{
+				"success": false,
+				"message": "key is already enabled",
+			})
 			return
 		}
 

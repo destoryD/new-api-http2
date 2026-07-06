@@ -335,6 +335,9 @@ const EditChannelModal = (props) => {
     multi_key_429_skip_seconds: 60,
     multi_key_429_model_scoped: false,
     multi_key_429_retry_key_limit: 0,
+    multi_key_auto_enable_enabled: false,
+    multi_key_auto_enable_minutes: 10,
+    multi_key_auto_enable_model: '',
     model_rpm_limits: '',
     use_global_proxy_pool: false,
     proxy: '',
@@ -675,6 +678,9 @@ const EditChannelModal = (props) => {
     multi_key_429_skip_seconds: 60,
     multi_key_429_model_scoped: false,
     multi_key_429_retry_key_limit: 0,
+    multi_key_auto_enable_enabled: false,
+    multi_key_auto_enable_minutes: 10,
+    multi_key_auto_enable_model: '',
     model_rpm_limits: '',
     use_global_proxy_pool: false,
     proxy: '',
@@ -1084,6 +1090,14 @@ const EditChannelModal = (props) => {
             0,
             Math.floor(Number(parsedSettings.multi_key_429_retry_key_limit) || 0),
           );
+          data.multi_key_auto_enable_enabled =
+            parsedSettings.multi_key_auto_enable_enabled === true;
+          data.multi_key_auto_enable_minutes = Math.max(
+            1,
+            Math.floor(Number(parsedSettings.multi_key_auto_enable_minutes) || 10),
+          );
+          data.multi_key_auto_enable_model =
+            parsedSettings.multi_key_auto_enable_model || '';
         } catch (error) {
           console.error('解析渠道设置失败:', error);
           data.force_format = false;
@@ -1099,6 +1113,9 @@ const EditChannelModal = (props) => {
           data.multi_key_429_skip_seconds = 60;
           data.multi_key_429_model_scoped = false;
           data.multi_key_429_retry_key_limit = 0;
+          data.multi_key_auto_enable_enabled = false;
+          data.multi_key_auto_enable_minutes = 10;
+          data.multi_key_auto_enable_model = '';
           data.model_rpm_limits = '';
           data.use_global_proxy_pool = false;
           data.proxy = '';
@@ -1252,6 +1269,10 @@ const EditChannelModal = (props) => {
         multi_key_429_skip_seconds: data.multi_key_429_skip_seconds,
         multi_key_429_model_scoped: data.multi_key_429_model_scoped || false,
         multi_key_429_retry_key_limit: data.multi_key_429_retry_key_limit || 0,
+        multi_key_auto_enable_enabled:
+          data.multi_key_auto_enable_enabled === true,
+        multi_key_auto_enable_minutes: data.multi_key_auto_enable_minutes || 10,
+        multi_key_auto_enable_model: data.multi_key_auto_enable_model || '',
         model_rpm_limits: data.model_rpm_limits,
         use_global_proxy_pool: data.use_global_proxy_pool,
         proxy: data.proxy,
@@ -1316,6 +1337,9 @@ const EditChannelModal = (props) => {
         data.multi_key_429_skip_seconds !== 60 ||
         data.multi_key_429_model_scoped ||
         data.multi_key_429_retry_key_limit ||
+        data.multi_key_auto_enable_enabled ||
+        data.multi_key_auto_enable_minutes !== 10 ||
+        data.multi_key_auto_enable_model ||
         (data.model_rpm_limits && data.model_rpm_limits.trim()) ||
         data.pass_through_body_enabled ||
         data.force_format ||
@@ -2080,6 +2104,14 @@ const EditChannelModal = (props) => {
         0,
         Math.floor(Number(localInputs.multi_key_429_retry_key_limit) || 0),
       ),
+      multi_key_auto_enable_enabled:
+        localInputs.multi_key_auto_enable_enabled === true,
+      multi_key_auto_enable_minutes: Math.max(
+        1,
+        Math.floor(Number(localInputs.multi_key_auto_enable_minutes) || 10),
+      ),
+      multi_key_auto_enable_model:
+        (localInputs.multi_key_auto_enable_model || '').trim(),
       model_rpm_limits: parseModelRPMLimits(localInputs.model_rpm_limits),
       use_global_proxy_pool: localInputs.use_global_proxy_pool === true,
       proxy: localInputs.proxy || '',
@@ -2181,6 +2213,9 @@ const EditChannelModal = (props) => {
     delete localInputs.multi_key_429_skip_seconds;
     delete localInputs.multi_key_429_model_scoped;
     delete localInputs.multi_key_429_retry_key_limit;
+    delete localInputs.multi_key_auto_enable_enabled;
+    delete localInputs.multi_key_auto_enable_minutes;
+    delete localInputs.multi_key_auto_enable_model;
     delete localInputs.model_rpm_limits;
     delete localInputs.use_global_proxy_pool;
     delete localInputs.proxy;
@@ -2894,6 +2929,9 @@ const EditChannelModal = (props) => {
                   <Form.InputNumber field='multi_key_429_skip_seconds' label={t('按序 429 跳过时长')} min={0} step={1} placeholder='60' onNumberChange={(value) => handleChannelSettingsChange('multi_key_429_skip_seconds', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('多密钥按序模式下，密钥返回 429 后临时跳过的秒数；0 表示使用 60 秒')} />
                   <Form.Switch field='multi_key_429_model_scoped' label={t('按模型隔离 429 跳过')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('multi_key_429_model_scoped', value)} extraText={t('开启后，多密钥按序模式下的 429 跳过只对当前模型生效，其他模型仍可继续使用该密钥')} />
                   <Form.InputNumber field='multi_key_429_retry_key_limit' label={t('按序 429 重试密钥数')} min={0} step={1} placeholder='0' onNumberChange={(value) => handleChannelSettingsChange('multi_key_429_retry_key_limit', Math.max(0, Math.floor(Number(value) || 0)))} extraText={t('多密钥按序模式下，某个密钥返回 429 后最多继续尝试后续密钥的数量；0 表示尝试所有剩余密钥')} />
+                  <Form.Switch field='multi_key_auto_enable_enabled' label={t('Auto-enable Disabled Multi-Keys')} checkedText='ON' uncheckedText='OFF' onChange={(value) => handleChannelSettingsChange('multi_key_auto_enable_enabled', value)} extraText={t('Periodically test automatically disabled keys and enable them again when the test succeeds')} />
+                  <Form.InputNumber field='multi_key_auto_enable_minutes' label={t('Auto-enable Check Interval Minutes')} min={1} step={1} placeholder='10' onNumberChange={(value) => handleChannelSettingsChange('multi_key_auto_enable_minutes', Math.max(1, Math.floor(Number(value) || 10)))} extraText={t('How often to test automatically disabled keys for this channel')} />
+                  <Form.Input field='multi_key_auto_enable_model' label={t('Auto-enable Test Model')} placeholder='gpt-4o-mini' onChange={(value) => handleChannelSettingsChange('multi_key_auto_enable_model', value)} extraText={t('Model used to test disabled keys; empty uses the channel test model or first configured model')} />
                   <Form.TextArea field='model_rpm_limits' label={t('模型 RPM 限制')} placeholder='{"gpt-4o": 60}' onChange={(value) => handleChannelSettingsChange('model_rpm_limits', value)} autosize showClear extraText={t('按模型限制该渠道每分钟请求数，JSON 对象，留空表示不限制')} />
                   <Form.Switch field='pass_through_body_enabled' label={t('透传请求体')} checkedText={t('开')} uncheckedText={t('关')} onChange={(value) => handleChannelSettingsChange('pass_through_body_enabled', value)} extraText={t('启用请求体透传功能')} />
 
