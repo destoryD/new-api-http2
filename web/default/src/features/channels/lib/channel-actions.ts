@@ -35,6 +35,7 @@ import {
   testAllChannels,
   updateAllChannelsBalance,
   updateChannelBalance,
+  resetChannelUsedQuota,
 } from '../api'
 import { CHANNEL_STATUS, ERROR_MESSAGES, SUCCESS_MESSAGES } from '../constants'
 import type { CopyChannelParams } from '../types'
@@ -266,6 +267,29 @@ export async function handleCopyChannel(
 /**
  * Update channel balance
  */
+export async function handleResetChannelUsedQuota(
+  id: number,
+  queryClient?: QueryClient,
+  onSuccess?: () => void
+): Promise<void> {
+  try {
+    const response = await resetChannelUsedQuota(id)
+    if (response.success) {
+      toast.success(i18next.t('Channel used quota cleared'))
+      queryClient?.invalidateQueries({ queryKey: channelsQueryKeys.lists() })
+      onSuccess?.()
+    } else {
+      toast.error(response.message || i18next.t('Failed to clear channel used quota'))
+    }
+  } catch (_error: unknown) {
+    toast.error(
+      _error instanceof Error
+        ? _error.message
+        : i18next.t('Failed to clear channel used quota')
+    )
+  }
+}
+
 export async function handleUpdateChannelBalance(
   id: number,
   queryClient?: QueryClient,

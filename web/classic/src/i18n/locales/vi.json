@@ -4307,6 +4307,10 @@
     "{{seconds}}s remaining": "{{seconds}}s remaining",
     "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready",
     "IP switch cooldown seconds": "Thời gian chờ đổi IP (giây)",
-    "After a key switches proxy IP, it must wait this many seconds before switching again.": "Sau khi một key đổi IP proxy, key đó phải chờ số giây này trước khi đổi lại."
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "Sau khi một key đổi IP proxy, key đó phải chờ số giây này trước khi đổi lại.",
+    "Clear Used Quota": "Xóa mức đã dùng",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "Bạn có chắc muốn xóa mức đã dùng của \"{{name}}\" không?",
+    "Channel used quota cleared": "Đã xóa mức đã dùng của kênh",
+    "Failed to clear channel used quota": "Không thể xóa mức đã dùng của kênh"
   }
 }

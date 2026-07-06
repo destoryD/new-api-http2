@@ -38,6 +38,7 @@ import {
   showSuccess,
   showError,
   showInfo,
+  API,
 } from '../../../helpers';
 import {
   CHANNEL_OPTIONS,
@@ -722,6 +723,34 @@ export const getChannelsColumns = ({
                   title: t('确定是否要复制此渠道？'),
                   content: t('复制渠道的所有信息'),
                   onOk: () => copySelectedChannel(record),
+                });
+              },
+            },
+            {
+              node: 'item',
+              name: t('Clear Used Quota'),
+              type: 'danger',
+              onClick: () => {
+                Modal.confirm({
+                  title: t('Clear Used Quota'),
+                  content: t(
+                    'Are you sure you want to clear the used quota for "{{name}}"?',
+                    { name: record.name },
+                  ),
+                  onOk: async () => {
+                    const res = await API.post(
+                      '/api/channel/' + record.id + '/used_quota/reset',
+                    );
+                    if (res.data.success) {
+                      showSuccess(t('Channel used quota cleared'));
+                      refresh();
+                    } else {
+                      showError(
+                        res.data.message ||
+                          t('Failed to clear channel used quota'),
+                      );
+                    }
+                  },
                 });
               },
             },

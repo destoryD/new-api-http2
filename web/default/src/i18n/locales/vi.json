@@ -4565,6 +4565,10 @@
     "Zero retention": "Không lưu dữ liệu",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "Clear Used Quota": "Xóa mức đã dùng",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "Bạn có chắc muốn xóa mức đã dùng của \"{{name}}\" không?",
+    "Channel used quota cleared": "Đã xóa mức đã dùng của kênh",
+    "Failed to clear channel used quota": "Không thể xóa mức đã dùng của kênh"
   }
 }

@@ -3754,6 +3754,10 @@
     "{{usable}} of {{total}} proxies are ready": "{{total}} 個代理中 {{usable}} 個可用",
     "Refreshing...": "刷新中...",
     "IP switch cooldown seconds": "換 IP 冷卻秒數",
-    "After a key switches proxy IP, it must wait this many seconds before switching again.": "每個 key 更換代理 IP 後，需等待這個冷卻時間才能再次更換。"
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "每個 key 更換代理 IP 後，需等待這個冷卻時間才能再次更換。",
+    "Clear Used Quota": "清空用量",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "確定要清空渠道「{{name}}」的已用額度嗎？",
+    "Channel used quota cleared": "渠道已用額度已清空",
+    "Failed to clear channel used quota": "清空渠道已用額度失敗"
   }
 }

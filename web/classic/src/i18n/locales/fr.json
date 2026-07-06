@@ -3771,6 +3771,10 @@
     "{{seconds}}s remaining": "{{seconds}}s remaining",
     "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready",
     "IP switch cooldown seconds": "Délai de changement d’IP en secondes",
-    "After a key switches proxy IP, it must wait this many seconds before switching again.": "Après qu’une clé a changé d’IP proxy, elle doit attendre ce nombre de secondes avant de changer à nouveau."
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "Après qu’une clé a changé d’IP proxy, elle doit attendre ce nombre de secondes avant de changer à nouveau.",
+    "Clear Used Quota": "Effacer le quota utilisé",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "Voulez-vous vraiment effacer le quota utilisé pour « {{name}} » ?",
+    "Channel used quota cleared": "Quota utilisé du canal effacé",
+    "Failed to clear channel used quota": "Échec de l’effacement du quota utilisé du canal"
   }
 }

@@ -4565,6 +4565,10 @@
     "Zero retention": "データ保持なし",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V 4",
-    "Zoom": "ズーム"
+    "Zoom": "ズーム",
+    "Clear Used Quota": "使用済みクォータをクリア",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "「{{name}}」の使用済みクォータをクリアしますか？",
+    "Channel used quota cleared": "チャネルの使用済みクォータをクリアしました",
+    "Failed to clear channel used quota": "チャネルの使用済みクォータのクリアに失敗しました"
   }
 }

@@ -3909,6 +3909,10 @@
     "{{seconds}}s remaining": "{{seconds}}s remaining",
     "{{usable}} of {{total}} proxies are ready": "{{usable}} of {{total}} proxies are ready",
     "IP switch cooldown seconds": "IP switch cooldown seconds",
-    "After a key switches proxy IP, it must wait this many seconds before switching again.": "After a key switches proxy IP, it must wait this many seconds before switching again."
+    "After a key switches proxy IP, it must wait this many seconds before switching again.": "After a key switches proxy IP, it must wait this many seconds before switching again.",
+    "Clear Used Quota": "Clear Used Quota",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "Are you sure you want to clear the used quota for \"{{name}}\"?",
+    "Channel used quota cleared": "Channel used quota cleared",
+    "Failed to clear channel used quota": "Failed to clear channel used quota"
   }
 }

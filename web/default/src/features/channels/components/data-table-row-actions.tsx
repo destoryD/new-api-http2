@@ -27,6 +27,7 @@ import {
   Gauge,
   DollarSign,
   Download,
+  Eraser,
   Copy,
   Power,
   PowerOff,
@@ -57,6 +58,7 @@ import {
   handleDeleteChannel,
   handleTestChannel,
   handleToggleChannelStatus,
+  handleResetChannelUsedQuota,
   isChannelEnabled,
   isMultiKeyChannel,
 } from '../lib'
@@ -74,6 +76,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow, upstream } = useChannels()
   const queryClient = useQueryClient()
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [resetUsedQuotaConfirmOpen, setResetUsedQuotaConfirmOpen] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
   const [isTogglingStatus, setIsTogglingStatus] = useState(false)
 
@@ -284,6 +287,19 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
             </DropdownMenuShortcut>
           </DropdownMenuItem>
 
+          {/* Clear Used Quota */}
+          <DropdownMenuItem
+            onSelect={(e) => {
+              e.preventDefault()
+              setResetUsedQuotaConfirmOpen(true)
+            }}
+          >
+            {t('Clear Used Quota')}
+            <DropdownMenuShortcut>
+              <Eraser size={16} />
+            </DropdownMenuShortcut>
+          </DropdownMenuItem>
+
           {/* Manage Keys (only for multi-key channels) */}
           {isMultiKey && (
             <DropdownMenuItem onClick={handleManageKeys}>
@@ -311,6 +327,21 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <ConfirmDialog
+        open={resetUsedQuotaConfirmOpen}
+        onOpenChange={setResetUsedQuotaConfirmOpen}
+        title={t('Clear Used Quota')}
+        desc={t('Are you sure you want to clear the used quota for "{{name}}"?', {
+          name: channel.name,
+        })}
+        confirmText={t('Clear')}
+        destructive
+        handleConfirm={() => {
+          handleResetChannelUsedQuota(channel.id, queryClient)
+          setResetUsedQuotaConfirmOpen(false)
+        }}
+      />
 
       <ConfirmDialog
         open={deleteConfirmOpen}

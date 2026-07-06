@@ -4565,6 +4565,10 @@
     "Zero retention": "Zero retention",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "Clear Used Quota": "Clear Used Quota",
+    "Are you sure you want to clear the used quota for \"{{name}}\"?": "Are you sure you want to clear the used quota for \"{{name}}\"?",
+    "Channel used quota cleared": "Channel used quota cleared",
+    "Failed to clear channel used quota": "Failed to clear channel used quota"
   }
 }
