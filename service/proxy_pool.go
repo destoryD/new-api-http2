@@ -167,10 +167,18 @@ func ReportGlobalProxyPoolFailure(setting dto.ChannelSettings, channelID int, ke
 }
 
 func SwitchGlobalProxyPoolProxy(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string) (dto.ChannelSettings, bool, error) {
+	return switchGlobalProxyPoolProxy(setting, channelID, keyIndex, apiKey, false)
+}
+
+func SwitchGlobalProxyPoolProxyAfterCooldown(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string) (dto.ChannelSettings, bool, error) {
+	return switchGlobalProxyPoolProxy(setting, channelID, keyIndex, apiKey, true)
+}
+
+func switchGlobalProxyPoolProxy(setting dto.ChannelSettings, channelID int, keyIndex int, apiKey string, requireAssignmentCooldown bool) (dto.ChannelSettings, bool, error) {
 	if !setting.UseGlobalProxyPool || strings.TrimSpace(setting.Proxy) == "" {
 		return setting, false, nil
 	}
-	proxyURL, err := globalProxyPool.reassign(channelID, keyIndex, apiKey, setting.Proxy)
+	proxyURL, err := globalProxyPool.reassign(channelID, keyIndex, apiKey, setting.Proxy, requireAssignmentCooldown)
 	if err != nil {
 		return setting, false, err
 	}
@@ -282,19 +290,27 @@ func (m *globalProxyPoolManager) assign(channelID int, keyIndex int, apiKey stri
 	return proxyURL, nil
 }
 
-func (m *globalProxyPoolManager) reassign(channelID int, keyIndex int, apiKey string, failedProxy string) (string, error) {
+func (m *globalProxyPoolManager) reassign(channelID int, keyIndex int, apiKey string, failedProxy string, requireAssignmentCooldown bool) (string, error) {
 	setting := operation_setting.GetProxyPoolSetting()
 	if !setting.Enabled {
 		return "", errors.New("global proxy pool is disabled")
 	}
 	operation_setting.NormalizeProxyPoolSetting(setting)
 	assignmentKey := buildProxyAssignmentKey(channelID, keyIndex, apiKey)
+	cooldown := time.Duration(setting.AssignmentCooldownSeconds) * time.Second
 	m.Lock()
 	defer m.Unlock()
 	m.pruneRuntimeStateLocked(setting.Proxies)
-	proxyURL := m.pickProxyLocked(setting.Proxies, time.Duration(setting.AssignmentCooldownSeconds)*time.Second, failedProxy)
+	if requireAssignmentCooldown && cooldown > 0 {
+		if assignment, ok := m.assignments[assignmentKey]; ok && time.Since(assignment.AssignedAt) < cooldown {
+			return assignment.ProxyURL, nil
+		}
+	}
+	proxyURL := m.pickProxyLocked(setting.Proxies, cooldown, failedProxy)
 	if proxyURL == "" {
-		delete(m.assignments, assignmentKey)
+		if !requireAssignmentCooldown {
+			delete(m.assignments, assignmentKey)
+		}
 		return "", errors.New("global proxy pool has no replacement proxy resources")
 	}
 	m.assignments[assignmentKey] = proxyAssignment{ProxyURL: proxyURL, AssignedAt: time.Now()}
