@@ -3775,12 +3775,12 @@
     "Clear Used Quota": "Effacer le quota utilisé",
     "Are you sure you want to clear the used quota for \"{{name}}\"?": "Voulez-vous vraiment effacer le quota utilisé pour « {{name}} » ?",
     "Channel used quota cleared": "Quota utilisé du canal effacé",
-    "Failed to clear channel used quota": "Échec de l’effacement du quota utilisé du canal"
-  },
-  "Auto-enable Disabled Multi-Keys": "Activer automatiquement les cl?s multiples d?sactiv?es",
-  "Periodically test automatically disabled keys and enable them again when the test succeeds": "Tester p?riodiquement les cl?s d?sactiv?es automatiquement et les r?activer lorsque le test r?ussit",
-  "Auto-enable Check Interval Minutes": "Intervalle de v?rification automatique en minutes",
-  "How often to test automatically disabled keys for this channel": "Fr?quence de test des cl?s d?sactiv?es automatiquement pour ce canal",
-  "Auto-enable Test Model": "Mod?le de test pour la r?activation automatique",
-  "Model used to test disabled keys; empty uses the channel test model or first configured model": "Mod?le utilis? pour tester les cl?s d?sactiv?es ; vide utilise le mod?le de test du canal ou le premier mod?le configur?"
+    "Failed to clear channel used quota": "Échec de l’effacement du quota utilisé du canal",
+    "Auto-enable Disabled Multi-Keys": "Activer automatiquement les cles multiples desactivees",
+    "Periodically test automatically disabled keys and enable them again when the test succeeds": "Tester periodiquement les cles desactivees automatiquement et les reactiver lorsque le test reussit",
+    "Auto-enable Check Interval Minutes": "Intervalle de verification automatique en minutes",
+    "How often to test automatically disabled keys for this channel": "Frequence de test des cles desactivees automatiquement pour ce canal",
+    "Auto-enable Test Model": "Modele de test pour la reactivation automatique",
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Modele utilise pour tester les cles desactivees ; vide utilise le modele de test du canal ou le premier modele configure"
+  }
 }

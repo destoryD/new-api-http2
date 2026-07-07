@@ -4311,12 +4311,12 @@
     "Clear Used Quota": "Xóa mức đã dùng",
     "Are you sure you want to clear the used quota for \"{{name}}\"?": "Bạn có chắc muốn xóa mức đã dùng của \"{{name}}\" không?",
     "Channel used quota cleared": "Đã xóa mức đã dùng của kênh",
-    "Failed to clear channel used quota": "Không thể xóa mức đã dùng của kênh"
-  },
-  "Auto-enable Disabled Multi-Keys": "T? ??ng b?t l?i c?c kh?a ?a kh?a ?? t?t",
-  "Periodically test automatically disabled keys and enable them again when the test succeeds": "Ki?m tra ??nh k? c?c kh?a b? t? ??ng t?t v? b?t l?i khi ki?m tra th?nh c?ng",
-  "Auto-enable Check Interval Minutes": "Kho?ng ki?m tra t? ??ng b?t l?i theo ph?t",
-  "How often to test automatically disabled keys for this channel": "T?n su?t ki?m tra c?c kh?a b? t? ??ng t?t c?a k?nh n?y",
-  "Auto-enable Test Model": "M? h?nh ki?m tra ?? t? ??ng b?t l?i",
-  "Model used to test disabled keys; empty uses the channel test model or first configured model": "M? h?nh d?ng ?? ki?m tra kh?a b? t?t; ?? tr?ng s? d?ng m? h?nh ki?m tra c?a k?nh ho?c m? h?nh ???c c?u h?nh ??u ti?n"
+    "Failed to clear channel used quota": "Không thể xóa mức đã dùng của kênh",
+    "Auto-enable Disabled Multi-Keys": "Tu dong bat lai cac khoa da khoa da tat",
+    "Periodically test automatically disabled keys and enable them again when the test succeeds": "Kiem tra dinh ky cac khoa bi tu dong tat va bat lai khi kiem tra thanh cong",
+    "Auto-enable Check Interval Minutes": "Khoang kiem tra tu dong bat lai theo phut",
+    "How often to test automatically disabled keys for this channel": "Tan suat kiem tra cac khoa bi tu dong tat cua kenh nay",
+    "Auto-enable Test Model": "Mo hinh kiem tra de tu dong bat lai",
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Mo hinh dung de kiem tra khoa bi tat; de trong se dung mo hinh kiem tra cua kenh hoac mo hinh duoc cau hinh dau tien"
+  }
 }
