@@ -583,12 +583,19 @@ func ResponseClaude2OpenAI(claudeResponse *dto.ClaudeResponse) *dto.OpenAITextRe
 }
 
 type ClaudeResponseInfo struct {
-	ResponseId   string
-	Created      int64
-	Model        string
-	ResponseText strings.Builder
-	Usage        *dto.Usage
-	Done         bool
+	ResponseId          string
+	Created             int64
+	Model               string
+	ResponseText        strings.Builder
+	Usage               *dto.Usage
+	Done                bool
+	PendingMessageDelta *claudeTerminalStreamEvent
+	PendingMessageStop  *claudeTerminalStreamEvent
+}
+
+type claudeTerminalStreamEvent struct {
+	response dto.ClaudeResponse
+	data     string
 }
 
 type claudeContentBlockAccumulator struct {
@@ -690,6 +697,7 @@ func patchClaudeMessageDeltaUsageData(data string, usage *dto.ClaudeUsage) strin
 		return data
 	}
 
+	data = setMessageDeltaUsageInt(data, "usage.output_tokens", usage.OutputTokens)
 	data = setMessageDeltaUsageInt(data, "usage.input_tokens", usage.InputTokens)
 	data = setMessageDeltaUsageInt(data, "usage.cache_read_input_tokens", usage.CacheReadInputTokens)
 	data = setMessageDeltaUsageInt(data, "usage.cache_creation_input_tokens", usage.CacheCreationInputTokens)
@@ -700,6 +708,79 @@ func patchClaudeMessageDeltaUsageData(data string, usage *dto.ClaudeUsage) strin
 	}
 
 	return data
+}
+
+func buildFinalMessageDeltaUsage(claudeResponse *dto.ClaudeResponse, claudeInfo *ClaudeResponseInfo) *dto.ClaudeUsage {
+	usage := buildMessageDeltaPatchUsage(claudeResponse, claudeInfo)
+	if claudeInfo == nil || claudeInfo.Usage == nil {
+		return usage
+	}
+	if usage.OutputTokens == 0 {
+		usage.OutputTokens = claudeInfo.Usage.CompletionTokens
+	}
+	if usage.InputTokens == 0 {
+		usage.InputTokens = claudeInfo.Usage.PromptTokens
+	}
+	return usage
+}
+
+func hasClaudeMessageDeltaUsage(usage *dto.ClaudeUsage) bool {
+	if usage == nil {
+		return false
+	}
+	return usage.InputTokens > 0 ||
+		usage.OutputTokens > 0 ||
+		usage.CacheReadInputTokens > 0 ||
+		usage.CacheCreationInputTokens > 0
+}
+
+func flushClaudeTerminalStreamEvents(c *gin.Context, info *relaycommon.RelayInfo, claudeInfo *ClaudeResponseInfo) *types.NewAPIError {
+	if claudeInfo == nil {
+		return nil
+	}
+	flushRawTerminalEvents := func() {
+		if claudeInfo.PendingMessageDelta != nil {
+			pending := claudeInfo.PendingMessageDelta
+			helper.ClaudeChunkData(c, pending.response, pending.data)
+		}
+		if claudeInfo.PendingMessageStop != nil {
+			pending := claudeInfo.PendingMessageStop
+			helper.ClaudeChunkData(c, pending.response, pending.data)
+		}
+	}
+	if shouldSkipClaudeMessageDeltaUsagePatch(info) ||
+		(info != nil && info.StreamStatus != nil && !info.StreamStatus.IsNormalEnd()) {
+		flushRawTerminalEvents()
+		return nil
+	}
+
+	if claudeInfo.PendingMessageDelta != nil {
+		pending := claudeInfo.PendingMessageDelta
+		usage := buildFinalMessageDeltaUsage(&pending.response, claudeInfo)
+		data := patchClaudeMessageDeltaUsageData(pending.data, usage)
+		helper.ClaudeChunkData(c, pending.response, data)
+	} else {
+		usage := buildFinalMessageDeltaUsage(nil, claudeInfo)
+		if hasClaudeMessageDeltaUsage(usage) {
+			stopReason := "end_turn"
+			response := dto.ClaudeResponse{
+				Type:  "message_delta",
+				Delta: &dto.ClaudeMediaMessage{StopReason: &stopReason},
+				Usage: usage,
+			}
+			data, err := common.Marshal(response)
+			if err != nil {
+				return types.NewError(err, types.ErrorCodeBadResponseBody)
+			}
+			helper.ClaudeChunkData(c, response, string(data))
+		}
+	}
+
+	if claudeInfo.PendingMessageStop != nil {
+		pending := claudeInfo.PendingMessageStop
+		helper.ClaudeChunkData(c, pending.response, pending.data)
+	}
+	return nil
 }
 
 func setMessageDeltaUsageInt(data string, path string, localValue int) string {
@@ -832,15 +913,8 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 		FormatClaudeResponseInfo(&claudeResponse, nil, claudeInfo)
 
 		if claudeResponse.Type == "message_start" {
-			// message_start, 获取usage
 			if claudeResponse.Message != nil {
 				info.UpstreamModelName = claudeResponse.Message.Model
-			}
-		} else if claudeResponse.Type == "message_delta" {
-			// 确保 message_delta 的 usage 包含完整的 input_tokens 和 cache 相关字段
-			// 解决 AWS Bedrock 等上游返回的 message_delta 缺少这些字段的问题
-			if !shouldSkipClaudeMessageDeltaUsagePatch(info) {
-				data = patchClaudeMessageDeltaUsageData(data, buildMessageDeltaPatchUsage(&claudeResponse, claudeInfo))
 			}
 		}
 		if overrideClaudeResponseModelName(info, &claudeResponse) {
@@ -850,6 +924,18 @@ func HandleStreamResponseData(c *gin.Context, info *relaycommon.RelayInfo, claud
 			}
 			data = string(jsonData)
 		}
+
+		// Hold terminal events until the stream ends so their usage can include
+		// the final values or the fallback estimate when upstream omits them.
+		switch claudeResponse.Type {
+		case "message_delta":
+			claudeInfo.PendingMessageDelta = &claudeTerminalStreamEvent{response: claudeResponse, data: data}
+			return nil
+		case "message_stop":
+			claudeInfo.PendingMessageStop = &claudeTerminalStreamEvent{response: claudeResponse, data: data}
+			return nil
+		}
+
 		helper.ClaudeChunkData(c, claudeResponse, data)
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
 		response := StreamResponseClaude2OpenAI(&claudeResponse)
@@ -891,7 +977,11 @@ func HandleStreamFinalResponse(c *gin.Context, info *relaycommon.RelayInfo, clau
 	}
 
 	if info.RelayFormat == types.RelayFormatClaude {
-		//
+		if !info.StreamForcedForNonStream {
+			if err := flushClaudeTerminalStreamEvents(c, info, claudeInfo); err != nil {
+				common.SysLog("failed to flush Claude terminal stream events: " + err.Error())
+			}
+		}
 	} else if info.RelayFormat == types.RelayFormatOpenAI {
 		if info.ShouldIncludeUsage {
 			openAIUsage := buildOpenAIStyleUsageFromClaudeUsage(claudeInfo.Usage)

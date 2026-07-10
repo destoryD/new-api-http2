@@ -127,3 +127,40 @@ func TestBuildMessageDeltaPatchUsage(t *testing.T) {
 		require.EqualValues(t, 0, usage.CacheCreation.Ephemeral1hInputTokens)
 	})
 }
+
+func TestBuildFinalMessageDeltaUsage(t *testing.T) {
+	claudeInfo := &ClaudeResponseInfo{Usage: &dto.Usage{
+		PromptTokens:     100,
+		CompletionTokens: 53,
+		PromptTokensDetails: dto.InputTokenDetails{
+			CachedTokens:         30,
+			CachedCreationTokens: 50,
+		},
+	}}
+
+	t.Run("fills a missing final output token count", func(t *testing.T) {
+		usage := buildFinalMessageDeltaUsage(&dto.ClaudeResponse{Usage: &dto.ClaudeUsage{
+			InputTokens: 100,
+		}}, claudeInfo)
+		require.EqualValues(t, 100, usage.InputTokens)
+		require.EqualValues(t, 53, usage.OutputTokens)
+		require.EqualValues(t, 30, usage.CacheReadInputTokens)
+		require.EqualValues(t, 50, usage.CacheCreationInputTokens)
+	})
+
+	t.Run("builds usage for a synthesized final event", func(t *testing.T) {
+		usage := buildFinalMessageDeltaUsage(nil, claudeInfo)
+		require.True(t, hasClaudeMessageDeltaUsage(usage))
+		require.EqualValues(t, 100, usage.InputTokens)
+		require.EqualValues(t, 53, usage.OutputTokens)
+	})
+}
+
+func TestPatchClaudeMessageDeltaUsageDataAddsMissingOutputTokens(t *testing.T) {
+	originalData := `{"type":"message_delta","usage":{"input_tokens":100}}`
+	patchedData := patchClaudeMessageDeltaUsageData(originalData, &dto.ClaudeUsage{
+		InputTokens:  100,
+		OutputTokens: 53,
+	})
+	require.EqualValues(t, 53, gjson.Get(patchedData, "usage.output_tokens").Int())
+}
