@@ -386,8 +386,8 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 	var key string
 	var index int
 	var newAPIError *types.NewAPIError
-	forcedIndex := common.GetContextKeyInt(c, constant.ContextKeyChannelMultiKeyForcedIndex)
-	if channel.ChannelInfo.IsMultiKey && forcedIndex >= 0 {
+	forcedIndex, forceMultiKeyIndex := getForcedMultiKeyIndex(c)
+	if channel.ChannelInfo.IsMultiKey && forceMultiKeyIndex {
 		keys := channel.GetKeys()
 		if forcedIndex >= len(keys) {
 			return types.NewError(fmt.Errorf("multi-key index %d is out of range", forcedIndex), types.ErrorCodeChannelNoAvailableKey, types.ErrOptionWithSkipRetry())
@@ -438,6 +438,11 @@ func SetupContextForSelectedChannel(c *gin.Context, channel *model.Channel, mode
 		c.Set("bot_id", channel.Other)
 	}
 	return nil
+}
+
+func getForcedMultiKeyIndex(c *gin.Context) (int, bool) {
+	index, exists := common.GetContextKeyType[int](c, constant.ContextKeyChannelMultiKeyForcedIndex)
+	return index, exists && index >= 0
 }
 
 // extractModelNameFromGeminiPath 从 Gemini API URL 路径中提取模型名
