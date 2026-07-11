@@ -3752,6 +3752,8 @@
     "Auto-enable Check Interval Minutes": "自動有効化チェック間隔（分）",
     "How often to test automatically disabled keys for this channel": "このチャンネルで自動無効化されたキーをテストする頻度",
     "Auto-enable Test Model": "自動有効化テストモデル",
-    "Model used to test disabled keys; empty uses the channel test model or first configured model": "無効化されたキーのテストに使うモデル。空の場合はチャンネルのテストモデルまたは最初の設定モデルを使います"
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "無効化されたキーのテストに使うモデル。空の場合はチャンネルのテストモデルまたは最初の設定モデルを使います",
+    "不记录用量": "チャンネル使用量を記録しない",
+    "开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志": "このチャンネルの表示使用量を 0 に保ち、課金や使用量ログには影響しません"
   }
 }

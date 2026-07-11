@@ -3781,6 +3781,8 @@
     "Auto-enable Check Interval Minutes": "Intervalle de verification automatique en minutes",
     "How often to test automatically disabled keys for this channel": "Frequence de test des cles desactivees automatiquement pour ce canal",
     "Auto-enable Test Model": "Modele de test pour la reactivation automatique",
-    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Modele utilise pour tester les cles desactivees ; vide utilise le modele de test du canal ou le premier modele configure"
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Modele utilise pour tester les cles desactivees ; vide utilise le modele de test du canal ou le premier modele configure",
+    "不记录用量": "Ne pas comptabiliser l’utilisation du canal",
+    "开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志": "Maintenir l’utilisation affichée de ce canal à zéro sans affecter la facturation ni les journaux d’utilisation"
   }
 }

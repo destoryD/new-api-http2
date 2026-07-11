@@ -3803,6 +3803,8 @@
     "Auto-enable Check Interval Minutes": "Интервал проверки авто-включения в минутах",
     "How often to test automatically disabled keys for this channel": "Как часто проверять автоматически отключенные ключи этого канала",
     "Auto-enable Test Model": "Тестовая модель для авто-включения",
-    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Модель для проверки отключенных ключей; если пусто, используется тестовая модель канала или первая настроенная модель"
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Модель для проверки отключенных ключей; если пусто, используется тестовая модель канала или первая настроенная модель",
+    "不记录用量": "Не учитывать использование канала",
+    "开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志": "Оставлять отображаемое использование этого канала равным нулю, не затрагивая тарификацию и журналы использования"
   }
 }

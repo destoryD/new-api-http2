@@ -3919,6 +3919,8 @@
     "Auto-enable Check Interval Minutes": "Auto-enable check interval minutes",
     "How often to test automatically disabled keys for this channel": "How often to test automatically disabled keys for this channel",
     "Auto-enable Test Model": "Auto-enable test model",
-    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Model used to test disabled keys; empty uses the channel test model or first configured model"
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Model used to test disabled keys; empty uses the channel test model or first configured model",
+    "不记录用量": "Do Not Track Channel Usage",
+    "开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志": "Keep this channel's displayed usage at zero without affecting billing or usage logs"
   }
 }

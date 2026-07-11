@@ -315,6 +315,7 @@ const EditChannelModal = (props) => {
     status_code_mapping: '',
     models: [],
     auto_ban: 1,
+    disable_used_quota: false,
     test_model: '',
     groups: ['default'],
     priority: 0,
@@ -1242,6 +1243,7 @@ const EditChannelModal = (props) => {
       }
 
       initialBaseUrlRef.current = data.base_url || '';
+      data.disable_used_quota = data.disable_used_quota === true;
       setInputs(data);
       if (formApiRef.current) {
         formApiRef.current.setValues(data);
@@ -4075,6 +4077,20 @@ const EditChannelModal = (props) => {
                       '仅当自动禁用开启时有效，关闭后不会自动禁用该渠道',
                     )}
                     initValue={autoBan}
+                  />
+
+                  <Form.Switch
+                    field='disable_used_quota'
+                    label={t('不记录用量')}
+                    checkedText={t('开')}
+                    uncheckedText={t('关')}
+                    onChange={(value) =>
+                      handleInputChange('disable_used_quota', value)
+                    }
+                    extraText={t(
+                      '开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志',
+                    )}
+                    initValue={inputs.disable_used_quota === true}
                   />
 
                   {/* Test Model - Core Config */}

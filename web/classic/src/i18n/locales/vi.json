@@ -4317,6 +4317,8 @@
     "Auto-enable Check Interval Minutes": "Khoang kiem tra tu dong bat lai theo phut",
     "How often to test automatically disabled keys for this channel": "Tan suat kiem tra cac khoa bi tu dong tat cua kenh nay",
     "Auto-enable Test Model": "Mo hinh kiem tra de tu dong bat lai",
-    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Mo hinh dung de kiem tra khoa bi tat; de trong se dung mo hinh kiem tra cua kenh hoac mo hinh duoc cau hinh dau tien"
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "Mo hinh dung de kiem tra khoa bi tat; de trong se dung mo hinh kiem tra cua kenh hoac mo hinh duoc cau hinh dau tien",
+    "不记录用量": "Không ghi nhận mức sử dụng kênh",
+    "开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志": "Giữ mức sử dụng hiển thị của kênh này ở 0 mà không ảnh hưởng đến tính phí hoặc nhật ký sử dụng"
   }
 }

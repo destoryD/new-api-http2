@@ -3764,6 +3764,8 @@
     "Auto-enable Check Interval Minutes": "自动启用检测间隔分钟",
     "How often to test automatically disabled keys for this channel": "此渠道自动禁用密钥的检测频率",
     "Auto-enable Test Model": "自动启用测试模型",
-    "Model used to test disabled keys; empty uses the channel test model or first configured model": "用于检测禁用密钥的模型；留空则使用渠道测试模型或首个配置模型"
+    "Model used to test disabled keys; empty uses the channel test model or first configured model": "用于检测禁用密钥的模型；留空则使用渠道测试模型或首个配置模型",
+    "不记录用量": "不記錄渠道用量",
+    "开启后渠道显示的已用量保持为 0，不影响正常计费或用量日志": "開啟後渠道顯示的已用量保持為 0，不影響正常計費或用量日誌"
   }
 }
