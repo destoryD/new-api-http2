@@ -381,6 +381,8 @@ export const FIELD_DESCRIPTIONS = {
     'Map request model names to actual provider model names (JSON format)',
   PRIORITY: 'Higher priority channels are selected first',
   WEIGHT: 'Used for load balancing. Higher weight = more requests',
+  DISABLE_USED_QUOTA:
+    "Keep this channel's displayed usage at zero without affecting billing or usage logs",
   TEST_MODEL: 'Model to use when testing channel connectivity',
   AUTO_BAN: 'Automatically disable channel on repeated failures',
   OVERRIDE_ERROR_AS_429:

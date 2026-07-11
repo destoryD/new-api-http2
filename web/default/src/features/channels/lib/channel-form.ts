@@ -37,6 +37,7 @@ export const channelFormSchema = z.object({
   weight: z.number().optional(),
   test_model: z.string().optional(),
   auto_ban: z.number().optional(),
+  disable_used_quota: z.boolean().optional(),
   status: z.number(),
   status_code_mapping: z.string().optional(),
   tag: z.string().optional(),
@@ -71,13 +72,10 @@ export const channelFormSchema = z.object({
   multi_key_auto_enable_enabled: z.boolean().optional(),
   multi_key_auto_enable_minutes: z.number().int().min(1).optional(),
   multi_key_auto_enable_model: z.string().optional(),
-  model_rpm_limits: z
-    .string()
-    .optional()
-    .refine(validateModelRPMLimits, {
-      message:
-        'Model RPM Limits must be a JSON object with non-negative integer values',
-    }),
+  model_rpm_limits: z.string().optional().refine(validateModelRPMLimits, {
+    message:
+      'Model RPM Limits must be a JSON object with non-negative integer values',
+  }),
   use_global_proxy_pool: z.boolean().optional(),
   proxy: z.string().optional(),
   proxy_pool: z.string().optional(),
@@ -130,6 +128,7 @@ export const CHANNEL_FORM_DEFAULT_VALUES: ChannelFormValues = {
   weight: 0,
   test_model: '',
   auto_ban: 1,
+  disable_used_quota: false,
   status: CHANNEL_STATUS.ENABLED,
   status_code_mapping: '',
   tag: '',
@@ -250,8 +249,7 @@ export function transformChannelToFormDefaults(
           0,
           Math.floor(Number(parsed.multi_key_429_skip_seconds) || 60)
         ),
-        multi_key_429_model_scoped:
-          parsed.multi_key_429_model_scoped || false,
+        multi_key_429_model_scoped: parsed.multi_key_429_model_scoped || false,
         multi_key_429_retry_key_limit: Math.max(
           0,
           Math.floor(Number(parsed.multi_key_429_retry_key_limit) || 0)
@@ -341,6 +339,7 @@ export function transformChannelToFormDefaults(
     weight: channel.weight || 0,
     test_model: channel.test_model || '',
     auto_ban: channel.auto_ban ?? 1,
+    disable_used_quota: channel.disable_used_quota ?? false,
     status: channel.status,
     status_code_mapping: channel.status_code_mapping || '',
     tag: channel.tag || '',
@@ -399,8 +398,7 @@ function buildSettingJSON(formData: ChannelFormValues): string {
       0,
       Math.floor(Number(formData.multi_key_429_skip_seconds) || 60)
     ),
-    multi_key_429_model_scoped:
-      formData.multi_key_429_model_scoped === true,
+    multi_key_429_model_scoped: formData.multi_key_429_model_scoped === true,
     multi_key_429_retry_key_limit: Math.max(
       0,
       Math.floor(Number(formData.multi_key_429_retry_key_limit) || 0)
@@ -518,7 +516,9 @@ function normalizeModelRPMLimits(value: unknown): Record<string, number> {
   return limits
 }
 
-function parseModelRPMLimits(value: string | undefined): Record<string, number> {
+function parseModelRPMLimits(
+  value: string | undefined
+): Record<string, number> {
   if (!value?.trim()) {
     return {}
   }
@@ -694,6 +694,7 @@ export function transformFormDataToCreatePayload(formData: ChannelFormValues): {
     weight: formData.weight || null,
     test_model: formData.test_model || null,
     auto_ban: formData.auto_ban ?? 1,
+    disable_used_quota: formData.disable_used_quota ?? false,
     status: formData.status,
     status_code_mapping: formData.status_code_mapping || null,
     tag: formData.tag || null,
@@ -742,6 +743,7 @@ export function transformFormDataToUpdatePayload(
     weight: formData.weight || null,
     test_model: formData.test_model || null,
     auto_ban: formData.auto_ban ?? 1,
+    disable_used_quota: formData.disable_used_quota ?? false,
     status: formData.status,
     status_code_mapping: formData.status_code_mapping || null,
     tag: formData.tag || null,

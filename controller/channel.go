@@ -972,6 +972,14 @@ func UpdateChannel(c *gin.Context) {
 		common.ApiError(c, err)
 		return
 	}
+	if channel.DisableUsedQuota != nil && *channel.DisableUsedQuota {
+		if err = model.ResetChannelUsedQuota(channel.Id); err != nil {
+			common.ApiError(c, err)
+			return
+		}
+		channel.UsedQuota = 0
+	}
+
 	model.InitChannelCache()
 	service.ResetProxyClientCache()
 	channel.Key = ""

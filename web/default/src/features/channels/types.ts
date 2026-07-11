@@ -53,6 +53,7 @@ export const channelSchema = z.object({
   models: z.string().default(''),
   group: z.string().default('default'),
   used_quota: z.number().default(0),
+  disable_used_quota: z.boolean().nullish().default(false),
   model_mapping: z.string().nullish(),
   status_code_mapping: z.string().nullish(),
   priority: z.number().nullish(),
@@ -232,12 +233,7 @@ export interface MultiKeyStatusResponse {
 // ============================================================================
 
 export type ChannelSortBy =
-  | 'id'
-  | 'name'
-  | 'priority'
-  | 'balance'
-  | 'response_time'
-  | 'test_time'
+  'id' | 'name' | 'priority' | 'balance' | 'response_time' | 'test_time'
 
 export type ChannelSortOrder = 'asc' | 'desc'
 

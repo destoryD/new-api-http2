@@ -2605,11 +2605,36 @@ export function ChannelMutateDrawer({
 
                       <FormField
                         control={form.control}
+                        name='disable_used_quota'
+                        render={({ field }) => (
+                          <FormItem className='flex items-center justify-between'>
+                            <div className='space-y-0.5'>
+                              <FormLabel>
+                                {t('Do Not Track Channel Usage')}
+                              </FormLabel>
+                              <FormDescription>
+                                {t(FIELD_DESCRIPTIONS.DISABLE_USED_QUOTA)}
+                              </FormDescription>
+                            </div>
+                            <FormControl>
+                              <Switch
+                                checked={field.value === true}
+                                onCheckedChange={field.onChange}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
                         name='override_error_as_429'
                         render={({ field }) => (
                           <FormItem className='flex items-center justify-between'>
                             <div className='space-y-0.5'>
-                              <FormLabel>{t('Override Error as 429')}</FormLabel>
+                              <FormLabel>
+                                {t('Override Error as 429')}
+                              </FormLabel>
                               <FormDescription>
                                 {t(FIELD_DESCRIPTIONS.OVERRIDE_ERROR_AS_429)}
                               </FormDescription>
@@ -3448,9 +3473,7 @@ export function ChannelMutateDrawer({
                         name='multi_key_rpm_limit'
                         render={({ field }) => (
                           <FormItem className='px-4 py-3'>
-                            <FormLabel>
-                              {t('Single-Key RPM Limit')}
-                            </FormLabel>
+                            <FormLabel>{t('Single-Key RPM Limit')}</FormLabel>
                             <FormControl>
                               <Input
                                 type='number'
@@ -3642,9 +3665,7 @@ export function ChannelMutateDrawer({
                         name='multi_key_auto_enable_model'
                         render={({ field }) => (
                           <FormItem className='px-4 py-3'>
-                            <FormLabel>
-                              {t('Auto-enable Test Model')}
-                            </FormLabel>
+                            <FormLabel>{t('Auto-enable Test Model')}</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder='gpt-4o-mini'
