@@ -1,6 +1,12 @@
 package model
 
-import "github.com/QuantumNous/new-api/dto"
+import (
+	"errors"
+
+	"github.com/QuantumNous/new-api/dto"
+)
+
+var ErrChannelEndpointNotAllowed = errors.New("channel endpoint is not allowed")
 
 func isChannelEndpointAllowed(channel *Channel, endpointType string) bool {
 	if channel == nil {

@@ -107,15 +107,21 @@ func GetRandomSatisfiedChannel(group string, model string, retry int, endpointTy
 	defer channelSyncLock.RUnlock()
 
 	// First, try to find channels with the exact model name.
-	channels := filterChannelIDsByEndpoint(group2model2channels[group][model], endpointType)
+	channelIDs := group2model2channels[group][model]
+	channels := filterChannelIDsByEndpoint(channelIDs, endpointType)
 
 	// If no channels found, try to find channels with the normalized model name.
+	var normalizedChannelIDs []int
 	if len(channels) == 0 {
 		normalizedModel := ratio_setting.FormatMatchingModelName(model)
-		channels = filterChannelIDsByEndpoint(group2model2channels[group][normalizedModel], endpointType)
+		normalizedChannelIDs = group2model2channels[group][normalizedModel]
+		channels = filterChannelIDsByEndpoint(normalizedChannelIDs, endpointType)
 	}
 
 	if len(channels) == 0 {
+		if endpointType != "" && (len(channelIDs) > 0 || len(normalizedChannelIDs) > 0) {
+			return nil, ErrChannelEndpointNotAllowed
+		}
 		return nil, nil
 	}
 

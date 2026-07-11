@@ -397,7 +397,7 @@ func checkChannelEndpointAllowed(c *gin.Context, channel *model.Channel, endpoin
 	return types.NewErrorWithStatusCode(
 		fmt.Errorf("endpoint type %s is not allowed by this channel", endpointType),
 		types.ErrorCodeChannelEndpointNotAllowed,
-		http.StatusForbidden,
+		http.StatusNotFound,
 		types.ErrOptionWithNoRecordErrorLog(),
 	)
 }

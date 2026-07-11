@@ -132,9 +132,13 @@ func GetChannel(group string, model string, retry int, endpointTypes ...string) 
 	if err != nil {
 		return nil, err
 	}
+	unfilteredAbilities := abilities
 	abilities, err = filterAbilitiesByEndpoint(abilities, endpointType)
 	if err != nil {
 		return nil, err
+	}
+	if endpointType != "" && len(unfilteredAbilities) > 0 && len(abilities) == 0 {
+		return nil, ErrChannelEndpointNotAllowed
 	}
 	if endpointType != "" {
 		abilities, err = filterAbilitiesByPriorityRetry(abilities, retry)

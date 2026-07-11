@@ -53,7 +53,7 @@ func Distribute() func(c *gin.Context) {
 				return
 			}
 			if !dto.IsChannelEndpointAllowed(channel.GetSetting().AllowedEndpointTypes, endpointType) {
-				abortWithOpenAiMessage(c, http.StatusForbidden, fmt.Sprintf("endpoint type %s is not allowed by this channel", endpointType), types.ErrorCodeChannelEndpointNotAllowed)
+				abortWithOpenAiMessage(c, http.StatusNotFound, fmt.Sprintf("endpoint type %s is not enabled for this channel", endpointType), types.ErrorCodeChannelEndpointNotAllowed)
 				return
 			}
 		} else {
@@ -144,6 +144,10 @@ func Distribute() func(c *gin.Context) {
 					})
 					if err != nil {
 						showGroup := usingGroup
+						if errors.Is(err, model.ErrChannelEndpointNotAllowed) {
+							abortWithOpenAiMessage(c, http.StatusNotFound, fmt.Sprintf("endpoint type %s is not enabled for this channel", endpointType), types.ErrorCodeChannelEndpointNotAllowed)
+							return
+						}
 						if usingGroup == "auto" {
 							showGroup = fmt.Sprintf("auto(%s)", selectGroup)
 						}
