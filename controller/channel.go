@@ -1287,8 +1287,13 @@ func ManageMultiKeys(c *gin.Context) {
 	}
 
 	lock := model.GetChannelPollingLock(channel.Id)
-	lock.Lock()
-	defer lock.Unlock()
+	// enable_key delegates to EnableChannelMultiKeyIndex, which acquires this
+	// same lock internally. Locking here as well would deadlock because
+	// sync.Mutex is not reentrant.
+	if request.Action != "enable_key" {
+		lock.Lock()
+		defer lock.Unlock()
+	}
 
 	switch request.Action {
 	case "get_key_status":
